@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes.fs" />
+    <Compile Include="GherkinProvider.fs" />
+    <Reference Include="Gherkin.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Reference>
+    <Reference Include="Utf8Json.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Reference>
+    <!-- <PackageReference Include="Gherkin" Version="6.0.0" /> -->
+
+    <!-- <None Include="Gherkin.dll" CopyToOutputDirectory="Always"/>
+    <None Include="Utf8Json.dll" CopyToOutputDirectory="Always"/> -->
+    <None Include="netstandard.dll" CopyToOutputDirectory="Always"/>
+    <None Include="System.Reflection.dll" CopyToOutputDirectory="Always"/>
+    <None Include="System.Runtime.dll" CopyToOutputDirectory="Always"/>
+  </ItemGroup>
+
+</Project>
