@@ -5,7 +5,7 @@ open Expecto
 
 open ProviderImplementation
 
-type TestFeature = FSharp.Data.Gherkin.GherkinProvider<"C:\\src\\bddkickstarter\\FSharp.Data.Gherkin\\FSharp.Data.Gherkin.Tests\\test.feature">
+type TestFeature = FSharp.Data.Gherkin.GherkinProvider<"test.feature">
 
 
 [<Tests>]
@@ -13,7 +13,7 @@ let foo =
     testCase
         "bar"
         <| fun _ ->
-            let test = TestFeature.``this is another scenario``.``0. Given this is another scenario given1``
+            let test = TestFeature.``this is another scenario``.``0. Given this is another scenario given1``.StepText
             printfn "%A" test
                 
                 

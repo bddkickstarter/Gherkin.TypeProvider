@@ -114,6 +114,21 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     //     createFeatureProperty (parser.Parse(path))
     //     dynamicFeatureType
 
+    let createExampleTable (examples:seq<Ast.Examples>) (scenarioName:string)=
+        let providedAssembly = ProvidedAssembly()
+        let alExamples = examples |> Seq.collect(fun e -> e.TableBody)
+        let header = (examples |> Seq.item 0).TableHeader.Cells
+
+        ProvidedTypeDefinition(providedAssembly, ns, (sprintf "%s.Examples" scenarioName) , Some typeof<seq<obj>>, isErased=false, hideObjectMethods = true, nonNullable = true)
+
+        // header |> Seq.iteri(
+        //     fun i h -> ProvidedProperty(h.Value,typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepText @@> ) |> examples.AddMember
+        // )
+        
+        // ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> examples.AddMember
+        
+
+
     let createStep (gherkinStep:Ast.Step) (order:int) (stepName:string)=
         let providedAssembly = ProvidedAssembly()
         let stepText = gherkinStep.Text
@@ -137,7 +152,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.iteri(
             fun i s ->
                 let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
-                let step = createStep s i stepName
+                let step = createStep s i s.Text
                 step |> scenario.AddMember 
 
                 ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> scenario.AddMember
