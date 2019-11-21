@@ -61,15 +61,29 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         
         // ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> examples.AddMember
         
-    // let createExampleTableInstances (scenarioName:string) = 
-    //     let exampleType =ProvidedTypeDefinition(asm,ns,(sprintf "%s examples" scenarioName) , Some typeof<obj>, isErased=false, isSealed=true, nonNullable = true, hideObjectMethods = true, isInterface = false) 
+    let createExampleTableInstances (value:string) (scenario:ProvidedTypeDefinition) = 
+        let providedAsm = ProvidedAssembly()
+        let exampleType =ProvidedTypeDefinition(providedAsm,ns,"Example" , Some typeof<obj>, isErased=false, isSealed=true, nonNullable = true, hideObjectMethods = true, isInterface = false) 
+        
+        // let exampleConstructor = 
+        //     ProvidedConstructor(
+        //         [ProvidedParameter("prop1", typeof<string>)],
+        //         invokeCode = 
+        //                 fun args ->
+        //                     match args with
+        //                     | [this;value] ->
+        //                         let valueField = ProvidedProperty("Prop1", typeof<string>)
+        //                         valueField |> exampleType.AddMember
+        //                         Expr.PropertySet (this, valueField, <@@ %%value:string @@>)
+        //                     | _ -> 
+        //                         failwith "wrong ctor params")
+        
+        // exampleConstructor |> exampleType.AddMember
+        // let examples = Expr.NewArray ((exampleType.AsType()),[Expr.NewObject(exampleConstructor,[Expr.Value(value)])])
 
-    //     ProvidedProperty("Prop1",typeof<string>,getterCode = fun _ -> <@@ "prop1" @@>) |> exampleType.AddMember
-    //     ProvidedProperty("Prop2",typeof<string>,getterCode = fun _ -> <@@ "prop2" @@>) |> exampleType.AddMember
 
-    //     Expr.NewObject(exampleType.AsType(),)
-
-
+        exampleType
+        
 
     let createStep (gherkinStep:Ast.Step) (order:int) (stepName:string)=
         let providedAssembly = ProvidedAssembly()
@@ -104,9 +118,15 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ProvidedProperty("ScenarioName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioName @@> ) |> scenario.AddMember
         ProvidedProperty("ScenarioDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioDesc @@> ) |> scenario.AddMember
 
-        // let examples = createExampleTableInstances scenarioName
-        // ProvidedProperty("Examples",typeof<list<obj>>,isStatic = false, getterCode = fun _ -> <@@ examples @@> ) |> scenario.AddMember
+        let exampleType = createExampleTableInstances "Foo" scenario
+        let t = (typedefof<list<_>>).MakeGenericType(exampleType.AsType())
+        let getterCode _ = <@@ [] @@> 
+        let setterCode _ = <@@ () @@> 
         
+
+        exampleType |> scenario.AddMember
+        ProvidedProperty("Examples",t,isStatic=false,getterCode=getterCode,setterCode=setterCode) |> scenario.AddMember
+
         scenario
 
     

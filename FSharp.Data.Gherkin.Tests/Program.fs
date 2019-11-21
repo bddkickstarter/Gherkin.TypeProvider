@@ -14,7 +14,7 @@ let foo =
         "bar"
         <| fun _ ->
             let background = TestFeature.Background.``0. Given this is a background given``.StepText
-            let scenario = TestFeature.Scenarios.``this is a scenario``.``0. Given this is a scenario given1``.StepText
+            let scenario = TestFeature.Scenarios.``this is a scenario outline``.Examples.[0]
             printfn "%A %A" background scenario
                 
                 
