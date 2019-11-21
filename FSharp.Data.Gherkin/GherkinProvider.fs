@@ -61,25 +61,29 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         
         // ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> examples.AddMember
         
-    let createExampleTableInstances (value:string) (scenario:ProvidedTypeDefinition) = 
+    let createExampleTableInstances () = 
         let providedAsm = ProvidedAssembly()
-        let exampleType =ProvidedTypeDefinition(providedAsm,ns,"Example" , Some typeof<obj>, isErased=false, isSealed=true, nonNullable = true, hideObjectMethods = true, isInterface = false) 
+        let exampleType =ProvidedTypeDefinition(providedAsm,scenariosNs,"Example" , Some typeof<obj>, isErased=false, nonNullable = true, hideObjectMethods = true)
+        let valueField = ProvidedField("value", typeof<string>)
+        let getterCode (args:Expr list) = Expr.FieldGet(args.[0],valueField)
+        let setterCode (args:Expr list) = Expr.FieldSet(valueField,args.[0])
+        valueField |> exampleType.AddMember
+        ProvidedProperty("Prop1", typeof<string>,isStatic=false,getterCode = getterCode) |> exampleType.AddMember
+
+        let exampleConstructor = 
+            ProvidedConstructor(
+                [ProvidedParameter("prop1", typeof<string>)],
+                invokeCode = 
+                        fun args ->
+                            match args with
+                            | [this;value] ->
+                                Expr.FieldSet (this, valueField, <@@ %%value:string @@>)
+                                
+                            | _ -> 
+                                failwith "wrong ctor params")
         
-        // let exampleConstructor = 
-        //     ProvidedConstructor(
-        //         [ProvidedParameter("prop1", typeof<string>)],
-        //         invokeCode = 
-        //                 fun args ->
-        //                     match args with
-        //                     | [this;value] ->
-        //                         let valueField = ProvidedProperty("Prop1", typeof<string>)
-        //                         valueField |> exampleType.AddMember
-        //                         Expr.PropertySet (this, valueField, <@@ %%value:string @@>)
-        //                     | _ -> 
-        //                         failwith "wrong ctor params")
-        
-        // exampleConstructor |> exampleType.AddMember
-        // let examples = Expr.NewArray ((exampleType.AsType()),[Expr.NewObject(exampleConstructor,[Expr.Value(value)])])
+        exampleConstructor |> exampleType.AddMember
+        //let examples = Expr.NewArray ((exampleType.AsType()),[Expr.NewObject(exampleConstructor,[Expr.Value("hello")])])
 
 
         exampleType
@@ -118,7 +122,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ProvidedProperty("ScenarioName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioName @@> ) |> scenario.AddMember
         ProvidedProperty("ScenarioDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioDesc @@> ) |> scenario.AddMember
 
-        let exampleType = createExampleTableInstances "Foo" scenario
+        let exampleType = createExampleTableInstances()
         let t = (typedefof<list<_>>).MakeGenericType(exampleType.AsType())
         let getterCode _ = <@@ [] @@> 
         let setterCode _ = <@@ () @@> 
