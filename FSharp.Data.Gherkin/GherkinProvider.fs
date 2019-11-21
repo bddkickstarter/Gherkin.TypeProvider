@@ -7,17 +7,17 @@ open ProviderImplementation.ProvidedTypes
 
 open Gherkin
 
-// type Scenario = 
-//     {
-//         ScenarioName:string
-//         ScenarioDescription:string
-//     }
-
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config)
 
     let ns = "FSharp.Data.Gherkin"
+    //let generatedNs = sprintf "%s.Generated" ns
+    let providerNs = sprintf "%s.Provider" ns
+    let featuresNs = sprintf "%s.Features" ns
+    let scenariosNs = sprintf "%s.Scenarios" ns
+    let backgroundNs = sprintf "%s.Background" ns
+    let stepsNs = sprintf "%s.Steps" ns
     let parser = Parser()
     let asm = Assembly.GetExecutingAssembly()
 
@@ -101,25 +101,14 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         
     
     
-    // let createFeatureProperty  (document:Ast.GherkinDocument) =
-    //     //let asm = ProvidedAssembly()
-    //     let featureName = document.Feature.Name
-    //     ProvidedProperty(featureName,featureType,isStatic = true, getterCode = fun _ -> Expr.Value(document.Feature, typeof<Feature>)) |> featureType.AddMember
-    //     // createScenarios document.Feature featureType
 
 
-    // let createFeatureProvider providerName (path:string)  =
-    //     let asm = ProvidedAssembly()
-    //     let dynamicFeatureType = ProvidedTypeDefinition(asm, ns, providerName, Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
-    //     createFeatureProperty (parser.Parse(path))
-    //     dynamicFeatureType
+    // let createExampleTable (examples:seq<Ast.Examples>) (scenarioName:string)=
+    //     let providedAssembly = ProvidedAssembly()
+    //     let alExamples = examples |> Seq.collect(fun e -> e.TableBody)
+    //     let header = (examples |> Seq.item 0).TableHeader.Cells
 
-    let createExampleTable (examples:seq<Ast.Examples>) (scenarioName:string)=
-        let providedAssembly = ProvidedAssembly()
-        let alExamples = examples |> Seq.collect(fun e -> e.TableBody)
-        let header = (examples |> Seq.item 0).TableHeader.Cells
-
-        ProvidedTypeDefinition(providedAssembly, ns, (sprintf "%s.Examples" scenarioName) , Some typeof<seq<obj>>, isErased=false, hideObjectMethods = true, nonNullable = true)
+    //     ProvidedTypeDefinition(providedAssembly, ns, (sprintf "%s.Examples" scenarioName) , Some typeof<seq<obj>>, isErased=false, hideObjectMethods = true, nonNullable = true)
 
         // header |> Seq.iteri(
         //     fun i h -> ProvidedProperty(h.Value,typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepText @@> ) |> examples.AddMember
@@ -133,7 +122,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let providedAssembly = ProvidedAssembly()
         let stepText = gherkinStep.Text
         let stepKeyword = gherkinStep.Keyword
-        let step = ProvidedTypeDefinition(providedAssembly, ns, stepName, Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
+        let step = ProvidedTypeDefinition(providedAssembly, stepsNs, stepName, Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
 
         ProvidedProperty("StepText",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepText @@> ) |> step.AddMember
         ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> step.AddMember
@@ -146,7 +135,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let scenarioName = gherkinScenario.Name
         let scenarioDesc = gherkinScenario.Description
 
-        let scenario = ProvidedTypeDefinition(providedAssembly, ns, scenarioName, Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
+        let scenario = ProvidedTypeDefinition(providedAssembly, scenariosNs, scenarioName, Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
 
         gherkinScenario.Steps
         |> Seq.iteri(
@@ -165,19 +154,54 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         scenario
 
     
+    let createBackground (gherkinBackground:Ast.Background) =
+        let providedAssembly = ProvidedAssembly()
+        let backgroundName = gherkinBackground.Name
+        let backgroundDesc = gherkinBackground.Description
+
+        let background = ProvidedTypeDefinition(providedAssembly, backgroundNs, "Background", Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
+        
+        gherkinBackground.Steps
+        |> Seq.iteri(
+            fun i s ->
+                let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
+                let step = createStep s i s.Text
+                step |> background.AddMember 
+
+                ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> background.AddMember
+
+        )
+        
+        ProvidedProperty("BackgroundName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ backgroundName @@> ) |> background.AddMember
+        ProvidedProperty("BackgroundDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ backgroundDesc @@> ) |> background.AddMember
+        
+        background
+
+    
     let createFeature providerName (path:string) =
         let document = parser.Parse(path)
         let providedAssembly = ProvidedAssembly()
         let featureName = document.Feature.Name
         let featureDesc = document.Feature.Description
+        
 
-        let feature = ProvidedTypeDefinition(providedAssembly, ns, providerName, Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
-
+        let feature = ProvidedTypeDefinition(providedAssembly, featuresNs, providerName, Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
+        ProvidedProperty("FeatureName",typeof<string>,isStatic = true, getterCode = fun _ -> <@@ featureName @@> ) |> feature.AddMember
+        ProvidedProperty("FeatureDescription",typeof<string>,isStatic = true, getterCode = fun _ -> <@@ featureDesc @@> ) |> feature.AddMember
+        
+        
+        let scenarios = ProvidedTypeDefinition(providedAssembly, scenariosNs, "FeatureScenarios", Some typeof<obj>, isErased=false, hideObjectMethods = true, nonNullable = true)
+        
         document.Feature.Children
         |> Seq.iter(
             fun c ->
                 match c with
-                | :? Ast.Background ->()
+                | :? Ast.Background ->
+                        let gherkinBackground = c :?> Ast.Background
+                        let background = createBackground gherkinBackground 
+                        background |> feature.AddMember
+                        ProvidedProperty("Background",background.AsType(),isStatic = true, getterCode = fun _ -> <@@ obj() @@> )  |> feature.AddMember
+                        
                 | :? Ast.Scenario ->
                         let gherkinScenario = c :?> Ast.Scenario
                         let scenarioName = gherkinScenario.Name
@@ -185,23 +209,20 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
                         scenario |> feature.AddMember
                         
-                        ProvidedProperty(scenarioName,scenario.AsType(),isStatic = true, getterCode=fun _ -> <@@ obj() @@>) |> feature.AddMember
+                        ProvidedProperty(scenarioName,scenario.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> scenarios.AddMember
                 | _ -> ()
         )
 
-
-
-        ProvidedProperty("FeatureName",typeof<string>,isStatic = true, getterCode = fun _ -> <@@ featureName @@> ) |> feature.AddMember
-        ProvidedProperty("FeatureDescription",typeof<string>,isStatic = true, getterCode = fun _ -> <@@ featureDesc @@> ) |> feature.AddMember
+        scenarios |> feature.AddMember
+        ProvidedProperty("Scenarios",scenarios.AsType(),isStatic = true, getterCode = fun _ -> <@@ obj() @@> )  |> feature.AddMember
         
+
         providedAssembly.AddTypes [feature]
 
         feature
 
-        
-
     do
-        let gherkinProvider = ProvidedTypeDefinition(asm, ns, "GherkinProvider", None, isErased=false, hideObjectMethods = true, nonNullable = true)
+        let gherkinProvider = ProvidedTypeDefinition(asm, providerNs, "GherkinProvider", None, isErased=false, hideObjectMethods = true, nonNullable = true)
         gherkinProvider.DefineStaticParameters( 
                 [ProvidedStaticParameter("Feature path", typeof<string>)], 
                 fun providerName args -> createFeature providerName (unbox<string> args.[0]))
