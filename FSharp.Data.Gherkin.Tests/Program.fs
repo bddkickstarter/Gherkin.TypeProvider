@@ -16,7 +16,6 @@ let foo =
             let scenarioOutline = TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.ScenarioName
             let example = TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples.[0]
             printfn "Feature:%A Scenario:%A Scenario Outline:%A Example:%A" feature scenario scenarioOutline example
-            //printfn "Background:%A Scenario:%A" "kjh" "lkj"
                 
                 
                

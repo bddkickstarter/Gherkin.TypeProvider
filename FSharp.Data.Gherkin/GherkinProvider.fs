@@ -8,10 +8,6 @@ open Microsoft.FSharp.Reflection
 
 open Gherkin
 
-type Feature (featureName:string,featureDescription:string) =
-    member this.FeatureName = featureName
-    member this.FeatureDescription = featureDescription
-
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config)
@@ -31,7 +27,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let providedAssembly = ProvidedAssembly()
         let stepText = gherkinStep.Text
         let stepKeyword = gherkinStep.Keyword
-        let step = ProvidedTypeDefinition(providedAssembly, stepsNs, stepName, Some typeof<obj>, isErased=false)
+        let step = ProvidedTypeDefinition(providedAssembly, stepsNs, stepName, Some typeof<obj>, isErased=false, hideObjectMethods=true)
 
         ProvidedProperty("StepText",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepText @@> ) |> step.AddMember
         ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> step.AddMember
@@ -71,7 +67,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let scenarioName = gherkinScenario.Name
         let scenarioDesc = gherkinScenario.Description
 
-        let scenario = ProvidedTypeDefinition(providedAssembly, scenariosNs, scenarioName, Some typeof<obj>, isErased=false)
+        let scenario = ProvidedTypeDefinition(providedAssembly, scenariosNs, scenarioName, Some typeof<obj>, isErased=false, hideObjectMethods=true)
 
         gherkinScenario.Steps
         |> Seq.iteri(
@@ -124,7 +120,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         
 
         let root = ProvidedTypeDefinition(providedAssembly, ns, providerName, Some typeof<obj>, hideObjectMethods=true, nonNullable=true, isErased=false)
-        let featureType = ProvidedTypeDefinition(providedAssembly,ns,featureName, Some typeof<Feature>, hideObjectMethods=true, nonNullable=true, isErased=false)
+        let featureType = ProvidedTypeDefinition(providedAssembly,ns,featureName, Some typeof<obj>, hideObjectMethods=true, nonNullable=true, isErased=false)
 
         let scenarios = ProvidedTypeDefinition(providedAssembly, scenariosNs, "Scenarios", Some typeof<obj>, isErased=false)
         let scenarioOutlines = ProvidedTypeDefinition(providedAssembly, scenariosNs, "ScenarioOutlines", Some typeof<obj>, isErased=false)
@@ -169,27 +165,15 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
         ProvidedProperty("Scenarios",scenarios.AsType(),isStatic = false, getterCode = fun _ -> <@@ obj() @@> )  |> featureType.AddMember
         ProvidedProperty("ScenarioOutlines",scenarioOutlines.AsType(),isStatic = false, getterCode = fun _ -> <@@ obj() @@> )  |> featureType.AddMember
+        ProvidedProperty("FeatureName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ featureName @@> )  |> featureType.AddMember
+        ProvidedProperty("FeatureDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ featureDesc @@> )  |> featureType.AddMember
 
-
-        let featureBaseCtr = typeof<Feature>.GetConstructors().[0]
-
-        let featureCtr = 
-            ProvidedConstructor(
-                [ProvidedParameter("name", typeof<string>);ProvidedParameter("desc", typeof<string>)],
-                invokeCode = fun _ -> <@@ () @@>)
-
-        featureCtr.BaseConstructorCall <- fun args -> featureBaseCtr,args
-
-        featureCtr |> featureType.AddMember
-
-        let featureProp = ProvidedProperty(featureName,featureType.AsType(),isStatic=true,getterCode=fun _ -> Expr.NewObject(featureCtr,[Expr.Value(featureName);Expr.Value(featureDesc)]))
-
+        let featureProp = ProvidedProperty(featureName,featureType.AsType(),isStatic=true,getterCode=fun _ -> <@@ obj() @@>) 
         
         featureType |> root.AddMember
         featureProp |> root.AddMember
 
         providedAssembly.AddTypes [root]
-
 
         root
 
