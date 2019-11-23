@@ -38,6 +38,33 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ProvidedProperty("Order",typeof<int>,isStatic = false, getterCode = fun _ -> <@@ order @@> ) |> step.AddMember
 
         step
+
+    let addScenarioOutlineExamples (scenarioOutline:ProvidedTypeDefinition)=
+
+        let nameField = ProvidedField("_name",typeof<string>)
+        let descField = ProvidedField("_desc",typeof<string>)
+        let examplesField = ProvidedField("_examples",typeof<System.String[]>)
+        let examplesProperty = ProvidedProperty("Examples",typeof<System.String[]>,fun args -> Expr.FieldGet(args.[0],examplesField))
+        nameField |> scenarioOutline.AddMember
+        descField |> scenarioOutline.AddMember
+        examplesField |> scenarioOutline.AddMember
+        examplesProperty |> scenarioOutline.AddMember
+
+        ProvidedConstructor(
+            [ProvidedParameter("name", typeof<string>);ProvidedParameter("desc", typeof<string>);ProvidedParameter("examples",typeof<System.String[]>)],
+            invokeCode = 
+                fun args -> 
+                        match args with
+                        | [this;name;descr;examples] -> 
+                            Expr.FieldSet(this,nameField,name) |> ignore
+                            Expr.FieldSet(this,descField,descr) |> ignore
+                            Expr.FieldSet(this,examplesField,examples)
+                        | _ -> failwithf "invalid constructor args"
+                ) |>scenarioOutline.AddMember
+
+        scenarioOutline
+
+
     
     let createScenario (gherkinScenario:Ast.Scenario) =
         let providedAssembly = ProvidedAssembly()
@@ -100,6 +127,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let featureType = ProvidedTypeDefinition(providedAssembly,ns,featureName, Some typeof<Feature>, hideObjectMethods=true, nonNullable=true, isErased=false)
 
         let scenarios = ProvidedTypeDefinition(providedAssembly, scenariosNs, "Scenarios", Some typeof<obj>, isErased=false)
+        let scenarioOutlines = ProvidedTypeDefinition(providedAssembly, scenariosNs, "ScenarioOutlines", Some typeof<obj>, isErased=false)
         
         document.Feature.Children
         |> Seq.iter(
@@ -114,6 +142,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                 | :? Ast.Scenario ->
                         let gherkinScenario = c :?> Ast.Scenario
                         let scenarioName = gherkinScenario.Name
+                        let scenarioDesc = gherkinScenario.Description
 
                         if (gherkinScenario.Examples |> Seq.isEmpty)
                         then
@@ -124,45 +153,36 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                         
                             ProvidedProperty(scenarioName,scenario.AsType(),isStatic = false, getterCode=fun _ -> <@@obj()@@>) |> scenarios.AddMember
                         else
-                            ()
+                            let scenarioOutline = createScenario gherkinScenario |> addScenarioOutlineExamples
+
+                            scenarioOutline |> scenarios.AddMember
+                        
+                            let gc _ = 
+                                let examples = Expr.NewArray(typeof<System.String>,[Expr.Value("hello");Expr.Value("world")])
+                                Expr.NewObject(scenarioOutline.GetConstructors().[0],[Expr.Value(scenarioName);Expr.Value(scenarioDesc);examples])
+                            ProvidedProperty(scenarioName,scenarioOutline.AsType(),isStatic = false, getterCode=gc) |> scenarioOutlines.AddMember
                 | _ -> ()
         )
 
         scenarios |> featureType.AddMember
+        scenarioOutlines |> featureType.AddMember
 
         ProvidedProperty("Scenarios",scenarios.AsType(),isStatic = false, getterCode = fun _ -> <@@ obj() @@> )  |> featureType.AddMember
+        ProvidedProperty("ScenarioOutlines",scenarioOutlines.AsType(),isStatic = false, getterCode = fun _ -> <@@ obj() @@> )  |> featureType.AddMember
 
 
         let featureBaseCtr = typeof<Feature>.GetConstructors().[0]
 
-        let valueField = ProvidedField("_examples",typeof<System.String[]>)
-        valueField |> featureType.AddMember
-
-        let examplesProp = ProvidedProperty("Examples",typeof<System.String[]>,isStatic=false,
-                                                getterCode= fun args -> Expr.FieldGet(args.[0],valueField))
-
-        examplesProp |> featureType.AddMember
-
         let featureCtr = 
             ProvidedConstructor(
-                [ProvidedParameter("name", typeof<string>);ProvidedParameter("desc", typeof<string>);ProvidedParameter("examples",typeof<System.String[]>)],
-                invokeCode = 
-                    fun args -> 
-                            match args with
-                            | [this;_;_;examples] -> Expr.FieldSet(this,valueField,examples)
-                            | _ -> failwithf "invalid constructor args"
-                    )
+                [ProvidedParameter("name", typeof<string>);ProvidedParameter("desc", typeof<string>)],
+                invokeCode = fun _ -> <@@ () @@>)
 
-        featureCtr.BaseConstructorCall <- 
-            fun args -> 
-                match args with
-                | [this;name;desc;_] -> featureBaseCtr, [this;name;desc]
-                | _ -> failwithf "invalid constructor args"
+        featureCtr.BaseConstructorCall <- fun args -> featureBaseCtr,args
 
         featureCtr |> featureType.AddMember
 
-        let examples = Expr.NewArray(typeof<System.String>,[Expr.Value("hello");Expr.Value("world")])
-        let featureProp = ProvidedProperty(featureName,featureType.AsType(),isStatic=true,getterCode=fun _ -> Expr.NewObject(featureCtr,[Expr.Value(featureName);Expr.Value(featureDesc);examples]))
+        let featureProp = ProvidedProperty(featureName,featureType.AsType(),isStatic=true,getterCode=fun _ -> Expr.NewObject(featureCtr,[Expr.Value(featureName);Expr.Value(featureDesc)]))
 
         
         featureType |> root.AddMember
