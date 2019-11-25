@@ -7,8 +7,8 @@ open ProviderImplementation.ProvidedTypes
 
 open Gherkin
 
-type Example (column:string,value:string) =
-    member __.Column = column
+type DataRow (header:string,value:string) =
+    member __.Header = header
     member __.Value = value
 
 [<TypeProvider>]
@@ -18,7 +18,83 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     let ns = "FSharp.Data.Gherkin"
     let parser = Parser()
     let asm = Assembly.GetExecutingAssembly()
+
+    let examplesConstructor = (typeof<DataRow>).GetConstructors().[0]
+    let createExample (column:string) (value:Expr) = Expr.NewObject(examplesConstructor,[Expr.Value(column);value])
     
+    let createDynamicObject name propertyNames =
+        let dynamicObjectType  = ProvidedTypeDefinition(name,Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
+
+        let parameters = 
+            propertyNames 
+            |> List.map(fun h -> ProvidedParameter(h,typeof<string>))
+        
+        let fields = 
+            propertyNames 
+            |> List.map(fun h -> ProvidedField( sprintf "_%s" h,typeof<DataRow>))
+
+        fields |> Seq.iter (dynamicObjectType.AddMember)
+
+        let properties =
+            propertyNames
+            |> Seq.mapi(fun i h -> ProvidedProperty(h,typeof<DataRow>,getterCode=fun args -> Expr.FieldGet(args.[0],fields.[i])))
+
+        properties |> Seq.iter (dynamicObjectType.AddMember)
+        
+        let ctr =
+            ProvidedConstructor(parameters,
+                fun args -> 
+                    match args with
+                    | this :: xs -> 
+                        match xs with
+                        | e :: ex when ex.Length = 0 -> Expr.FieldSet(this,fields.[0],createExample propertyNames.[0] e)
+                        | e :: ex when ex.Length <> 0 -> 
+                            let first =  Expr.FieldSet(this,fields.[0],(createExample propertyNames.[0] e))
+                            let rest = ex |> List.mapi(fun i expr -> Expr.FieldSet(this,fields.[i+1],(createExample propertyNames.[i+1] expr)))
+                            rest |> List.fold (fun a c -> Expr.Sequential(a,c)) first
+                            
+                        | _ -> failwith ("incorrect constructor arguments")
+                    | _ -> failwith ("incorrect constructor arguments"))
+        
+        ctr |> dynamicObjectType.AddMember
+        dynamicObjectType
+
+
+    let addArgument (stepName:string) (arg:Ast.StepArgument) (step:ProvidedTypeDefinition) =
+
+        let createDataInstances (rows:seq<Ast.TableRow>) (exampleType:ProvidedTypeDefinition) = 
+            let ctr = exampleType.GetConstructors().[0]
+
+            let examples =
+                rows
+                |> Seq.map (fun r -> 
+                        r.Cells
+                        |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
+                |> Seq.map (fun args -> Expr.NewObject(ctr,args) )
+                |> Seq.toList
+            
+            Expr.NewArray(exampleType,examples)
+
+        if isNull arg then step
+        else
+            
+            match arg with
+            | :? Ast.DataTable -> 
+                let dataTable = arg :?> Ast.DataTable
+                let rows = dataTable.Rows |> Seq.toList
+                let propertyNames = rows.[0].Cells |> Seq.map(fun c -> c.Value) |> Seq.toList
+
+                let rowType  =createDynamicObject (sprintf "%s data" stepName)  propertyNames
+
+                rowType |> step.AddMember
+
+                let addRows _ = createDataInstances dataTable.Rows rowType
+                let rowsType =  (typedefof<seq<_>>).MakeGenericType(rowType.AsType())
+                let argument = ProvidedProperty("Argument",rowsType,isStatic=false,getterCode=addRows)
+                argument |> step.AddMember
+
+                step
+            | _ -> step
 
 
     let createStep (gherkinStep:Ast.Step) (order:int) (stepName:string)=
@@ -29,6 +105,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ProvidedProperty("StepText",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepText @@> ) |> step.AddMember
         ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> step.AddMember
         ProvidedProperty("Order",typeof<int>,isStatic = false, getterCode = fun _ -> <@@ order @@> ) |> step.AddMember
+
 
         step
 
@@ -43,7 +120,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.iteri(
             fun i s ->
                 let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
-                let step = createStep s i stepName
+                let step = createStep s i stepName |> addArgument stepName s.Argument
                 step |> scenario.AddMember 
 
                 ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> scenario.AddMember)
@@ -87,49 +164,14 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let scenarios = ProvidedTypeDefinition(providedAssembly, ns, "Scenarios", Some typeof<obj>, isErased=false,hideObjectMethods=true, nonNullable=true)
         let scenarioOutlines = ProvidedTypeDefinition(providedAssembly, ns, "ScenarioOutlines", Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
 
-        let examplesConstructor = (typeof<Example>).GetConstructors().[0]
+        
 
         let createExampleType (gherkinScenario:Ast.Scenario) =
             let examplesName = sprintf "%s example" gherkinScenario.Name
             let header = (gherkinScenario.Examples |> Seq.toList).[0].TableHeader.Cells |> Seq.map (fun c ->c.Value) |> Seq.toList
-            let exampleType  = ProvidedTypeDefinition(examplesName,Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
 
-            let parameters = 
-                header 
-                |> List.map(fun h -> ProvidedParameter(h,typeof<string>))
-            
-            //change thiese types from string to whatever
-            let fields = 
-                header 
-                |> List.map(fun h -> ProvidedField( sprintf "_%s" h,typeof<Example>))
+            createDynamicObject examplesName header
 
-            fields |> Seq.iter (exampleType.AddMember)
-
-            let properties =
-                header
-                |> Seq.mapi(fun i h -> ProvidedProperty(h,typeof<Example>,getterCode=fun args -> Expr.FieldGet(args.[0],fields.[i])))
-
-            properties |> Seq.iter (exampleType.AddMember)
-
-            let createExample (column:string) (value:Expr) = Expr.NewObject(examplesConstructor,[Expr.Value(column);value])
-
-            let ctr =
-                ProvidedConstructor(parameters,
-                    fun args -> 
-                        match args with
-                        | this :: xs -> 
-                            match xs with
-                            | e :: ex when ex.Length = 0 -> Expr.FieldSet(this,fields.[0],e)
-                            | e :: ex when ex.Length <> 0 -> 
-                                let first =  Expr.FieldSet(this,fields.[0],(createExample header.[0] e))
-                                let rest = ex |> List.mapi(fun i expr -> Expr.FieldSet(this,fields.[i+1],(createExample header.[i+1] expr)))
-                                rest |> List.fold (fun a c -> Expr.Sequential(a,c)) first
-                                
-                            | _ -> failwith ("incorrect constructor arguments")
-                        | _ -> failwith ("incorrect constructor arguments"))
-            
-            ctr |> exampleType.AddMember
-            exampleType
 
         let createExampleInstances (scenarioOutline:Ast.Scenario) (exampleType:ProvidedTypeDefinition) = 
             let ctr = exampleType.GetConstructors().[0]

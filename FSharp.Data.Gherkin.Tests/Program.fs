@@ -15,9 +15,11 @@ let foo =
             let scenario = TestFeature.``this is a feature``.Scenarios.``this is a scenario``.ScenarioName
             let step = TestFeature.``this is a feature``.Scenarios.``this is a scenario``.``0. Given this is a scenario given1``.StepText
             let scenarioOutline =TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.ScenarioName
-            let example = (TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples |> Seq.toList).[0].sdfsdf.Column
-            printfn "Feature:%A Scenario:%A Scenario Outline:%A Step:%A Example:%A" feature scenario scenarioOutline step example             
-                
+            let example = (TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples |> Seq.toList).[0].``col umn``.Value
+            let arg = (TestFeature.``this is a feature``.Scenarios.``this is a scenario``.``0. Given this is a scenario given1``.Argument |> Seq.toList).[0].``Da ta``.Value
+            printfn "Feature:%A Scenario:%A Scenario Outline:%A Step:%A Example:%A Arg:%A" feature scenario scenarioOutline step example arg
+               
+              
 
 [<EntryPoint>]
 let main argv = Tests.runTestsInAssembly defaultConfig argv

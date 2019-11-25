@@ -8,7 +8,7 @@ Then this is a background then
 
 Scenario: this is a scenario
 Given this is a scenario given1
-    |Data|
+    |Da ta|
     |some given 1 data|
 And this is a scenario given2
     |Data|
@@ -35,7 +35,7 @@ When foo <column>
 Then bar
 
 Examples: first set
-|column|column2|sdfsdf|
+|col umn|column2|sdfsdf|
 |data|asdf|jhg|
 |data2|asdf|JHKKJ|
 
@@ -43,3 +43,10 @@ Examples: first set
 # |column|
 # |data3|
 # |data4|
+
+Scenario: a new scenario
+Given this is a brand new step
+|name|email|
+|chris|chris@foo.com|
+When the user is emailed
+Then something
