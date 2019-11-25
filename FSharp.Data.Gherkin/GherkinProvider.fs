@@ -7,6 +7,10 @@ open ProviderImplementation.ProvidedTypes
 
 open Gherkin
 
+type Example (column:string,value:string) =
+    member __.Column = column
+    member __.Value = value
+
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
     inherit TypeProviderForNamespaces (config)
@@ -14,6 +18,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     let ns = "FSharp.Data.Gherkin"
     let parser = Parser()
     let asm = Assembly.GetExecutingAssembly()
+    
 
 
     let createStep (gherkinStep:Ast.Step) (order:int) (stepName:string)=
@@ -82,6 +87,8 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let scenarios = ProvidedTypeDefinition(providedAssembly, ns, "Scenarios", Some typeof<obj>, isErased=false,hideObjectMethods=true, nonNullable=true)
         let scenarioOutlines = ProvidedTypeDefinition(providedAssembly, ns, "ScenarioOutlines", Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
 
+        let examplesConstructor = (typeof<Example>).GetConstructors().[0]
+
         let createExampleType (gherkinScenario:Ast.Scenario) =
             let examplesName = sprintf "%s example" gherkinScenario.Name
             let header = (gherkinScenario.Examples |> Seq.toList).[0].TableHeader.Cells |> Seq.map (fun c ->c.Value) |> Seq.toList
@@ -91,17 +98,20 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                 header 
                 |> List.map(fun h -> ProvidedParameter(h,typeof<string>))
             
+            //change thiese types from string to whatever
             let fields = 
                 header 
-                |> List.map(fun h -> ProvidedField( sprintf "_%s" h,typeof<string>))
+                |> List.map(fun h -> ProvidedField( sprintf "_%s" h,typeof<Example>))
 
             fields |> Seq.iter (exampleType.AddMember)
 
             let properties =
                 header
-                |> Seq.mapi(fun i h -> ProvidedProperty(h,typeof<string>,getterCode=fun args -> Expr.FieldGet(args.[0],fields.[i])))
+                |> Seq.mapi(fun i h -> ProvidedProperty(h,typeof<Example>,getterCode=fun args -> Expr.FieldGet(args.[0],fields.[i])))
 
             properties |> Seq.iter (exampleType.AddMember)
+
+            let createExample (column:string) (value:Expr) = Expr.NewObject(examplesConstructor,[Expr.Value(column);value])
 
             let ctr =
                 ProvidedConstructor(parameters,
@@ -111,8 +121,8 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                             match xs with
                             | e :: ex when ex.Length = 0 -> Expr.FieldSet(this,fields.[0],e)
                             | e :: ex when ex.Length <> 0 -> 
-                                let first =  Expr.FieldSet(this,fields.[0],e)
-                                let rest = ex |> List.mapi(fun i expr -> Expr.FieldSet(this,fields.[i+1],expr))
+                                let first =  Expr.FieldSet(this,fields.[0],(createExample header.[0] e))
+                                let rest = ex |> List.mapi(fun i expr -> Expr.FieldSet(this,fields.[i+1],(createExample header.[i+1] expr)))
                                 rest |> List.fold (fun a c -> Expr.Sequential(a,c)) first
                                 
                             | _ -> failwith ("incorrect constructor arguments")
