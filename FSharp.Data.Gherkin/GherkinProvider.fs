@@ -152,7 +152,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.iteri(
             fun i s ->
                 let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
-                let step = createStep s i s.Text
+                let step = createStep s i s.Text |> addArgument s.Text s.Argument
                 step |> background.AddMember 
 
                 ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> background.AddMember)
