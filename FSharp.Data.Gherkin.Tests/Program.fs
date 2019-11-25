@@ -13,9 +13,10 @@ let foo =
             
             let feature = TestFeature.``this is a feature``.FeatureName
             let scenario = TestFeature.``this is a feature``.Scenarios.``this is a scenario``.ScenarioName
+            let step = TestFeature.``this is a feature``.Scenarios.``this is a scenario``.``0. Given this is a scenario given1``.StepText
             let scenarioOutline =TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.ScenarioName
-            let prop1 = (TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples |> Seq.toList).[0].sdfsdf
-            printfn "Feature:%A Scenario:%A Scenario Outline:%A Example:%A" feature scenario scenarioOutline prop1             
+            let example = (TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples |> Seq.toList).[0].sdfsdf
+            printfn "Feature:%A Scenario:%A Scenario Outline:%A Step:%A Example:%A" feature scenario scenarioOutline step example             
                 
 
 [<EntryPoint>]
