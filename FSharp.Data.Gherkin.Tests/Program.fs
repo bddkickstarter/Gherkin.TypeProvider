@@ -4,11 +4,12 @@ open System
 open Expecto
 
 type TestFeature = FSharp.Data.Gherkin.GherkinProvider<"./test.feature">
+let feature = TestFeature.``this is a feature``
 
 [<Tests>]
-let foo =
+let exploratory =
     testCase
-        "bar"
+        "test some of the things"
         <| fun _ ->
             
             let feature = TestFeature.``this is a feature``.FeatureName
@@ -23,6 +24,59 @@ let foo =
             let example2 = (TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples |> Seq.toList).[0].qqqq.Value
             
             printfn "Feature:%A Scenario:%A Scenario Outline:%A Step:%A Example:%A DataArg:%A StringArg:%A" feature scenario scenarioOutline step example2 arg arg2
+
+
+[<Tests>]
+let scenarios =
+    
+    let scenarios = feature.Scenarios
+
+    testList
+        feature.FeatureName
+        [
+            testCase
+                scenarios.``a new scenario``.ScenarioName
+                <| fun _ ->
+                    let scenario =scenarios.``a new scenario``
+                    printfn
+                        "%s\r\n%s\r\n%s" 
+                        scenario.``0. Given this is a brand new step``.StepText
+                        scenario.``1. When the user is emailed``.StepText
+                        scenario.``2. Then something``.StepText
+
+            testCase
+                scenarios.``this is a scenario``.ScenarioName
+                <| fun _ ->
+                    let scenario =scenarios.``this is a scenario``
+                    printfn
+                        "%s\r\n%s\r\n%s" 
+                        scenario.``0. Given this is a scenario given1``.StepText
+                        scenario.``1. And this is a scenario given2``.StepText
+                        scenario.``2. When this is a scenario when1``.StepText
+
+                    
+        ]
+
+
+[<Tests>]
+let scenarioOutlines =
+    
+    let scenarios = feature.ScenarioOutlines
+
+    testList
+        feature.FeatureName
+        [
+            testCase
+                scenarios.``this is a scenario outline``.ScenarioName
+                <| fun _ ->
+                    let scenario =scenarios.``this is a scenario outline``
+
+                    printfn
+                        "%s\r\n%s\r\n%s" 
+                        scenario.``0. When foo <ghj>``.StepText
+                        scenario.``1. Then bar``.StepText
+                        (scenario.Examples |> Seq.toList).[0].qqqq.Value
+        ]
                 
                
               
