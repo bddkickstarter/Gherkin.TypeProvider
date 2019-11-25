@@ -38,11 +38,11 @@ And this is a scenario when2
 Then this is a scenario then1
 
 Scenario Outline: this is a scenario outline
-When foo <column>
+When foo <ghj>
 Then bar
 
 Examples: first set
-|col umn|column2|sdfsdf|
+|ghj|zxczx|qqqq|
 |data|asdf|jhg|
 |data2|asdf|JHKKJ|
 
@@ -50,6 +50,15 @@ Examples: first set
 # |column|
 # |data3|
 # |data4|
+
+Scenario Outline: this is another scenario outline
+When foo <column>
+Then bar
+
+Examples: first set
+|col umn|column2|sdfsdf|
+|data|asdf|jhg|
+|data2|asdf|JHKKJ|
 
 Scenario: a new scenario
 Given this is a brand new step

@@ -12,14 +12,17 @@ let foo =
         <| fun _ ->
             
             let feature = TestFeature.``this is a feature``.FeatureName
+
             let scenario = TestFeature.``this is a feature``.Scenarios.``this is a scenario``.ScenarioName
             let step = TestFeature.``this is a feature``.Scenarios.``this is a scenario``.``0. Given this is a scenario given1``.StepText
             let scenarioOutline =TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.ScenarioName
-            let example = (TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples |> Seq.toList).[0].``col umn``.Value
+            let example = (TestFeature.``this is a feature``.ScenarioOutlines.``this is another scenario outline``.Examples |> Seq.toList).[0].``col umn``.Value
             let arg = (TestFeature.``this is a feature``.Scenarios.``this is a scenario``.``0. Given this is a scenario given1``.Argument |> Seq.toList).[0].``Data``.Value
             let arg2 = TestFeature.``this is a feature``.Scenarios.``this is a scenario``.``2. When this is a scenario when1``.Argument.Content
+
+            let example2 = (TestFeature.``this is a feature``.ScenarioOutlines.``this is a scenario outline``.Examples |> Seq.toList).[0].qqqq
             
-            printfn "Feature:%A Scenario:%A Scenario Outline:%A Step:%A Example:%A DataArg:%A StringArg:%A" feature scenario scenarioOutline step example arg arg2
+            printfn "Feature:%A Scenario:%A Scenario Outline:%A Step:%A Example:%A DataArg:%A StringArg:%A" feature scenario scenarioOutline step example2 arg arg2
                 
                
               

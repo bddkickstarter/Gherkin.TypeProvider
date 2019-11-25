@@ -66,7 +66,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.map (fun args -> Expr.NewObject(ctr,args))
         |> Seq.toList
 
-    let addArgument (stepName:string) (arg:Ast.StepArgument) (step:ProvidedTypeDefinition) =
+    let addArgument (arg:Ast.StepArgument) (step:ProvidedTypeDefinition) =
 
         let createDataInstances (rows:seq<Ast.TableRow>) (exampleType:ProvidedTypeDefinition) = 
             let ctr = exampleType.GetConstructors().[0]
@@ -77,7 +77,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         if isNull arg then step
         else
             
-            let argName= (sprintf "%s data" stepName) 
+            let argName= "Data" //(sprintf "%s data" stepName) 
             match arg with
             | :? Ast.DataTable -> 
                 let dataTable = arg :?> Ast.DataTable
@@ -116,6 +116,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ProvidedProperty("StepText",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepText @@> ) |> step.AddMember
         ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> step.AddMember
         ProvidedProperty("Order",typeof<int>,isStatic = false, getterCode = fun _ -> <@@ order @@> ) |> step.AddMember
+        ProvidedProperty("StepName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepName @@> ) |> step.AddMember
 
 
         step
@@ -131,7 +132,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.iteri(
             fun i s ->
                 let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
-                let step = createStep s i stepName |> addArgument stepName s.Argument
+                let step = createStep s i stepName |> addArgument s.Argument
                 step |> scenario.AddMember 
 
                 ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> scenario.AddMember)
@@ -152,7 +153,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.iteri(
             fun i s ->
                 let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
-                let step = createStep s i s.Text |> addArgument s.Text s.Argument
+                let step = createStep s i s.Text |> addArgument s.Argument
                 step |> background.AddMember 
 
                 ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> background.AddMember)
@@ -177,7 +178,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         
 
         let createExampleType (gherkinScenario:Ast.Scenario) =
-            let examplesName = sprintf "%s example" gherkinScenario.Name
+            let examplesName = "Example" // sprintf "%s example" gherkinScenario.Name
             let header = (gherkinScenario.Examples |> Seq.toList).[0].TableHeader.Cells |> Seq.map (fun c ->c.Value) |> Seq.toList
             createDynamicObject examplesName header typeof<DataRow> createDataRowInstance
 
