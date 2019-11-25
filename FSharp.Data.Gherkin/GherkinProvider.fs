@@ -59,20 +59,20 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ctr |> dynamicObjectType.AddMember
         dynamicObjectType
 
+    let addArgumentsFromRows (ctr:ConstructorInfo) (rows:seq<Ast.TableRow>) =
+        rows
+        |> Seq.map (fun r -> 
+                r.Cells
+                |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
+        |> Seq.map (fun args -> Expr.NewObject(ctr,args) )
+        |> Seq.toList
+
 
     let addArgument (stepName:string) (arg:Ast.StepArgument) (step:ProvidedTypeDefinition) =
 
         let createDataInstances (rows:seq<Ast.TableRow>) (exampleType:ProvidedTypeDefinition) = 
             let ctr = exampleType.GetConstructors().[0]
-
-            let examples =
-                rows
-                |> Seq.map (fun r -> 
-                        r.Cells
-                        |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
-                |> Seq.map (fun args -> Expr.NewObject(ctr,args) )
-                |> Seq.toList
-            
+            let examples = addArgumentsFromRows ctr rows
             Expr.NewArray(exampleType,examples)
 
         if isNull arg then step
@@ -179,11 +179,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
             let  examples =
                 scenarioOutline.Examples
                 |> Seq.collect(fun e -> e.TableBody)
-                |> Seq.map (fun r -> 
-                        r.Cells
-                        |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
-                |> Seq.map (fun args -> Expr.NewObject(ctr,args) )
-                |> Seq.toList
+                |> addArgumentsFromRows ctr
             
             Expr.NewArray(exampleType,examples)
 
