@@ -61,12 +61,9 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
     let addArgumentsFromRows (ctr:ConstructorInfo) (rows:seq<Ast.TableRow>) =
         rows
-        |> Seq.map (fun r -> 
-                r.Cells
-                |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
-        |> Seq.map (fun args -> Expr.NewObject(ctr,args) )
+        |> Seq.map (fun r -> r.Cells |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
+        |> Seq.map (fun args -> Expr.NewObject(ctr,args))
         |> Seq.toList
-
 
     let addArgument (stepName:string) (arg:Ast.StepArgument) (step:ProvidedTypeDefinition) =
 
@@ -78,13 +75,14 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         if isNull arg then step
         else
             
+            let argName= (sprintf "%s data" stepName) 
             match arg with
             | :? Ast.DataTable -> 
                 let dataTable = arg :?> Ast.DataTable
                 let rows = dataTable.Rows |> Seq.toList
                 let propertyNames = rows.[0].Cells |> Seq.map(fun c -> c.Value) |> Seq.toList
 
-                let rowType  =createDynamicObject (sprintf "%s data" stepName)  propertyNames
+                let rowType  = createDynamicObject argName propertyNames
 
                 rowType |> step.AddMember
 
@@ -94,6 +92,17 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                 argument |> step.AddMember
 
                 step
+            | :? Ast.DocString ->
+                let docString = arg :?> Ast.DocString
+                let header = ["Content";"ContentType"]
+                let docStringType = createDynamicObject argName header
+                docStringType |> step.AddMember
+                
+                let docStringObj = Expr.NewObject(docStringType.GetConstructors().[0],[Expr.Value(docString.Content);Expr.Value(docString.ContentType)])
+                let argument = ProvidedProperty("Argument",docStringType,isStatic=false,getterCode=fun _ -> docStringObj)
+                argument |> step.AddMember
+                step
+
             | _ -> step
 
 

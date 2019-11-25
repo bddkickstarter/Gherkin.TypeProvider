@@ -14,6 +14,10 @@ And this is a scenario given2
     |Data|
     |some given 2 data|
 When this is a scenario when1
+"""
+    this is a multi
+    line arg
+"""
 And this is a scenario when2
 
 Then this is a scenario then1
