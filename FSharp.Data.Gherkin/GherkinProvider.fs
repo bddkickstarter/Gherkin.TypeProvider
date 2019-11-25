@@ -35,32 +35,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
         step
 
-    let addScenarioOutlineExamples (scenarioOutline:ProvidedTypeDefinition)=
-
-        let nameField = ProvidedField("_name",typeof<string>)
-        let descField = ProvidedField("_desc",typeof<string>)
-        let examplesField = ProvidedField("_examples",typeof<System.String[]>)
-        let examplesProperty = ProvidedProperty("Examples",typeof<System.String[]>,fun args -> Expr.FieldGet(args.[0],examplesField))
-        nameField |> scenarioOutline.AddMember
-        descField |> scenarioOutline.AddMember
-        examplesField |> scenarioOutline.AddMember
-        examplesProperty |> scenarioOutline.AddMember
-
-        ProvidedConstructor(
-            [ProvidedParameter("name", typeof<string>);ProvidedParameter("desc", typeof<string>);ProvidedParameter("examples",typeof<System.String[]>)],
-            invokeCode = 
-                fun args -> 
-                        match args with
-                        | [this;name;descr;examples] -> 
-                            Expr.FieldSet(this,nameField,name) |> ignore
-                            Expr.FieldSet(this,descField,descr) |> ignore
-                            Expr.FieldSet(this,examplesField,examples)
-                        | _ -> failwithf "invalid constructor args"
-                ) |>scenarioOutline.AddMember
-
-        scenarioOutline
-
-
     
     let createScenario (gherkinScenario:Ast.Scenario) =
         let providedAssembly = ProvidedAssembly()
@@ -105,25 +79,80 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
         )
         
-        ProvidedProperty("BackgroundName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ backgroundName @@> ) |> background.AddMember
+        ProvidedProperty("BackgroundName        ",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ backgroundName @@> ) |> background.AddMember
         ProvidedProperty("BackgroundDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ backgroundDesc @@> ) |> background.AddMember
         
         background
+        
 
-    
     
     let createFeature providerName (path:string) =
         let document = parser.Parse(path)
         let providedAssembly = ProvidedAssembly()
         let featureName = document.Feature.Name
-        let featureDesc = document.Feature.Description
-        
+        let featureDesc = document.Feature.Description        
 
         let root = ProvidedTypeDefinition(providedAssembly, ns, providerName, Some typeof<obj>, hideObjectMethods=true, nonNullable=true, isErased=false)
         let featureType = ProvidedTypeDefinition(providedAssembly,ns,featureName, Some typeof<obj>, hideObjectMethods=true, nonNullable=true, isErased=false)
 
         let scenarios = ProvidedTypeDefinition(providedAssembly, scenariosNs, "Scenarios", Some typeof<obj>, isErased=false)
         let scenarioOutlines = ProvidedTypeDefinition(providedAssembly, scenariosNs, "ScenarioOutlines", Some typeof<obj>, isErased=false)
+
+        let createExampleType (gherkinScenario:Ast.Scenario) =
+            let examplesName = sprintf "%s example" gherkinScenario.Name
+            let header = (gherkinScenario.Examples |> Seq.toList).[0].TableHeader.Cells |> Seq.map (fun c ->c.Value) |> Seq.toList
+            let exampleType  = ProvidedTypeDefinition(examplesName,Some typeof<obj>, isErased=false)
+
+            let parameters = 
+                header 
+                |> List.map(fun h -> ProvidedParameter(h,typeof<string>))
+
+            
+            let fields = 
+                header 
+                |> List.map(fun h -> ProvidedField( sprintf "_%s" h,typeof<string>))
+
+            fields |> Seq.iter (exampleType.AddMember)
+
+
+            let properties =
+                header
+                |> Seq.mapi(fun i h -> ProvidedProperty(h,typeof<string>,getterCode=fun args -> Expr.FieldGet(args.[0],fields.[i])))
+
+            properties |> Seq.iter (exampleType.AddMember)
+
+            let ctr =
+                ProvidedConstructor(parameters,
+                    fun args -> 
+                        match args with
+                        | this :: xs -> 
+                            match xs with
+                            | e :: ex when ex.Length = 0 -> Expr.FieldSet(this,fields.[0],e)
+                            | e :: ex when ex.Length <> 0 -> 
+                                let first =  Expr.FieldSet(this,fields.[0],e)
+                                let rest = ex |> List.mapi(fun i expr -> Expr.FieldSet(this,fields.[i+1],expr))
+                                rest |> List.fold (fun a c -> Expr.Sequential(a,c)) first
+                                
+                            | _ -> failwith ("incorrect constructor arguments")
+                        | _ -> failwith ("incorrect constructor arguments"))
+            
+            ctr |> exampleType.AddMember
+            exampleType
+
+        let createExampleInstances (scenarioOutline:Ast.Scenario) (exampleType:ProvidedTypeDefinition) = 
+            let ctr = exampleType.GetConstructors().[0]
+
+            let  examples =
+                scenarioOutline.Examples
+                |> Seq.collect(fun e -> e.TableBody)
+                |> Seq.map (fun r -> 
+                        r.Cells
+                        |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
+                |> Seq.map (fun args -> Expr.NewObject(ctr,args) )
+                |> Seq.toList
+            
+            Expr.NewArray(exampleType,examples)
+
         
         document.Feature.Children
         |> Seq.iter(
@@ -138,25 +167,31 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                 | :? Ast.Scenario ->
                         let gherkinScenario = c :?> Ast.Scenario
                         let scenarioName = gherkinScenario.Name
-                        let scenarioDesc = gherkinScenario.Description
 
                         if (gherkinScenario.Examples |> Seq.isEmpty)
                         then
 
                             let scenario = createScenario gherkinScenario
-
                             scenario |> scenarios.AddMember
-                        
                             ProvidedProperty(scenarioName,scenario.AsType(),isStatic = false, getterCode=fun _ -> <@@obj()@@>) |> scenarios.AddMember
                         else
-                            let scenarioOutline = createScenario gherkinScenario |> addScenarioOutlineExamples
+                            let scenarioOutline = createScenario gherkinScenario
+                            let exampleType = createExampleType gherkinScenario
+                            let examplesType = (typedefof<seq<_>>).MakeGenericType(exampleType.AsType())
 
-                            scenarioOutline |> scenarios.AddMember
+
+                            let examples = createExampleInstances gherkinScenario exampleType
+
+                            let examplesProp = ProvidedProperty("Examples",examplesType,getterCode=fun _ -> examples )
+
+                            exampleType |> scenarioOutline.AddMember
+                            examplesProp |> scenarioOutline.AddMember
+                            
+                            scenarioOutline  |> scenarioOutlines.AddMember
                         
-                            let gc _ = 
-                                let examples = Expr.NewArray(typeof<System.String>,[Expr.Value("hello");Expr.Value("world")])
-                                Expr.NewObject(scenarioOutline.GetConstructors().[0],[Expr.Value(scenarioName);Expr.Value(scenarioDesc);examples])
-                            ProvidedProperty(scenarioName,scenarioOutline.AsType(),isStatic = false, getterCode=gc) |> scenarioOutlines.AddMember
+
+                            ProvidedProperty(scenarioName,scenarioOutline.AsType(),isStatic = false, getterCode=fun _ -> <@@obj()@@>) |> scenarioOutlines.AddMember
+                            
                 | _ -> ()
         )
 
@@ -179,6 +214,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
     do
         let gherkinProvider = ProvidedTypeDefinition(asm, ns, "GherkinProvider", None, hideObjectMethods=true, nonNullable=true, isErased=false)
+        
         gherkinProvider.DefineStaticParameters( 
                 [ProvidedStaticParameter("Feature path", typeof<string>)], 
                 fun providerName args -> createFeature providerName (unbox<string> args.[0]))

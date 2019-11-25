@@ -35,11 +35,11 @@ When foo <column>
 Then bar
 
 Examples: first set
-|column|
-|data|
-|data2|
+|column|column2|sdfsdf|
+|data|asdf|jhg|
+|data2|asdf|JHKKJ|
 
-Examples: second set
-|column|
-|data3|
-|data4|
+# Examples: second set
+# |column|
+# |data3|
+# |data4|
