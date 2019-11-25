@@ -8,11 +8,11 @@ Then this is a background then
 
 Scenario: this is a scenario
 Given this is a scenario given1
-    |Data|
-    |some given 1 data|
-    |some given 2 data|
-    |some given 3 data|
-    |some given 4 data|
+    |Data|Data 2|
+    |some given 1 data|ert|
+    |some given 2 data|uyi|
+    |some given 3 data|asd|
+    |some given 4 data|wer  sf|
 And this is a scenario given2
     |Data|
     |some given 2 data|

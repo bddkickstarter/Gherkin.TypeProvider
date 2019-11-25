@@ -19,10 +19,9 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     let parser = Parser()
     let asm = Assembly.GetExecutingAssembly()
 
-    let examplesConstructor = (typeof<DataRow>).GetConstructors().[0]
-
-
-    let createDataRowInstance (column:string) (value:Expr) = Expr.NewObject(examplesConstructor,[Expr.Value(column);value])
+    let dataRowConstructor = (typeof<DataRow>).GetConstructors().[0]
+    let createDataRowInstance (column:string) (value:Expr) = Expr.NewObject(dataRowConstructor,[Expr.Value(column);value])
+    let createDefaultInstance _ (value:Expr) = value
     
     let createDynamicObject name propertyNames propertyType createInstance =
         let dynamicObjectType  = ProvidedTypeDefinition(name,Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
@@ -73,7 +72,8 @@ type GherkinProvider (config : TypeProviderConfig) as this =
             let ctr = exampleType.GetConstructors().[0]
             let examples = addArgumentsFromRows ctr rows
             Expr.NewArray(exampleType,examples)
-
+            
+            
         if isNull arg then step
         else
             
@@ -97,7 +97,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
             | :? Ast.DocString ->
                 let docString = arg :?> Ast.DocString
                 let header = ["Content";"ContentType"]
-                let docStringType = createDynamicObject argName header typeof<string> (fun _ e -> e )
+                let docStringType = createDynamicObject argName header typeof<string> createDefaultInstance
                 docStringType |> step.AddMember
                 
                 let docStringObj = Expr.NewObject(docStringType.GetConstructors().[0],[Expr.Value(docString.Content);Expr.Value(docString.ContentType)])
