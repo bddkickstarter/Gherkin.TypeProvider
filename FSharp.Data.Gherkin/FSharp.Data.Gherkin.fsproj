@@ -1,6 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ProvidedTypes.fsi" />
@@ -11,7 +12,8 @@
     <None Include="System.Runtime.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Gherkin.dll" />
-    <Reference Include="Utf8Json.dll" />
+    <Reference Include="../packages/Gherkin/lib/netstandard2.0/Gherkin.dll" />
+    <Reference Include="../packages/Utf8Json/lib/netstandard2.0/Utf8Json.dll" />
   </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
