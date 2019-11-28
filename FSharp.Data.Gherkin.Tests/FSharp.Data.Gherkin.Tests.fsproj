@@ -11,7 +11,7 @@
   <ItemGroup>
     <Compile Include="ProvidedTypesTesting.fs" />
     <Compile Include="Program.fs" />
-    <Content Include="../test.feature" CopyToOutputDirectory="Always" />
+    <Content Include="test.feature" CopyToOutputDirectory="Always" />
     <ProjectReference Include="..\FSharp.Data.Gherkin\FSharp.Data.Gherkin.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />

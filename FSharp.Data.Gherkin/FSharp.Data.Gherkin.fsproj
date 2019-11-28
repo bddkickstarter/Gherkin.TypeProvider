@@ -6,14 +6,14 @@
   <ItemGroup>
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
-    <None Include="netstandard.dll" />
     <Compile Include="GherkinProvider.fs" />
-    <None Include="System.Reflection.dll" />
-    <None Include="System.Runtime.dll" />
+    <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/netstandard.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
+    <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/System.Reflection.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
+    <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/System.Runtime.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="../packages/Gherkin/lib/netstandard2.0/Gherkin.dll" />
-    <Reference Include="../packages/Utf8Json/lib/netstandard2.0/Utf8Json.dll" />
+    <Reference Include="../packages/Gherkin/lib/netstandard2.0/Gherkin.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Reference>
+    <Reference Include="../packages/Utf8Json/lib/netstandard2.0/Utf8Json.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Reference>
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
