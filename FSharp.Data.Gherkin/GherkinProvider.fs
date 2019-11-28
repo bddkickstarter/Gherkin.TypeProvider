@@ -76,7 +76,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         if isNull arg then step
         else
             
-            let argName= "Data"
+            let argName= "Argument"
             match arg with
             | :? Ast.DataTable -> 
                 let dataTable = arg :?> Ast.DataTable
@@ -205,7 +205,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
                         if (gherkinScenario.Examples |> Seq.isEmpty)
                         then
-
                             let scenario = createScenario gherkinScenario
                             scenario |> scenarios.AddMember
                             ProvidedProperty(scenarioName,scenario.AsType(),isStatic = false, getterCode=fun _ -> <@@obj()@@>) |> scenarios.AddMember
