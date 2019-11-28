@@ -3,7 +3,7 @@
 open System
 open Expecto
 
-type TestFeature = FSharp.Data.Gherkin.GherkinProvider<"./test.feature">
+type TestFeature = FSharp.Data.Gherkin.GherkinProvider<"test.feature">
 let feature = TestFeature.``this is a feature``
 
 [<Tests>]
@@ -34,7 +34,7 @@ let scenarios =
     testList
         feature.FeatureName
         [
-            let scenario = feature.Scenarios.``a new scenario`` 
+            let scenario = feature.Scenarios.``a new scenario``
             testCase
                 scenario.ScenarioName
                 <| fun _ ->

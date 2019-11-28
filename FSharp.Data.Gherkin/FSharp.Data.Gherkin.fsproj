@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+     <TargetFrameworks>netstandard2.0</TargetFrameworks>
+     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+     <Version>0.1</Version>
+     <NuspecFile>FSharp.Data.Gherkin.nuspec</NuspecFile>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
     <Compile Include="GherkinProvider.fs" />
+  </ItemGroup>
+  <ItemGroup>
     <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/netstandard.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
     <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/System.Reflection.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
     <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/System.Runtime.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></None>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="../packages/Gherkin/lib/netstandard2.0/Gherkin.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Reference>
     <Reference Include="../packages/Utf8Json/lib/netstandard2.0/Utf8Json.dll"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Reference>
   </ItemGroup>
-  <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

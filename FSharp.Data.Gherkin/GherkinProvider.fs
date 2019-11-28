@@ -60,7 +60,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ctr |> dynamicObjectType.AddMember
         dynamicObjectType
 
-    let addArgumentsFromRows (ctr:ConstructorInfo) (rows:seq<Ast.TableRow>) =
+    let createExamplesFromRows (ctr:ConstructorInfo) (rows:seq<Ast.TableRow>) =
         rows
         |> Seq.map (fun r -> r.Cells |> Seq.map (fun c -> Expr.Value(c.Value,typeof<string>)) |> Seq.toList)
         |> Seq.map (fun args -> Expr.NewObject(ctr,args))
@@ -70,7 +70,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
         let createDataInstances (rows:seq<Ast.TableRow>) (exampleType:ProvidedTypeDefinition) = 
             let ctr = exampleType.GetConstructors().[0]
-            let examples = addArgumentsFromRows ctr rows
+            let examples = createExamplesFromRows ctr rows
             Expr.NewArray(exampleType,examples)
             
         if isNull arg then step
@@ -185,7 +185,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
             let  examples =
                 scenarioOutline.Examples
                 |> Seq.collect(fun e -> e.TableBody)
-                |> addArgumentsFromRows ctr
+                |> createExamplesFromRows ctr
             
             Expr.NewArray(exampleType,examples)
         

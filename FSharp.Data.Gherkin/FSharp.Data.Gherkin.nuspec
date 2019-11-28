@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <id>Gherkin.TypeProvider</id>
+    <title>Gherkin Typeprovider</title>
+    <version>0.1</version>
+    <authors>Chris Roff</authors>
+    <owners>Chris Roff</owners>
+    <!--
+    <licenseUrl>http://github.com/fsharp/ComboProvider/blob/master/LICENSE.md</licenseUrl>
+    <projectUrl>http://fsharp.github.io/ComboProvider</projectUrl>
+    <iconUrl>https://raw.github.com/fsharp/ComboProvider/master/misc/logo.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    -->
+    <summary>A Gherkin type provider</summary>
+    <description>Creates a type system from the provded Gherkin file</description>
+   
+    <!-- These are the dependencies of the type provider runtime component --> 
+    <dependencies>
+      <group targetFramework="netstandard2.0">
+        <dependency id="FSharp.Core" version="4.3.4" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+
+    <!-- Use the same component as the TPDTC, placed in the usual locations --> 
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\FSharp.Data.Gherkin.dll" target="lib/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\FSharp.Data.Gherkin.pdb" target="lib/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\FSharp.Data.Gherkin.xml" target="lib/netstandard2.0" />
+
+    <!-- Add these facades to allow .NET 4.6.x-based tooling to load the component, see docs at https://github.com/fsprojects/FSharp.TypeProviders.SDK/ -->
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\netstandard.dll" target="lib/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\System.Reflection.dll" target="lib/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\System.Runtime.dll" target="lib/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\Gherkin.dll" target="lib/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\Utf8Json.dll" target="lib/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\Utf8Json.xml" target="lib/netstandard2.0" />
+
+  </files>
+</package>
