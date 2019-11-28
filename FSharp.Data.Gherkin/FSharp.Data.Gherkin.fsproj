@@ -4,6 +4,7 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>0.1</Version>
     <NuspecFile>FSharp.Data.Gherkin.nuspec</NuspecFile>
   </PropertyGroup>
   <ItemGroup>
