@@ -73,11 +73,10 @@ type GherkinProvider (config : TypeProviderConfig) as this =
             let examples = addArgumentsFromRows ctr rows
             Expr.NewArray(exampleType,examples)
             
-            
         if isNull arg then step
         else
             
-            let argName= "Data" //(sprintf "%s data" stepName) 
+            let argName= "Data"
             match arg with
             | :? Ast.DataTable -> 
                 let dataTable = arg :?> Ast.DataTable
@@ -117,7 +116,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> step.AddMember
         ProvidedProperty("Order",typeof<int>,isStatic = false, getterCode = fun _ -> <@@ order @@> ) |> step.AddMember
         ProvidedProperty("StepName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepName @@> ) |> step.AddMember
-
 
         step
 
@@ -176,12 +174,10 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let scenarios = ProvidedTypeDefinition(providedAssembly, ns, "Scenarios", Some typeof<obj>, isErased=false,hideObjectMethods=true, nonNullable=true)
         let scenarioOutlines = ProvidedTypeDefinition(providedAssembly, ns, "ScenarioOutlines", Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
         
-
         let createExampleType (gherkinScenario:Ast.Scenario) =
-            let examplesName = "Example" // sprintf "%s example" gherkinScenario.Name
+            let examplesName = "Example"
             let header = (gherkinScenario.Examples |> Seq.toList).[0].TableHeader.Cells |> Seq.map (fun c ->c.Value) |> Seq.toList
             createDynamicObject examplesName header typeof<DataRow> createDataRowInstance
-
 
         let createExampleInstances (scenarioOutline:Ast.Scenario) (exampleType:ProvidedTypeDefinition) = 
             let ctr = exampleType.GetConstructors().[0]
@@ -192,7 +188,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                 |> addArgumentsFromRows ctr
             
             Expr.NewArray(exampleType,examples)
-
         
         document.Feature.Children
         |> Seq.iter(
@@ -218,17 +213,12 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                             let scenarioOutline = createScenario gherkinScenario
                             let exampleType = createExampleType gherkinScenario
                             let examplesType = (typedefof<seq<_>>).MakeGenericType(exampleType.AsType())
-
-
                             let examples = createExampleInstances gherkinScenario exampleType
-
                             let examplesProp = ProvidedProperty("Examples",examplesType,getterCode=fun _ -> examples )
 
                             exampleType |> scenarioOutline.AddMember
                             examplesProp |> scenarioOutline.AddMember
-                            
                             scenarioOutline  |> scenarioOutlines.AddMember
-                        
 
                             ProvidedProperty(scenarioName,scenarioOutline.AsType(),isStatic = false, getterCode=fun _ -> <@@obj()@@>) |> scenarioOutlines.AddMember
                             
