@@ -3,7 +3,7 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>Gherkin.TypeProvider</id>
     <title>Gherkin Typeprovider</title>
-    <!-- <version>0.1</version> -->
+    <version>0.0.1</version>
     <authors>Chris Roff</authors>
     <owners>Chris Roff</owners>
     <!--
