@@ -1,6 +1,6 @@
 source https://api.nuget.org/v3/index.json
 
-nuget FSharp.Core = 4.3.4
+nuget FSharp.Core
 nuget Gherkin
 nuget Expecto
 nuget NETStandard.Library.NETFramework
