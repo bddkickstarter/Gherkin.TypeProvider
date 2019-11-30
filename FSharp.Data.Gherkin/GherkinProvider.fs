@@ -122,23 +122,28 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let stepType = ProvidedTypeDefinition(name, Some typeof<Step>, isErased=false, hideObjectMethods=true, nonNullable=true) |> addArgument step.Argument
         let step = Expr.NewObject(Constructors.Step,[Expr.Value(order);Expr.Value(keyword);Expr.Value(text)])
         stepType |> parent.AddMember 
-        ProvidedProperty(name,stepType.AsType(),isStatic = false, getterCode=fun _ -> step)
+        ProvidedProperty(name,stepType.AsType(),isStatic = false, getterCode=fun _ -> step) |> parent.AddMember
+        step
     
     let createScenarioType (gherkinScenario:Ast.Scenario) =
         let scenario = ProvidedTypeDefinition(gherkinScenario.Name, Some typeof<Scenario>, isErased=false, hideObjectMethods=true, nonNullable = true)
 
-        gherkinScenario.Steps
-        |> Seq.iteri(fun i s -> createStep i s scenario |> scenario.AddMember)
+        let steps = 
+            gherkinScenario.Steps
+            |> Seq.mapi(fun i s -> createStep i s scenario)
+            |> Seq.toList
 
-        scenario
+        (scenario,Expr.NewArray(typeof<Step>,steps))
 
     let createBackgroundType (gherkinBackground:Ast.Background) =
         let background = ProvidedTypeDefinition(gherkinBackground.Name, Some typeof<Background>, isErased=false, hideObjectMethods=true, nonNullable=true)
         
-        gherkinBackground.Steps
-        |> Seq.iteri(fun i s ->createStep i s background |> background.AddMember )
+        let steps =
+            gherkinBackground.Steps
+            |> Seq.mapi(fun i s -> createStep i s background )
+            |> Seq.toList
         
-        background
+        (background,Expr.NewArray(typeof<Step>,steps))
 
     
     let createFeature providerName (path:string) =
@@ -170,53 +175,70 @@ type GherkinProvider (config : TypeProviderConfig) as this =
             
             Expr.NewArray(exampleType,examples)
         
-        document.Feature.Children
-        |> Seq.iter(
-            fun c ->
-                match c with
-                | :? Ast.Background ->
-                        let gherkinBackground = c :?> Ast.Background
-                        let backGroundType = createBackgroundType gherkinBackground
-                        let background = Expr.NewObject(Constructors.Background,[Expr.Value(gherkinBackground.Name);Expr.Value(gherkinBackground.Description)])
-                        backGroundType |> featureType.AddMember
-                        ProvidedProperty("Background",backGroundType.AsType(),isStatic = false, getterCode = fun _ -> background )  |> featureType.AddMember
-                        
-                | :? Ast.Scenario ->
-                        let gherkinScenario = c :?> Ast.Scenario
-                        let scenarioName = gherkinScenario.Name
+        let children = 
+            document.Feature.Children
+            |> Seq.choose(
+                fun c ->
+                    match c with
+                    | :? Ast.Background ->
+                            let gherkinBackground = c :?> Ast.Background
+                            let (backGroundType,steps) = createBackgroundType gherkinBackground
+                            let background = Expr.NewObject(Constructors.Background,[Expr.Value(gherkinBackground.Name);Expr.Value(gherkinBackground.Description);steps])
+                            backGroundType |> featureType.AddMember
+                            ProvidedProperty("Background",backGroundType.AsType(),isStatic = false, getterCode = fun _ -> background )  |> featureType.AddMember
+                            ("background",background) |> Some
 
-                        if (gherkinScenario.Examples |> Seq.isEmpty)
-                        then
-                            let scenarioType = createScenarioType gherkinScenario
+                    | :? Ast.Scenario ->
+                            let gherkinScenario = c :?> Ast.Scenario
+                            let scenarioName = gherkinScenario.Name
 
-                            match createTags gherkinScenario.Tags with
-                            | None -> ()
-                            | Some tags -> tags |> scenarioType.AddMember
+                            if (gherkinScenario.Examples |> Seq.isEmpty)
+                            then
+                                let (scenarioType,steps) = createScenarioType gherkinScenario
 
-                            let scenarioInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);])
-                            scenarioType |> scenarios.AddMember
-                            ProvidedProperty(scenarioName,scenarioType.AsType(),isStatic = false, getterCode=fun _ -> scenarioInstance) |> scenarios.AddMember
-                        else
-                            let scenarioOutlineType = createScenarioType gherkinScenario
+                                match createTags gherkinScenario.Tags with
+                                | None -> ()
+                                | Some tags -> tags |> scenarioType.AddMember
 
-                            match createTags gherkinScenario.Tags with
-                            | None -> ()
-                            | Some tags -> tags |> scenarioOutlineType.AddMember
+                                let scenarioInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);steps;Expr.NewArray(typeof<DataRow>,[])])
+                                scenarioType |> scenarios.AddMember
+                                ProvidedProperty(scenarioName,scenarioType.AsType(),isStatic = false, getterCode=fun _ -> scenarioInstance) |> scenarios.AddMember
+                                ("scenario",scenarioInstance) |> Some
+                            else
+                                let (scenarioOutlineType,steps) = createScenarioType gherkinScenario
 
-                            let scenarioOutlineInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);])
-                            let exampleType = createExampleType gherkinScenario
-                            let examplesType = (typedefof<seq<_>>).MakeGenericType(exampleType.AsType())
-                            let examples = createExampleInstances gherkinScenario exampleType
-                            let examplesProp = ProvidedProperty("Examples",examplesType,getterCode=fun _ -> examples )
+                                match createTags gherkinScenario.Tags with
+                                | None -> ()
+                                | Some tags -> tags |> scenarioOutlineType.AddMember
 
-                            exampleType |> scenarioOutlineType.AddMember
-                            examplesProp |> scenarioOutlineType.AddMember
-                            scenarioOutlineType  |> scenarioOutlines.AddMember
+                                
+                                let exampleType = createExampleType gherkinScenario
+                                let examplesType = (typedefof<seq<_>>).MakeGenericType(exampleType.AsType())
+                                let examples = createExampleInstances gherkinScenario exampleType
+                                let examplesProp = ProvidedProperty("Examples",examplesType,getterCode=fun _ -> examples )
 
-                            ProvidedProperty(scenarioName,scenarioOutlineType.AsType(),isStatic = false, getterCode=fun _ -> scenarioOutlineInstance) |> scenarioOutlines.AddMember
-                            
-                | _ -> ()
-        )
+                                exampleType |> scenarioOutlineType.AddMember
+                                examplesProp |> scenarioOutlineType.AddMember
+                                scenarioOutlineType  |> scenarioOutlines.AddMember
+
+                                let dataRows = 
+                                    Expr.NewArray(typeof<DataRow>,[])
+
+                                let scenarioOutlineInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);steps;dataRows])
+                                ProvidedProperty(scenarioName,scenarioOutlineType.AsType(),isStatic = false, getterCode=fun _ -> scenarioOutlineInstance) |> scenarioOutlines.AddMember
+                                ("scenarioOutline",scenarioOutlineInstance) |> Some
+                                
+                    | _ -> None
+            )
+            |> Seq.toList
+
+        let backgroundInstance = 
+            match children |> List.tryPick (fun (nm,instance) -> if nm = "background" then Some instance else None) with
+            | None -> Expr.Value(null)
+            | Some bg -> bg
+
+        let scenarioInstances = Expr.NewArray(typeof<Scenario>, (children |> List.choose (fun (nm,instance) -> if nm = "scenario" then Some instance else None)))
+        let scenarioOutlineInstances = Expr.NewArray(typeof<Scenario>, (children |> List.choose (fun (nm,instance) -> if nm = "scenarioOutline" then Some instance else None)))
 
         scenarios |> featureType.AddMember
         scenarioOutlines |> featureType.AddMember
@@ -228,7 +250,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         | None -> ()
         | Some tags -> tags |> featureType.AddMember
 
-        let featureInstance = Expr.NewObject(Constructors.Feature,[Expr.Value(featureName);Expr.Value(featureDesc)])
+        let featureInstance = Expr.NewObject(Constructors.Feature,[Expr.Value(featureName);Expr.Value(featureDesc);scenarioInstances;scenarioOutlineInstances;backgroundInstance])
         let featureProp = ProvidedProperty(featureName,featureType.AsType(),isStatic=true,getterCode=fun _ -> featureInstance) 
         
         featureType |> root.AddMember

@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Model.fs" />
+    <Compile Include="Tests/UnTyped.tests.fs" />
     <Compile Include="Tests/Example.tests.fs" />
     <Compile Include="Tests/Scenario.tests.fs" />
     <Compile Include="Tests/ScenarioOutline.tests.fs" />
