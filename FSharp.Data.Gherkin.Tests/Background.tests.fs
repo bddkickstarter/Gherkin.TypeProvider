@@ -1,38 +1,92 @@
-module FSharp.Data.Gherking.Tests.Background
+module FSharp.Data.Gherkin.Tests.Background
 
 open FSharp.Data.Gherkin
+open FSharp.Data.Gherkin.Tests.Features
+
 open Expecto
 
-// Use the const __SOURCE_DIRECTORY__ here to help intellisense play nice with relative paths
-type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature")>
+let validateBackground (background:Background) (name:string) (description:string) =
+    Expect.equal background.Name name (sprintf "Background name:Expected %s but got %s" name background.Name)
+    Expect.equal background.Description description (sprintf "Background description:Expected %s but got %s" description background.Description)
 
-let feature = TestFeature.``Feature name``
+let validateStep (step:Step) (expectedOrder:int) (expectedKeyword:string) (expectedText:string) =
+    Expect.equal step.Order expectedOrder (sprintf "Step Order:Expected %i but got %i" expectedOrder step.Order)
+    Expect.equal step.Keyword expectedKeyword (sprintf "Step Keyword:Expected %s but got %s" expectedKeyword step.Keyword)
+    Expect.equal step.Text expectedText (sprintf "Step Text:Expected %s but got %s" expectedText step.Text)
+
+let validateDatarow (row:DataCell) (header:string) (value:string) =
+    Expect.equal row.Header header (sprintf "Background When Data Row 1 Header:Expected %s but got %s" header row.Header)
+    Expect.equal row.Value value (sprintf "Background When Data Row 1 Value:Expected %s but got %s" value row.Value)
 
 
 [<Tests>]
 let background =
 
-    let background = feature.Background
-    
+    let background = TestFeature.``Feature name``.Background
+        
     testList
         "Background has correct data"
         [
             testCase
-                "Background name correct"
+                "Background correct"
                 <| fun _ ->
-                    let expectedBackgroundName = "Background name"
-                    Expect.equal background.Name expectedBackgroundName (sprintf "Background name:Expected %s but got %s" expectedBackgroundName background.Name)
+                    validateBackground background "Background name" "Multi-line\r\nBackground Description"
 
-            testCase
-                "Background description correct"
-                <| fun _ ->
-                    let expectedBackgroundDescription = "Multi-line\r\nBackground Description"
-                    Expect.equal background.Description expectedBackgroundDescription (sprintf "Background description:Expected %s but got %s" expectedBackgroundDescription background.Description)
 
             testCase
                 "Background Given correct"
                 <| fun _ ->
-                    let actualGivenText =  background.``0. Given background given step``.StepName
-                    let expectedGivenText = "background given step"
-                    Expect.equal actualGivenText expectedGivenText  (sprintf "Background given:Expected %s but got %s" expectedGivenText actualGivenText)
+
+                    validateStep
+                        background.``0. Given background given step`` 
+                        0
+                        "Given"
+                        "background given step"
+
+
+            testCase
+                "Background Given multiline argument correct"
+                <| fun _ ->
+
+                    let step = background.``0. Given background given step``
+                    let expectedArgument = "multi line\r\nargument"
+                    Expect.equal 
+                        step.Argument.Content expectedArgument
+                        (sprintf 
+                            "Background Given Argument:Expecting %s but got %s" 
+                            expectedArgument 
+                            step.Argument.Content)
+
+            testCase
+                "Background When correct"
+                <| fun _ ->
+
+                    validateStep
+                        background.``1. When background when step``
+                        1
+                        "When"
+                        "background when step"
+
+            testCase
+                "Background When data table argument correct"
+                <| fun _ ->
+
+                    let step = background.``1. When background when step``
+                    let dataTableRows = (step.Data |> Seq.toList)
+                    Expect.equal dataTableRows.Length 2 (sprintf "Background When Data:Expected 2 rows but got %i" dataTableRows.Length)
+
+                    validateDatarow  dataTableRows.[0].column1 "column1" "data1"
+                    validateDatarow  dataTableRows.[0].column2 "column2" "data2"
+                    validateDatarow  dataTableRows.[1].column1 "column1" "data3"
+                    validateDatarow  dataTableRows.[1].column2 "column2" "data4"
+
+            testCase
+                "Background Then correct"
+                <| fun _ ->
+
+                    validateStep
+                        background.``2. Then background then step``
+                        2
+                        "Then"
+                        "background then step"
         ]

@@ -8,6 +8,8 @@
   <ItemGroup>
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
+    <Compile Include="GherkinModel.fs" />
+    <Compile Include="Factories.fs" />
     <Compile Include="GherkinProvider.fs" />
   </ItemGroup>
   <ItemGroup>

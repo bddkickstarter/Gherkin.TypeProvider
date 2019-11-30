@@ -1,5 +1,6 @@
-﻿namespace ProviderImplementation
+﻿namespace FSharp.Data.Gherkin.ProviderImplementation
 
+open FSharp.Data.Gherkin
 open FSharp.Quotations
 open FSharp.Core.CompilerServices
 open System.Reflection
@@ -7,13 +8,6 @@ open ProviderImplementation.ProvidedTypes
 
 open Gherkin
 
-type Background (name:string,description:string) =
-    member __.Name = name
-    member __.Description = description
-
-type DataRow (header:string,value:string) =
-    member __.Header = header
-    member __.Value = value
 
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
@@ -24,8 +18,8 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     let asm = Assembly.GetExecutingAssembly()
 
 
-    let dataRowConstructor = (typeof<DataRow>).GetConstructors().[0]
-    let createDataRowInstance (column:string) (value:Expr) = Expr.NewObject(dataRowConstructor,[Expr.Value(column);value])
+    let dataCellConstructor = (typeof<DataCell>).GetConstructors().[0]
+    let createDataRowInstance (column:string) (value:Expr) = Expr.NewObject(dataCellConstructor,[Expr.Value(column);value])
     let createDefaultInstance _ (value:Expr) = value
     
     let createDynamicObject name propertyNames propertyType createInstance =
@@ -81,27 +75,26 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         if isNull arg then step
         else
             
-            let argName= "Argument"
             match arg with
             | :? Ast.DataTable -> 
                 let dataTable = arg :?> Ast.DataTable
                 let rows = dataTable.Rows |> Seq.toList
                 let propertyNames = rows.Head.Cells |> Seq.map(fun c -> c.Value) |> Seq.toList
 
-                let rowType  = createDynamicObject argName propertyNames typeof<DataRow> createDataRowInstance
+                let rowType  = createDynamicObject "Row" propertyNames typeof<DataCell> createDataRowInstance
 
                 rowType |> step.AddMember
 
                 let addRows _ = createDataInstances rows.Tail rowType
                 let rowsType =  (typedefof<seq<_>>).MakeGenericType(rowType.AsType())
-                let argument = ProvidedProperty("Argument",rowsType,isStatic=false,getterCode=addRows)
+                let argument = ProvidedProperty("Data",rowsType,isStatic=false,getterCode=addRows)
                 argument |> step.AddMember
 
                 step
             | :? Ast.DocString ->
                 let docString = arg :?> Ast.DocString
                 let header = ["Content";"ContentType"]
-                let docStringType = createDynamicObject argName header typeof<string> createDefaultInstance
+                let docStringType = createDynamicObject "DocString" header typeof<string> createDefaultInstance
                 docStringType |> step.AddMember
                 
                 let docStringObj = Expr.NewObject(docStringType.GetConstructors().[0],[Expr.Value(docString.Content);Expr.Value(docString.ContentType)])
@@ -111,19 +104,14 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
             | _ -> step
 
-
-    let createStep (gherkinStep:Ast.Step) (order:int) (stepName:string)=
-        let stepText = gherkinStep.Text
-        let stepKeyword = gherkinStep.Keyword
-        let step = ProvidedTypeDefinition(stepName, Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
-
-        ProvidedProperty("StepText",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepText @@> ) |> step.AddMember
-        ProvidedProperty("StepKeyword",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepKeyword @@> ) |> step.AddMember
-        ProvidedProperty("Order",typeof<int>,isStatic = false, getterCode = fun _ -> <@@ order @@> ) |> step.AddMember
-        ProvidedProperty("StepName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ stepName @@> ) |> step.AddMember
-
-        step
-
+    let createStep (order:int) (step:Ast.Step) (parent:ProvidedTypeDefinition) =
+        let text = step.Text
+        let keyword = step.Keyword.Trim()
+        let name = sprintf "%i. %s %s" order keyword text
+        let stepType = ProvidedTypeDefinition(name, Some typeof<Step>, isErased=false, hideObjectMethods=true, nonNullable=true) |> addArgument step.Argument
+        let step = Expr.NewObject(Constructors.Step,[Expr.Value(order);Expr.Value(keyword);Expr.Value(text)])
+        stepType |> parent.AddMember 
+        ProvidedProperty(name,stepType.AsType(),isStatic = false, getterCode=fun _ -> step)
     
     let createScenario (gherkinScenario:Ast.Scenario) =
         let scenarioName = gherkinScenario.Name
@@ -132,13 +120,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let scenario = ProvidedTypeDefinition(scenarioName, Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable = true)
 
         gherkinScenario.Steps
-        |> Seq.iteri(
-            fun i s ->
-                let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
-                let step = createStep s i stepName |> addArgument s.Argument
-                step |> scenario.AddMember 
-
-                ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> scenario.AddMember)
+        |> Seq.iteri(fun i s -> createStep i s scenario |> scenario.AddMember)
 
         ProvidedProperty("ScenarioName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioName @@> ) |> scenario.AddMember
         ProvidedProperty("ScenarioDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioDesc @@> ) |> scenario.AddMember
@@ -147,22 +129,15 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
     
     let createbackgroundInstance (gherkinBackground:Ast.Background) =
-        let backgroundCtr = typeof<Background>.GetConstructors().[0]
-        Expr.NewObject(backgroundCtr,[Expr.Value(gherkinBackground.Name);Expr.Value(gherkinBackground.Description)])
+        Expr.NewObject(Constructors.Background,[Expr.Value(gherkinBackground.Name);Expr.Value(gherkinBackground.Description)])
 
 
     let createBackgroundType (gherkinBackground:Ast.Background) =
 
-        let background = ProvidedTypeDefinition("Background", Some typeof<Background>, isErased=false, hideObjectMethods=true, nonNullable=true)
+        let background = ProvidedTypeDefinition(gherkinBackground.Name, Some typeof<Background>, isErased=false, hideObjectMethods=true, nonNullable=true)
         
         gherkinBackground.Steps
-        |> Seq.iteri(
-            fun i s ->
-                let stepName = sprintf "%i. %s%s" i s.Keyword s.Text
-                let step = createStep s i s.Text |> addArgument s.Argument
-                step |> background.AddMember 
-
-                ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> background.AddMember)
+        |> Seq.iteri(fun i s ->createStep i s background |> background.AddMember )
         
         background
 
@@ -182,7 +157,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let createExampleType (gherkinScenario:Ast.Scenario) =
             let examplesName = "Example"
             let header = (gherkinScenario.Examples |> Seq.toList).[0].TableHeader.Cells |> Seq.map (fun c ->c.Value) |> Seq.toList
-            createDynamicObject examplesName header typeof<DataRow> createDataRowInstance
+            createDynamicObject examplesName header typeof<DataCell> createDataRowInstance
 
         let createExampleInstances (scenarioOutline:Ast.Scenario) (exampleType:ProvidedTypeDefinition) = 
             let ctr = exampleType.GetConstructors().[0]
