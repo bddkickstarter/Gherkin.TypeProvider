@@ -5,7 +5,6 @@ open FSharp.Data.Gherkin.Tests.Model.Helpers
 
 open Expecto
 
-
 [<Tests>]
 let background =
 
@@ -61,10 +60,10 @@ let background =
                     let dataTableRows = (step.Data |> Seq.toList)
                     Expect.equal dataTableRows.Length 2 (sprintf "Background When Data:Expected 2 rows but got %i" dataTableRows.Length)
 
-                    validateDatarow  dataTableRows.[0].column1 "column1" "data1"
-                    validateDatarow  dataTableRows.[0].column2 "column2" "data2"
-                    validateDatarow  dataTableRows.[1].column1 "column1" "data3"
-                    validateDatarow  dataTableRows.[1].column2 "column2" "data4"
+                    validateData dataTableRows.[0].column1 "column1" "data1"
+                    validateData dataTableRows.[0].column2 "column2" "data2"
+                    validateData dataTableRows.[1].column1 "column1" "data3"
+                    validateData dataTableRows.[1].column2 "column2" "data4"
 
             testCase
                 "Background Then correct"

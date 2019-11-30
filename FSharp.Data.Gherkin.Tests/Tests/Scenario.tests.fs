@@ -5,7 +5,6 @@ open FSharp.Data.Gherkin.Tests.Model.Helpers
 
 open Expecto
 
-
 [<Tests>]
 let scenario1 =
 
@@ -37,7 +36,7 @@ let scenario1 =
                     Expect.equal 
                         step.Argument.Content expectedArgument
                         (sprintf 
-                            "Background Given Argument:Expecting %s but got %s" 
+                            "Scenario 1 Given Argument:Expecting %s but got %s" 
                             expectedArgument 
                             step.Argument.Content)
 
@@ -57,12 +56,12 @@ let scenario1 =
 
                     let step = scenario1.``1. When scenario 1 when step``
                     let dataTableRows = (step.Data |> Seq.toList)
-                    Expect.equal dataTableRows.Length 2 (sprintf "Background When Data:Expected 2 rows but got %i" dataTableRows.Length)
+                    Expect.equal dataTableRows.Length 2 (sprintf "Scenario 1 When Data:Expected 2 rows but got %i" dataTableRows.Length)
 
-                    validateDatarow  dataTableRows.[0].column1 "column1" "data1"
-                    validateDatarow  dataTableRows.[0].column2 "column2" "data2"
-                    validateDatarow  dataTableRows.[1].column1 "column1" "data3"
-                    validateDatarow  dataTableRows.[1].column2 "column2" "data4"
+                    validateData dataTableRows.[0].column1 "column1" "data1"
+                    validateData dataTableRows.[0].column2 "column2" "data2"
+                    validateData dataTableRows.[1].column1 "column1" "data3"
+                    validateData dataTableRows.[1].column2 "column2" "data4"
 
             testCase
                 "Scenario 1 Then correct"
@@ -106,7 +105,7 @@ let scenario2 =
                     Expect.equal 
                         step.Argument.Content expectedArgument
                         (sprintf 
-                            "Background Given Argument:Expecting %s but got %s" 
+                            "Scenario 2 Given Argument:Expecting %s but got %s" 
                             expectedArgument 
                             step.Argument.Content)
 
@@ -126,12 +125,12 @@ let scenario2 =
 
                     let step = scenario2.``1. When scenario 2 when step``
                     let dataTableRows = (step.Data |> Seq.toList)
-                    Expect.equal dataTableRows.Length 2 (sprintf "Background When Data:Expected 2 rows but got %i" dataTableRows.Length)
+                    Expect.equal dataTableRows.Length 2 (sprintf "Scenario 2 When Data:Expected 2 rows but got %i" dataTableRows.Length)
 
-                    validateDatarow  dataTableRows.[0].column1 "column1" "data1"
-                    validateDatarow  dataTableRows.[0].column2 "column2" "data2"
-                    validateDatarow  dataTableRows.[1].column1 "column1" "data3"
-                    validateDatarow  dataTableRows.[1].column2 "column2" "data4"
+                    validateData dataTableRows.[0].column1 "column1" "data1"
+                    validateData dataTableRows.[0].column2 "column2" "data2"
+                    validateData dataTableRows.[1].column1 "column1" "data3"
+                    validateData dataTableRows.[1].column2 "column2" "data4"
 
             testCase
                 "Scenario 1 Then correct"

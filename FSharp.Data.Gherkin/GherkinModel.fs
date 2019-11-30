@@ -26,4 +26,4 @@ module Constructors =
     let Background = (typeof<Background>).GetConstructors().[0]
     let Scenario = (typeof<Scenario>).GetConstructors().[0]
     let Step = (typeof<Step>).GetConstructors().[0]
-    let Data = (typeof<DataCell>).GetConstructors().[0]
+    let DataCell = (typeof<DataCell>).GetConstructors().[0]
