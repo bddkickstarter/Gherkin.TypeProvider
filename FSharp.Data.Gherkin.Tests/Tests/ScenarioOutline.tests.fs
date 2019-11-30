@@ -17,6 +17,13 @@ let scenarioOutline =
                 <| fun _ -> validateScenario scenarioOutline "Scenario outline name" "Multi-line\r\nScenario Outline Description"
 
             testCase
+                    "Scenario Outline tags correct"
+                    <| fun _ ->
+                        let tags = scenarioOutline.Tags |> Seq.toList
+                        Expect.equal tags.[0] "@scenarioOutlineTag1" (sprintf "Expected tag name %s but got %s" "@scenarioOutlineTag1" tags.[0])
+                        Expect.equal tags.[1] "@scenarioOutlineTag2" (sprintf "Expected tag name %s but got %s" "@scenarioOutlineTag2" tags.[1])
+
+            testCase
                 "Scenario Outline Given correct"
                 <| fun _ ->
 

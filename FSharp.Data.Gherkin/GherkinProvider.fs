@@ -101,6 +101,20 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
             | _ -> step
 
+    let createTags (tags:seq<Ast.Tag>) = 
+
+        match tags |> Seq.toList with
+        | [] -> None
+        | tagList ->
+            
+            let tagExprs = 
+                tagList
+                |> List.map(fun t -> Expr.Value(t.Name))
+        
+            let tagsInstance = Expr.NewArray(typeof<string>,tagExprs)
+
+            Some (ProvidedProperty("Tags",typeof<seq<string>>,isStatic = false, getterCode = fun _ -> tagsInstance ))
+
     let createStep (order:int) (step:Ast.Step) (parent:ProvidedTypeDefinition) =
         let text = step.Text
         let keyword = step.Keyword.Trim()
@@ -125,20 +139,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.iteri(fun i s ->createStep i s background |> background.AddMember )
         
         background
-
-    let createTags (tags:seq<Ast.Tag>) = 
-
-        match tags |> Seq.toList with
-        | [] -> None
-        | tagList ->
-            
-            let tagExprs = 
-                tagList
-                |> List.map(fun t -> Expr.Value(t.Name))
-        
-            let tagsInstance = Expr.NewArray(typeof<string>,tagExprs)
-
-            Some (ProvidedProperty("Tags",typeof<seq<string>>,isStatic = false, getterCode = fun _ -> tagsInstance ))
 
     
     let createFeature providerName (path:string) =
@@ -179,7 +179,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                         let backGroundType = createBackgroundType gherkinBackground
                         let background = Expr.NewObject(Constructors.Background,[Expr.Value(gherkinBackground.Name);Expr.Value(gherkinBackground.Description)])
                         backGroundType |> featureType.AddMember
-
                         ProvidedProperty("Background",backGroundType.AsType(),isStatic = false, getterCode = fun _ -> background )  |> featureType.AddMember
                         
                 | :? Ast.Scenario ->
@@ -189,11 +188,21 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                         if (gherkinScenario.Examples |> Seq.isEmpty)
                         then
                             let scenarioType = createScenarioType gherkinScenario
+
+                            match createTags gherkinScenario.Tags with
+                            | None -> ()
+                            | Some tags -> tags |> scenarioType.AddMember
+
                             let scenarioInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);])
                             scenarioType |> scenarios.AddMember
                             ProvidedProperty(scenarioName,scenarioType.AsType(),isStatic = false, getterCode=fun _ -> scenarioInstance) |> scenarios.AddMember
                         else
                             let scenarioOutlineType = createScenarioType gherkinScenario
+
+                            match createTags gherkinScenario.Tags with
+                            | None -> ()
+                            | Some tags -> tags |> scenarioOutlineType.AddMember
+
                             let scenarioOutlineInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);])
                             let exampleType = createExampleType gherkinScenario
                             let examplesType = (typedefof<seq<_>>).MakeGenericType(exampleType.AsType())

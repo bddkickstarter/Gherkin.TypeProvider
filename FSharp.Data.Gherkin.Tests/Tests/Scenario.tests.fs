@@ -11,11 +11,18 @@ let scenario1 =
     let scenario1 = TestFeature.``Feature name``.Scenarios.``Scenario 1 name``
 
     testList
-        "Scenario1 has correct data"
+        "Scenario 1 has correct data"
         [
             testCase
-                "Scenario is correct"
+                "Scenario 1 is correct"
                 <| fun _ -> validateScenario scenario1 "Scenario 1 name" "Multi-line\r\nScenario 1 Description"
+
+            testCase
+                    "Scenario 1 tags correct"
+                    <| fun _ ->
+                        let tags = scenario1.Tags |> Seq.toList
+                        Expect.equal tags.[0] "@scenario1Tag1" (sprintf "Expected tag name %s but got %s" "@scenario1Tag1" tags.[0])
+                        Expect.equal tags.[1] "@scenario1Tag2" (sprintf "Expected tag name %s but got %s" "@scenario1Tag2" tags.[1])
 
             testCase
                 "Scenario 1 Given correct"
@@ -80,11 +87,18 @@ let scenario2 =
     let scenario2 = TestFeature.``Feature name``.Scenarios.``Scenario 2 name``
 
     testList
-        "Scenario2 has correct data"
+        "Scenario 2 has correct data"
         [
             testCase
-                "Scenario is correct"
+                "Scenario 2 is correct"
                 <| fun _ -> validateScenario scenario2 "Scenario 2 name" "Multi-line\r\nScenario 2 Description"
+
+            testCase
+                    "Scenario 2 tags correct"
+                    <| fun _ ->
+                        let tags = scenario2.Tags |> Seq.toList
+                        Expect.equal tags.[0] "@scenario2Tag1" (sprintf "Expected tag name %s but got %s" "@scenario2Tag1" tags.[0])
+                        Expect.equal tags.[1] "@scenario2Tag2" (sprintf "Expected tag name %s but got %s" "@scenario2Tag2" tags.[1])
 
             testCase
                 "Scenario 2 Given correct"

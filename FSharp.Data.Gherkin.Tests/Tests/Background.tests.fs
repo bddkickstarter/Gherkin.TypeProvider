@@ -18,7 +18,6 @@ let background =
                 <| fun _ ->
                     validateBackground background "Background name" "Multi-line\r\nBackground Description"
 
-
             testCase
                 "Background Given correct"
                 <| fun _ ->
