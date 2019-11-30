@@ -8,6 +8,10 @@ type Background (name:string,description:string) =
     member __.Name = name
     member __.Description = description
 
+type Scenario (name:string,description:string) =
+    member __.Name = name
+    member __.Description = description
+
 type Step (order:int,keyword:string,text:string) =
     member __.Order = order
     member __.Text = text    
@@ -20,5 +24,6 @@ type DataCell (header:string,value:string) =
 module Constructors =
     let Feature = (typeof<Feature>).GetConstructors().[0]
     let Background = (typeof<Background>).GetConstructors().[0]
+    let Scenario = (typeof<Scenario>).GetConstructors().[0]
     let Step = (typeof<Step>).GetConstructors().[0]
     let Data = (typeof<DataCell>).GetConstructors().[0]

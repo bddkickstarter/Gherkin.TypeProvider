@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ProvidedTypesTesting.fs" />
-    <Compile Include="Features.fs" />
+    <Compile Include="Model.fs" />
     <Compile Include="ScenarioOutline.tests.fs" />
     <Compile Include="Scenario.tests.fs" />
     <Compile Include="Background.tests.fs" />

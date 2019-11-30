@@ -113,17 +113,12 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         stepType |> parent.AddMember 
         ProvidedProperty(name,stepType.AsType(),isStatic = false, getterCode=fun _ -> step)
     
-    let createScenario (gherkinScenario:Ast.Scenario) =
+    let createScenarioType (gherkinScenario:Ast.Scenario) =
         let scenarioName = gherkinScenario.Name
-        let scenarioDesc = gherkinScenario.Description
-
-        let scenario = ProvidedTypeDefinition(scenarioName, Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable = true)
+        let scenario = ProvidedTypeDefinition(scenarioName, Some typeof<Scenario>, isErased=false, hideObjectMethods=true, nonNullable = true)
 
         gherkinScenario.Steps
         |> Seq.iteri(fun i s -> createStep i s scenario |> scenario.AddMember)
-
-        ProvidedProperty("ScenarioName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioName @@> ) |> scenario.AddMember
-        ProvidedProperty("ScenarioDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ scenarioDesc @@> ) |> scenario.AddMember
 
         scenario
 
@@ -187,21 +182,23 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
                         if (gherkinScenario.Examples |> Seq.isEmpty)
                         then
-                            let scenario = createScenario gherkinScenario
-                            scenario |> scenarios.AddMember
-                            ProvidedProperty(scenarioName,scenario.AsType(),isStatic = false, getterCode=fun _ -> <@@obj()@@>) |> scenarios.AddMember
+                            let scenarioType = createScenarioType gherkinScenario
+                            let scenarioInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);])
+                            scenarioType |> scenarios.AddMember
+                            ProvidedProperty(scenarioName,scenarioType.AsType(),isStatic = false, getterCode=fun _ -> scenarioInstance) |> scenarios.AddMember
                         else
-                            let scenarioOutline = createScenario gherkinScenario
+                            let scenarioOutlineType = createScenarioType gherkinScenario
+                            let scenarioOutlineInstance = Expr.NewObject(Constructors.Scenario,[Expr.Value(gherkinScenario.Name);Expr.Value(gherkinScenario.Description);])
                             let exampleType = createExampleType gherkinScenario
                             let examplesType = (typedefof<seq<_>>).MakeGenericType(exampleType.AsType())
                             let examples = createExampleInstances gherkinScenario exampleType
                             let examplesProp = ProvidedProperty("Examples",examplesType,getterCode=fun _ -> examples )
 
-                            exampleType |> scenarioOutline.AddMember
-                            examplesProp |> scenarioOutline.AddMember
-                            scenarioOutline  |> scenarioOutlines.AddMember
+                            exampleType |> scenarioOutlineType.AddMember
+                            examplesProp |> scenarioOutlineType.AddMember
+                            scenarioOutlineType  |> scenarioOutlines.AddMember
 
-                            ProvidedProperty(scenarioName,scenarioOutline.AsType(),isStatic = false, getterCode=fun _ -> <@@obj()@@>) |> scenarioOutlines.AddMember
+                            ProvidedProperty(scenarioName,scenarioOutlineType.AsType(),isStatic = false, getterCode=fun _ -> scenarioOutlineInstance) |> scenarioOutlines.AddMember
                             
                 | _ -> ()
         )
