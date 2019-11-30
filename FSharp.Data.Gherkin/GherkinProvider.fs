@@ -125,12 +125,29 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         |> Seq.iteri(fun i s ->createStep i s background |> background.AddMember )
         
         background
+
+    let createTags (tags:seq<Ast.Tag>) = 
+
+        match tags |> Seq.toList with
+        | [] -> None
+        | tagList ->
+            
+            let tagExprs = 
+                tagList
+                |> List.map(fun t -> Expr.Value(t.Name))
+        
+            let tagsInstance = Expr.NewArray(typeof<string>,tagExprs)
+
+            Some (ProvidedProperty("Tags",typeof<seq<string>>,isStatic = false, getterCode = fun _ -> tagsInstance ))
+
     
     let createFeature providerName (path:string) =
         let document = parser.Parse(path)
         let providedAssembly = ProvidedAssembly()
         let featureName = document.Feature.Name
-        let featureDesc = document.Feature.Description        
+        let featureDesc = document.Feature.Description  
+
+            
 
         let root = ProvidedTypeDefinition(providedAssembly, ns, providerName, Some typeof<obj>, hideObjectMethods=true, nonNullable=true, isErased=false)
         let featureType = ProvidedTypeDefinition(providedAssembly,ns,featureName, Some typeof<Feature>, hideObjectMethods=true, nonNullable=true, isErased=false)
@@ -197,6 +214,10 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
         ProvidedProperty("Scenarios",scenarios.AsType(),isStatic = false, getterCode = fun _ -> <@@ obj() @@> )  |> featureType.AddMember
         ProvidedProperty("ScenarioOutlines",scenarioOutlines.AsType(),isStatic = false, getterCode = fun _ -> <@@ obj() @@> )  |> featureType.AddMember
+
+        match createTags document.Feature.Tags with
+        | None -> ()
+        | Some tags -> tags |> featureType.AddMember
 
         let featureInstance = Expr.NewObject(Constructors.Feature,[Expr.Value(featureName);Expr.Value(featureDesc)])
         let featureProp = ProvidedProperty(featureName,featureType.AsType(),isStatic=true,getterCode=fun _ -> featureInstance) 

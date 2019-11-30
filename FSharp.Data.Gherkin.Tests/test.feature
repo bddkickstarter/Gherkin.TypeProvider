@@ -1,3 +1,4 @@
+@featureTag1 @featureTag2
 Feature: Feature name
 
 Multi-line
