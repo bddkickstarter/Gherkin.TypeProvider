@@ -7,6 +7,10 @@ open ProviderImplementation.ProvidedTypes
 
 open Gherkin
 
+type Background (name:string,description:string) =
+    member __.Name = name
+    member __.Description = description
+
 type DataRow (header:string,value:string) =
     member __.Header = header
     member __.Value = value
@@ -18,6 +22,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     let ns = "FSharp.Data.Gherkin"
     let parser = Parser()
     let asm = Assembly.GetExecutingAssembly()
+
 
     let dataRowConstructor = (typeof<DataRow>).GetConstructors().[0]
     let createDataRowInstance (column:string) (value:Expr) = Expr.NewObject(dataRowConstructor,[Expr.Value(column);value])
@@ -141,11 +146,14 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         scenario
 
     
-    let createBackground (gherkinBackground:Ast.Background) =
-        let backgroundName = gherkinBackground.Name
-        let backgroundDesc = gherkinBackground.Description
+    let createbackgroundInstance (gherkinBackground:Ast.Background) =
+        let backgroundCtr = typeof<Background>.GetConstructors().[0]
+        Expr.NewObject(backgroundCtr,[Expr.Value(gherkinBackground.Name);Expr.Value(gherkinBackground.Description)])
 
-        let background = ProvidedTypeDefinition("Background", Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
+
+    let createBackgroundType (gherkinBackground:Ast.Background) =
+
+        let background = ProvidedTypeDefinition("Background", Some typeof<Background>, isErased=false, hideObjectMethods=true, nonNullable=true)
         
         gherkinBackground.Steps
         |> Seq.iteri(
@@ -155,9 +163,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                 step |> background.AddMember 
 
                 ProvidedProperty(stepName,step.AsType(),isStatic = false, getterCode=fun _ -> <@@ obj() @@>) |> background.AddMember)
-        
-        ProvidedProperty("BackgroundName",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ backgroundName @@> ) |> background.AddMember
-        ProvidedProperty("BackgroundDescription",typeof<string>,isStatic = false, getterCode = fun _ -> <@@ backgroundDesc @@> ) |> background.AddMember
         
         background
 
@@ -195,9 +200,11 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                 match c with
                 | :? Ast.Background ->
                         let gherkinBackground = c :?> Ast.Background
-                        let background = createBackground gherkinBackground 
-                        background |> featureType.AddMember
-                        ProvidedProperty("Background",background.AsType(),isStatic = false, getterCode = fun _ -> <@@ obj() @@> )  |> featureType.AddMember
+                        let backGroundType = createBackgroundType gherkinBackground
+                        let background = createbackgroundInstance gherkinBackground 
+                        backGroundType |> featureType.AddMember
+
+                        ProvidedProperty("Background",backGroundType.AsType(),isStatic = false, getterCode = fun _ -> background )  |> featureType.AddMember
                         
                 | :? Ast.Scenario ->
                         let gherkinScenario = c :?> Ast.Scenario

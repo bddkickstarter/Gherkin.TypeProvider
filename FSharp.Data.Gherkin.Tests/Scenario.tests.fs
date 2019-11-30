@@ -1,4 +1,4 @@
-﻿// Learn more about F# at http://fsharp.org
+module FSharp.Data.Gherking.Tests.Scenario
 
 open FSharp.Data.Gherkin
 open Expecto
@@ -7,10 +7,3 @@ open Expecto
 type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature")>
 
 let feature = TestFeature.``Feature name``
-
-
- 
-              
-
-[<EntryPoint>]
-let main argv = runTestsInAssembly defaultConfig argv

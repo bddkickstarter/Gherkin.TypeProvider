@@ -10,6 +10,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ProvidedTypesTesting.fs" />
+    <Compile Include="ScenarioOutline.tests.fs" />
+    <Compile Include="Scenario.tests.fs" />
+    <Compile Include="Background.tests.fs" />
+    <Compile Include="Feature.tests.fs" />
     <Compile Include="Program.fs" />
     <Content Include="test.feature" CopyToOutputDirectory="Always" />
     <ProjectReference Include="..\FSharp.Data.Gherkin\FSharp.Data.Gherkin.fsproj" />
