@@ -9,7 +9,6 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ProvidedTypesTesting.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Tests/Example.tests.fs" />
     <Compile Include="Tests/Scenario.tests.fs" />
