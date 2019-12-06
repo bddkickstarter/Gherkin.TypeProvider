@@ -7,6 +7,7 @@ open System.Reflection
 open Gherkin
 open ExpressionBuilders.Feature
 open InstanceBuilders.Feature
+open ExpressionBuilders.Global
 
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
@@ -16,14 +17,12 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     let asm = Assembly.GetExecutingAssembly()
 
     let create providerName (path:string) =
-        let providedAssembly = ProvidedAssembly() 
+        let providedAssembly = ProvidedAssembly()
         let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
         let gherkinDocument = Parser().Parse(path)
 
         createFeatureExpression root gherkinDocument
-        |> buildFeature root gherkinDocument
-
-
+        |> buildFeatureInstance root gherkinDocument
 
         providedAssembly.AddTypes [root]
         root
@@ -32,8 +31,17 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let provider = ProvidedTypeDefinition(asm, ns, "GherkinProvider", None, isErased=false)
 
         provider.DefineStaticParameters( 
-                [ProvidedStaticParameter("Feature path", typeof<string>)], 
-                fun providerName args -> create providerName (unbox<string> args.[0]))
+                [
+                    ProvidedStaticParameter("FeaturePath", typeof<string>)
+                    ProvidedStaticParameter("Santize", typeof<bool>,false)
+                ], 
+                fun providerName args -> 
+                
+                    match (unbox<bool> args.[1]) with 
+                    | true -> SanitizeName <- ExpressionBuilders.Shared.sanitize
+                    | _ -> ()
+
+                    create providerName (unbox<string> args.[0]) )
         this.AddNamespace(ns,[provider])
 
 [<assembly:CompilerServices.TypeProviderAssembly()>]

@@ -3,6 +3,7 @@ module ExpressionBuilders.Data
 open ExpressionBuilders.Shared
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
+open ExpressionBuilders.Global
 
 let createDataExpression (parent:ProvidedTypeDefinition)  (columnNames:string list) = 
     let dataType  = ProvidedTypeDefinition("Data",Some typeof<obj>, isErased=false)
@@ -13,12 +14,12 @@ let createDataExpression (parent:ProvidedTypeDefinition)  (columnNames:string li
     // create constructor parameters for each of the columns
     let parameters = 
         columnNames
-        |> List.map(fun h -> ProvidedParameter(h |> sanitizeName,typeof<string>))
+        |> List.map(fun h -> ProvidedParameter(h |> SanitizeName,typeof<string>))
     
     // create fields for each of the columns
     let fields = 
         columnNames 
-        |> List.map(fun h -> ProvidedField( sprintf "_%s" (h |> sanitizeName),typeof<string>))
+        |> List.map(fun h -> ProvidedField( sprintf "_%s" (h |> SanitizeName),typeof<string>))
 
     fields |> Seq.iter (dataType.AddMember)
 
@@ -28,7 +29,7 @@ let createDataExpression (parent:ProvidedTypeDefinition)  (columnNames:string li
         |> Seq.mapi(
             fun i h -> 
                 ProvidedProperty(
-                    h |> sanitizeName,
+                    h |> SanitizeName,
                     typeof<string>,
                     getterCode=
                         fun args ->

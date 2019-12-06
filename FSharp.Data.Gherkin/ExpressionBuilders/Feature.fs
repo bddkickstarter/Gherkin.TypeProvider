@@ -3,6 +3,7 @@ module ExpressionBuilders.Feature
 open ExpressionBuilders
 open ExpressionBuilders.BaseTypes
 open ExpressionBuilders.Shared
+open ExpressionBuilders.Global
 open ExpressionBuilders.Scenario
 open ExpressionBuilders.Tags
 open ExpressionBuilders.Background
@@ -75,7 +76,7 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
     let backgroundExpression = getBackgroundExpression featureType background
 
     let scenarioExpressions = scenarios |> List.map(createScenarioExpression featureType)
-    let scenarioParameters =  scenarioExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> sanitizeName,st.Type))
+    let scenarioParameters =  scenarioExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> SanitizeName,st.Type))
 
     //untyped scenarios array - add the typed scenarios as scenariobase
     let scenariosType = ScenarioBaseType.MakeArrayType()
@@ -98,7 +99,7 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
         | Some (backgroundType,_),Some(tagType,_) -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("background",backgroundType.Type);ProvidedParameter("tags",tagType)]
 
     //create individual fields to hold the derived scenarios
-    let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> sanitizeName, sArg.Type))
+    let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> SanitizeName, sArg.Type))
 
     //get the visited property of the scenario base
     let visitedProperty = ScenarioBaseType.GetProperty("Visited")
@@ -108,7 +109,7 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
         List.map2(
                 fun  (scenarioExpression:ScenarioExpression) (scenarioField:ProvidedField) -> 
                 ProvidedProperty(
-                    scenarioExpression.Name |> sanitizeName,
+                    scenarioExpression.Name |> SanitizeName,
                     scenarioExpression.Type,
                     isStatic = false,
                     getterCode = 

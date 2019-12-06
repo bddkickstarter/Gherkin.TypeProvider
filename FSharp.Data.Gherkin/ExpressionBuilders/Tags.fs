@@ -1,10 +1,10 @@
 module ExpressionBuilders.Tags
 
-open ExpressionBuilders.Shared
+open ExpressionBuilders.Global
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 
-let sanitizeTagName (nm:string) = nm.Replace("@","") |> sanitizeName
+let sanitizeTagName (nm:string) = nm.Replace("@","") |> SanitizeName
 
 let createTagsType (parent:ProvidedTypeDefinition) (tags:string list) = 
     if tags.Length = 0 then None

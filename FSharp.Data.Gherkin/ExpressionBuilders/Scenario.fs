@@ -9,12 +9,13 @@ open FSharp.Quotations
 open ExpressionBuilders.Tags
 open ExpressionBuilders.Data
 open ExpressionBuilders.Step
+open ExpressionBuilders.Global
 
 open Gherkin.Ast
 
 let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
 
-    let scenarioType = ProvidedTypeDefinition(gherkinScenario.Name |> sanitizeName,Some (ScenarioBaseType.AsType()),isErased=false)
+    let scenarioType = ProvidedTypeDefinition(gherkinScenario.Name |> SanitizeName,Some (ScenarioBaseType.AsType()),isErased=false)
     scenarioType |> feature.AddMember
 
     //create tags

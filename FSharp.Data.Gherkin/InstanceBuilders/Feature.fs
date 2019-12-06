@@ -115,7 +115,7 @@ let buildBackground (backgroundType:ProvidedTypeDefinition) (gherkinBackground:B
     Expr.NewObject(backgroundType.GetConstructors().[0],parameters)
 
 
-let buildFeature (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
+let buildFeatureInstance (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
 
     let gherkinScenarios =
         gherkinDocument.Feature.Children |> Seq.toList

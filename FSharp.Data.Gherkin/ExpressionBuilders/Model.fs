@@ -37,21 +37,25 @@ type FeatureExpression =
         Tags:ProvidedTypeDefinition option
     }
 
+module Global =
+
+    let mutable SanitizeName :string->string= id
 
 module Shared =
+    open Global
 
-    let sanitizeName (nm:string) = nm
-        
-        // let sanitizeFirstNumber =
-        //     match (nm.ToCharArray() |> Seq.toList) with
-        //     | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" nm
-        //     | _ -> nm 
+    let sanitize  = 
+        fun (nm:string) ->
+            let sanitizeFirstNumber =
+                match (nm.ToCharArray() |> Seq.toList) with
+                | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" nm
+                | _ -> nm 
 
-        // sanitizeFirstNumber
-        //     .Replace(" ","_")
-        //     .Replace("<","_")
-        //     .Replace(">","_")
-        //     .Replace("@","_")
+            sanitizeFirstNumber
+                .Replace(" ","_")
+                .Replace("<","_")
+                .Replace(">","_")
+                .Replace("@","_")
 
     let addVisitedProperty (parent:ProvidedTypeDefinition) =
         let visitedField = ProvidedField("_visited",typeof<bool>)
@@ -68,12 +72,14 @@ module Shared =
 
     let getStepName (position:int) (step:Step) =
         sprintf "%i %s %s" position (step.Keyword.Trim()) (step.Text.Trim())
-        |> sanitizeName
+        |> SanitizeName
+
 
 
 
 module BaseTypes =
     open Shared
+    open Global
 
     let DocStringArgumentType =
             let docArgument = ProvidedTypeDefinition("Argument",Some typeof<obj>,isErased=false)
@@ -158,8 +164,7 @@ module BaseTypes =
 
         step
 
-    let ScenarioBaseType = 
-        
+    let ScenarioBaseType  = 
         let scenarioBase = ProvidedTypeDefinition("ScenarioBase",Some typeof<obj>,isErased=false,isSealed=false)
 
         // name & description fields,props & params

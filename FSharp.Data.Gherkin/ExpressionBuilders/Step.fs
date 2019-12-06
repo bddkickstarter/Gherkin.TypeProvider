@@ -2,7 +2,7 @@ module ExpressionBuilders.Step
 
 open ExpressionBuilders
 open ExpressionBuilders.BaseTypes
-open ExpressionBuilders.Shared
+open ExpressionBuilders.Global
 open ExpressionBuilders.Data
 
 open ProviderImplementation.ProvidedTypes
@@ -12,7 +12,7 @@ open Gherkin.Ast
 
 let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherkinStep:Step) =
 
-    let stepName = (sprintf "%i %s" position gherkinStep.Text) |> sanitizeName
+    let stepName = (sprintf "%i %s" position gherkinStep.Text) |> SanitizeName
     let stepType = ProvidedTypeDefinition(stepName,Some (StepBaseType.AsType()),isErased=false)
     stepType |> parent.AddMember
    
