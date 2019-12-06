@@ -18,17 +18,12 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     let create providerName (path:string) =
         let providedAssembly = ProvidedAssembly() 
         let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
-
         let gherkinDocument = Parser().Parse(path)
 
-        let featureExpression = createFeatureExpression gherkinDocument
-       
-        featureExpression.Type |> root.AddMember
+        createFeatureExpression root gherkinDocument
+        |> buildFeature root gherkinDocument
 
-        let feature = buildFeature featureExpression gherkinDocument
 
-        ProvidedProperty("Feature",featureExpression.Type,isStatic=true,getterCode=fun _ -> feature)
-        |> root.AddMember
 
         providedAssembly.AddTypes [root]
         root

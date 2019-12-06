@@ -44,21 +44,22 @@ let buildSteps (steps:Step list) (stepsType:StepExpression list) =
     List.mapi2(
         fun i (step:Step) (stepType:StepExpression) ->
             let parameters = 
+                let text = step.Text.Trim()
+                let keyword = step.Keyword.Trim()
                 match buildArgument step.Argument stepType with
                 | None -> 
                     [
-                        Expr.Value(step.Text)
-                        Expr.Value(step.Keyword)
+                        Expr.Value(text)
+                        Expr.Value(keyword)
                         Expr.Value(i)
                     ]   
                 | Some arg -> 
                     [
-                        Expr.Value(step.Text)
-                        Expr.Value(step.Keyword)
+                        Expr.Value(text)
+                        Expr.Value(keyword)
                         Expr.Value(i)
                         arg
                     ]  
-            //here!!
             Expr.NewObject(stepType.Type.GetConstructors().[0],parameters)
     ) steps stepsType
 
@@ -114,7 +115,7 @@ let buildBackground (backgroundType:ProvidedTypeDefinition) (gherkinBackground:B
     Expr.NewObject(backgroundType.GetConstructors().[0],parameters)
 
 
-let buildFeature (featureType:FeatureExpression) (gherkinDocument:GherkinDocument) =
+let buildFeature (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
 
     let gherkinScenarios =
         gherkinDocument.Feature.Children |> Seq.toList
@@ -135,7 +136,7 @@ let buildFeature (featureType:FeatureExpression) (gherkinDocument:GherkinDocumen
                 )
 
     let parameters = 
-         match featureType.Background,gherkinBackground,(gherkinDocument.Feature.Tags |> Seq.toList) with
+         match featureExpression.Background,gherkinBackground,(gherkinDocument.Feature.Tags |> Seq.toList) with
 
          | Some bgType,Some gherkinBackground,[] ->
 
@@ -149,7 +150,7 @@ let buildFeature (featureType:FeatureExpression) (gherkinDocument:GherkinDocumen
             let steps =  buildSteps (gherkinBackground.Steps |> Seq.toList) bgType.Steps
             let background = buildBackground bgType.Type gherkinBackground steps
 
-            match featureType.Tags with
+            match featureExpression.Tags with
             | None ->  
                 [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);background]
             | Some featureTagType -> 
@@ -158,7 +159,7 @@ let buildFeature (featureType:FeatureExpression) (gherkinDocument:GherkinDocumen
 
          | None, _,tags ->
             
-            match featureType.Tags with
+            match featureExpression.Tags with
             | Some featureTagType -> 
                 let tagsinstance = createTagInstance featureTagType tags
                 [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);tagsinstance]
@@ -166,8 +167,11 @@ let buildFeature (featureType:FeatureExpression) (gherkinDocument:GherkinDocumen
 
          | _ -> [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description)]
 
-    let scenarios = buildScenarios gherkinScenarios featureType.Scenarios
+    let scenarios = buildScenarios gherkinScenarios featureExpression.Scenarios
 
     let allParams = parameters @ scenarios
 
-    Expr.NewObject(featureType.Type.GetConstructors().[0],allParams)
+    let feature = Expr.NewObject(featureExpression.Type.GetConstructors().[0],allParams)
+
+    ProvidedProperty("Feature",featureExpression.Type,isStatic=true,getterCode=fun _ -> feature)
+    |> root.AddMember

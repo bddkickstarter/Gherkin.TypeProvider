@@ -8,7 +8,7 @@ open Expecto
 [<Tests>]
 let background =
 
-    let background = Helpers.TestFeature.Feature.Background
+    let background = TestFeature.Feature.Background
         
     testList
         "Background has correct data"
@@ -18,15 +18,15 @@ let background =
                 <| fun _ ->
                     validateBackground background "Background name" "Multi-line\r\nBackground Description"
 
-            // testCase
-            //     "Background Given correct"
-            //     <| fun _ ->
+            testCase
+                "Background Given correct"
+                <| fun _ ->
 
-            //         validateStep
-            //             background.``0 Given background given step`` 
-            //             0
-            //             "Given"
-            //             "background given step"
+                    validateStep
+                        background.``0 Given background given step`` 
+                        0
+                        "Given"
+                        "background given step"
 
             testCase
                 "Background Given multiline argument correct"
@@ -41,15 +41,15 @@ let background =
                             expectedArgument 
                             step.Argument.Content)
 
-            // testCase
-            //     "Background When correct"
-            //     <| fun _ ->
+            testCase
+                "Background When correct"
+                <| fun _ ->
 
-            //         validateStep
-            //             background.``1 When background when step``
-            //             1
-            //             "When"
-            //             "background when step"
+                    validateStep
+                        background.``1 When background when step``
+                        1
+                        "When"
+                        "background when step"
 
             // testCase
             //     "Background When data table argument correct"
@@ -63,13 +63,13 @@ let background =
             //         validateData step.Argument.[1].column1 "column1" "data3"
             //         validateData step.Argument.[1].column2 "column2" "data4"
 
-            // testCase
-            //     "Background Then correct"
-            //     <| fun _ ->
+            testCase
+                "Background Then correct"
+                <| fun _ ->
 
-            //         validateStep
-            //             background.``2 Then background then step``
-            //             2
-            //             "Then"
-            //             "background then step"
+                    validateStep
+                        background.``2 Then background then step``
+                        2
+                        "Then"
+                        "background then step"
         ]

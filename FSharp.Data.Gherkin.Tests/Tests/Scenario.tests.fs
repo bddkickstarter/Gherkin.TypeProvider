@@ -1,4 +1,4 @@
-module FSharp.Data.Gherking.Tests.Scenario
+module FSharp.Data.Gherkin.Tests.Scenario
 
 open FSharp.Data.Gherkin.Tests.Model
 open FSharp.Data.Gherkin.Tests.Model.Helpers
@@ -8,14 +8,14 @@ open Expecto
 [<Tests>]
 let scenario1 =
 
-    let scenario1 = Helpers.TestFeature.Feature.``Scenario 1 name``
+    let scenario1 = TestFeature.Feature.``Scenario 1 name``
 
     testList
         "Scenario 1 has correct data"
         [
-            // testCase
-            //     "Scenario 1 is correct"
-            //     <| fun _ -> validateScenario (scenario1 :> TestFeature.Feature.ScenarioBase) "Scenario 1 name" "Multi-line\r\nScenario 1 Description"
+            testCase
+                "Scenario 1 is correct"
+                <| fun _ -> validateScenario scenario1 "Scenario 1 name" "Multi-line\r\nScenario 1 Description"
 
             testCase
                     "Scenario 1 tags correct"
@@ -26,15 +26,15 @@ let scenario1 =
                         Expect.equal tag1 "@scenario1Tag1" (sprintf "Expected tag name %s but got %s" "@scenario1Tag1" tag1)
                         Expect.equal tag2 "@scenario1Tag2" (sprintf "Expected tag name %s but got %s" "@scenario1Tag2" tag2)
 
-            // testCase
-            //     "Scenario 1 Given correct"
-            //     <| fun _ ->
+            testCase
+                "Scenario 1 Given correct"
+                <| fun _ ->
 
-            //         validateStep
-            //             scenario1.``0 Given scenario 1 given step``
-            //             0
-            //             "Given"
-            //             "scenario 1 given step"
+                    validateStep
+                        scenario1.``0 Given scenario 1 given step``
+                        0
+                        "Given"
+                        "scenario 1 given step"
 
             testCase
                 "Scenario 1 Given multiline argument correct"
@@ -49,15 +49,15 @@ let scenario1 =
                             expectedArgument 
                             step.Argument.Content)
 
-            // testCase
-            //     "Scenario 1 When correct"
-            //     <| fun _ ->
+            testCase
+                "Scenario 1 When correct"
+                <| fun _ ->
 
-            //         validateStep
-            //             scenario1.``1 When scenario 1 when step``
-            //             1
-            //             "When"
-            //             "scenario 1 when step"
+                    validateStep
+                        scenario1.``1 When scenario 1 when step``
+                        1
+                        "When"
+                        "scenario 1 when step"
 
             // testCase
             //     "Scenario 1 When data table argument correct"
@@ -72,15 +72,15 @@ let scenario1 =
             //         validateData dataTableRows.[1].column1 "column1" "data3"
             //         validateData dataTableRows.[1].column2 "column2" "data4"
 
-            // testCase
-            //     "Scenario 1 Then correct"
-            //     <| fun _ ->
+            testCase
+                "Scenario 1 Then correct"
+                <| fun _ ->
 
-            //         validateStep
-            //             scenario1.``2 Then scenario 1 then step``
-            //             2
-            //             "Then"
-            //             "scenario 1 then step"
+                    validateStep
+                        scenario1.``2 Then scenario 1 then step``
+                        2
+                        "Then"
+                        "scenario 1 then step"
         ]
 
 [<Tests>]

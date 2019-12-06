@@ -45,16 +45,18 @@ let getBackgroundExpression (feature:ProvidedTypeDefinition) (background:Backgro
             Some (backgroundType,backgroundField)
 
 
-let createFeatureTypeTree (children:Background option*Scenario list*string list) =
+let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background option*Scenario list*string list) =
     let (background,scenarios,tags) = children
 
     let featureType= ProvidedTypeDefinition("Feature",Some typeof<obj>,isErased=false)
 
     //Setup base types
-    ScenarioBaseType |> featureType.AddMember
-    DocStringArgumentType |> featureType.AddMember
-    StepBaseType |> featureType.AddMember
+    ScenarioBaseType |> root.AddMember
+    DocStringArgumentType |> root.AddMember
+    StepBaseType |> root.AddMember
 
+    //Add Feature
+    featureType |> root.AddMember
 
     // add name & description
     let nameField = ProvidedField("_name",typeof<string>)
@@ -187,6 +189,6 @@ let createFeatureTypeTree (children:Background option*Scenario list*string list)
     }
 
 
-let createFeatureExpression (document:GherkinDocument) =
+let createFeatureExpression (root:ProvidedTypeDefinition) (document:GherkinDocument) =
     getScenariosFromDocument document 
-    |> createFeatureTypeTree 
+    |> createFeatureTypeTree root

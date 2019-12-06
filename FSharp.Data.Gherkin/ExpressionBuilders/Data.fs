@@ -5,7 +5,7 @@ open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 
 let createDataExpression (parent:ProvidedTypeDefinition)  (columnNames:string list) = 
-    let dataType  = ProvidedTypeDefinition("Data",Some typeof<obj>, isErased=false, hideObjectMethods=true, nonNullable=true)
+    let dataType  = ProvidedTypeDefinition("Data",Some typeof<obj>, isErased=false)
     dataType |> parent.AddMember
 
     let visitedField = addVisitedProperty dataType

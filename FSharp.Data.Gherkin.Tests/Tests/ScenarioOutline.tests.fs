@@ -1,4 +1,4 @@
-module FSharp.Data.Gherking.Tests.ScenarioOutline
+module FSharp.Data.Gherkin.Tests.ScenarioOutline
 
 open FSharp.Data.Gherkin.Tests.Model
 open FSharp.Data.Gherkin.Tests.Model.Helpers
@@ -7,7 +7,7 @@ open Expecto
 [<Tests>]
 let scenarioOutline =
 
-    let scenarioOutline = Helpers.TestFeature.Feature.``Scenario outline name``
+    let scenarioOutline = TestFeature.Feature.``Scenario outline name``
 
     testList
         "Scenario Outline has correct data"

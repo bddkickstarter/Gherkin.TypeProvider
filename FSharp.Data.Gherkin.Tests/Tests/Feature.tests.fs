@@ -1,4 +1,4 @@
-module FSharp.Data.Gherking.Tests.Feature
+module FSharp.Data.Gherkin.Tests.Feature
 
 open FSharp.Data.Gherkin.Tests.Model
 open FSharp.Data.Gherkin.Tests.Model.Helpers
@@ -8,7 +8,7 @@ open Expecto
 [<Tests>]
 let features =
 
-        let feature = Helpers.TestFeature.Feature
+        let feature = TestFeature.Feature
         testList
             "Feature correct"
             [

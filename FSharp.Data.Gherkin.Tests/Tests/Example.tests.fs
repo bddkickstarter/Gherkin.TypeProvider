@@ -8,10 +8,10 @@ open Expecto
 [<Tests>]
 let examples =
 
-    let examples = Helpers.TestFeature
+    let examples = TestFeature
                     .Feature
                     .``Scenario outline name``
-                    .Examples |> Seq.toList
+                    .Examples
         
     testList
         "Examples have correct data"
