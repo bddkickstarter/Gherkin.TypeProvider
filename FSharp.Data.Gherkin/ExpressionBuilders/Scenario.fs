@@ -15,7 +15,7 @@ open Gherkin.Ast
 
 let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
 
-    let scenarioType = ProvidedTypeDefinition(gherkinScenario.Name |> SanitizeName,Some (ScenarioBaseType.AsType()),isErased=false)
+    let scenarioType = ProvidedTypeDefinition(gherkinScenario.Name |> SanitizeName,Some (ScenarioBaseType.Value.AsType()),isErased=false)
     scenarioType |> feature.AddMember
 
     //create tags
@@ -37,7 +37,7 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
             Some (exampleType,exampleField)
 
     //add the steps array backing field & property
-    let stepsType = StepBaseType.MakeArrayType()
+    let stepsType = StepBaseType.Value.MakeArrayType()
     let stepsField = ProvidedField("_steps",stepsType)
     let stepsProperty = ProvidedProperty("Steps",stepsType,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],stepsField))
 
@@ -50,7 +50,7 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
 
     let parameters = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter(getStepName i step,stepExpression.Type)) gherkinStepList stepExpressions 
     let stepFields = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField(getStepName i step,stepExpression.Type)) gherkinStepList stepExpressions 
-    let visitedProperty = StepBaseType.GetProperty("Visited")
+    let visitedProperty = StepBaseType.Value.GetProperty("Visited")
 
     let stepProperties = 
         List.mapi2(
@@ -74,7 +74,7 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
     stepProperties |> Seq.iter(scenarioType.AddMember)
 
     // override base constructor 
-    let baseCtr = ScenarioBaseType.GetConstructors().[0]
+    let baseCtr = ScenarioBaseType.Value.GetConstructors().[0]
 
     let constructorParams =
         match exampleExpression,tagExpression with
@@ -102,8 +102,8 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
                             | None,Some(_) -> args.GetSlice(Some 4,Some (args.Length-1))
 
                         // create the steps array
-                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,StepBaseType))
-                        let stepsArray = Expr.NewArray(StepBaseType,coercedSteps)
+                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,StepBaseType.Value))
+                        let stepsArray = Expr.NewArray(StepBaseType.Value,coercedSteps)
                         let first = Expr.FieldSet(this,stepsField, stepsArray)
 
                         //set each parameter to its non-derived backing field

@@ -51,11 +51,6 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
 
     let featureType= ProvidedTypeDefinition("Feature",Some typeof<obj>,isErased=false)
 
-    //Setup base types
-    ScenarioBaseType |> root.AddMember
-    DocStringArgumentType |> root.AddMember
-    StepBaseType |> root.AddMember
-
     //Add Feature
     featureType |> root.AddMember
 
@@ -79,7 +74,7 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
     let scenarioParameters =  scenarioExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> SanitizeName,st.Type))
 
     //untyped scenarios array - add the typed scenarios as scenariobase
-    let scenariosType = ScenarioBaseType.MakeArrayType()
+    let scenariosType = ScenarioBaseType.Value.MakeArrayType()
     let scenariosField = ProvidedField("_scenarios",scenariosType)
     let scenariosProperty = ProvidedProperty("Scenarios",scenariosType,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],scenariosField))
 
@@ -102,7 +97,7 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
     let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> SanitizeName, sArg.Type))
 
     //get the visited property of the scenario base
-    let visitedProperty = ScenarioBaseType.GetProperty("Visited")
+    let visitedProperty = ScenarioBaseType.Value.GetProperty("Visited")
 
     //properties named after the scenario names, accessing backing fields as typed scenarios
     let scenarioProperties = 
@@ -153,10 +148,10 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
                 | None,Some(_) -> args.GetSlice(Some 4,Some (args.Length-1))
 
             //coerce the derived scenarios to their base class
-            let coercedParams = scenarios |> List.map (fun p -> Expr.Coerce(p,ScenarioBaseType))
+            let coercedParams = scenarios |> List.map (fun p -> Expr.Coerce(p,ScenarioBaseType.Value))
 
             //then add them to the array 
-            let baseArray = Expr.NewArray(ScenarioBaseType,coercedParams)
+            let baseArray = Expr.NewArray(ScenarioBaseType.Value,coercedParams)
 
             //set the array with the descriptors
             let first = Expr.Sequential(Expr.FieldSet(this,scenariosField, baseArray),setDescriptors)

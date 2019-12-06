@@ -13,14 +13,14 @@ open Gherkin.Ast
 let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherkinStep:Step) =
 
     let stepName = (sprintf "%i %s" position gherkinStep.Text) |> SanitizeName
-    let stepType = ProvidedTypeDefinition(stepName,Some (StepBaseType.AsType()),isErased=false)
+    let stepType = ProvidedTypeDefinition(stepName,Some (StepBaseType.Value.AsType()),isErased=false)
     stepType |> parent.AddMember
    
     let argumentType =
         if isNull gherkinStep.Argument then None
         else
             match gherkinStep.Argument with
-            | :? DocString -> Some (DocStringArgumentType,false)
+            | :? DocString -> Some (DocStringArgumentType.Value,false)
             | :? DataTable -> 
                 let dataTable = gherkinStep.Argument :?> DataTable
                 let columnNames = (dataTable.Rows |> Seq.head).Cells |> Seq.toList |> List.map (fun c -> c.Value)
@@ -60,7 +60,7 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
                 argumentParameter
             ]
 
-    let baseCtr = StepBaseType.GetConstructors().[0]
+    let baseCtr = StepBaseType.Value.GetConstructors().[0]
     let stepCtr =
         ProvidedConstructor(
             parameters,

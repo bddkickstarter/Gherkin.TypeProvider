@@ -41,6 +41,12 @@ module Global =
 
     let mutable SanitizeName :string->string= id
 
+    let mutable StepBaseType :ProvidedTypeDefinition option= None
+    let mutable ScenarioBaseType :ProvidedTypeDefinition option= None
+    let mutable DocStringArgumentType :ProvidedTypeDefinition option= None
+
+    
+
 module Shared =
     open Global
 
@@ -81,8 +87,10 @@ module BaseTypes =
     open Shared
     open Global
 
-    let DocStringArgumentType =
-            let docArgument = ProvidedTypeDefinition("Argument",Some typeof<obj>,isErased=false)
+    let createDocStringArgumentType (parentName:string) (parent:ProvidedTypeDefinition) =
+            let baseName = sprintf "%s_Argument" parentName |> SanitizeName 
+            let docArgument = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false)
+            docArgument |> parent.AddMember
 
             let visitedField = addVisitedProperty docArgument
 
@@ -126,8 +134,10 @@ module BaseTypes =
 
             docArgument
     
-    let StepBaseType = 
-        let step = ProvidedTypeDefinition("StepBase",Some typeof<obj>,isErased=false,isSealed=false)
+    let createStepBaseType (parentName:string)  (parent:ProvidedTypeDefinition) =
+        let baseName = sprintf "%s_StepBase" parentName |> SanitizeName  
+        let step = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false)
+        step |> parent.AddMember
 
         let textField = ProvidedField("_text",typeof<string>)
         let textProperty = ProvidedProperty("Text",typeof<string>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],textField))
@@ -164,8 +174,10 @@ module BaseTypes =
 
         step
 
-    let ScenarioBaseType  = 
-        let scenarioBase = ProvidedTypeDefinition("ScenarioBase",Some typeof<obj>,isErased=false,isSealed=false)
+    let createScenarioBaseType (parentName:string) (parent:ProvidedTypeDefinition) =
+        let baseName = sprintf "%s_ScenarioBase" parentName |> SanitizeName  
+        let scenarioBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false)
+        scenarioBase |> parent.AddMember
 
         // name & description fields,props & params
         let nameField = ProvidedField("_name",typeof<string>)

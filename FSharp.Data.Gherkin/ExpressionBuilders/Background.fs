@@ -1,7 +1,7 @@
 module ExpressionBuilders.Background
 
 open ExpressionBuilders
-open ExpressionBuilders.BaseTypes
+open ExpressionBuilders.Global
 open ExpressionBuilders.Step
 open ExpressionBuilders.Shared
 open ProviderImplementation.ProvidedTypes
@@ -11,12 +11,12 @@ open FSharp.Quotations
 open Gherkin.Ast
 
 let createBackgroundExpression  (feature:ProvidedTypeDefinition)  (gherkinBackground:Background) =
-    let backgroundType = ProvidedTypeDefinition("Background",Some (ScenarioBaseType.AsType()),isErased=false)
+    let backgroundType = ProvidedTypeDefinition("Background",Some (ScenarioBaseType.Value.AsType()),isErased=false)
     backgroundType |> feature.AddMember
 
 
     //add the steps array backing field & property
-    let stepsType = StepBaseType.MakeArrayType()
+    let stepsType = StepBaseType.Value.MakeArrayType()
     let stepsField = ProvidedField("_steps",stepsType)
     let stepsProperty = ProvidedProperty("Steps",stepsType,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],stepsField))
 
@@ -29,7 +29,7 @@ let createBackgroundExpression  (feature:ProvidedTypeDefinition)  (gherkinBackgr
 
     let parameters =List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter(getStepName i step,stepExpression.Type)) backgroundStepList stepExpressions
     let stepFields =List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField(getStepName i step,stepExpression.Type))  backgroundStepList stepExpressions
-    let visitedProperty = StepBaseType.GetProperty("Visited")
+    let visitedProperty = StepBaseType.Value.GetProperty("Visited")
 
     let stepProperties = 
         List.mapi2(
@@ -53,7 +53,7 @@ let createBackgroundExpression  (feature:ProvidedTypeDefinition)  (gherkinBackgr
     stepProperties |> Seq.iter(backgroundType.AddMember)
 
     // override base constructor 
-    let baseCtr = ScenarioBaseType.GetConstructors().[0]
+    let baseCtr = ScenarioBaseType.Value.GetConstructors().[0]
 
     let backgroundCtr = 
         ProvidedConstructor(
@@ -66,8 +66,8 @@ let createBackgroundExpression  (feature:ProvidedTypeDefinition)  (gherkinBackgr
                         let steps = args.GetSlice(Some 3,Some (args.Length-1))
 
                         // create the steps array
-                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,StepBaseType))
-                        let stepsArray = Expr.NewArray(StepBaseType,coercedSteps)
+                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,StepBaseType.Value))
+                        let stepsArray = Expr.NewArray(StepBaseType.Value,coercedSteps)
                         let first = Expr.FieldSet(this,stepsField, stepsArray)
 
                         //set each parameter to its non-derived backing field
