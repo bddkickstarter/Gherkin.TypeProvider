@@ -8,8 +8,20 @@
   <ItemGroup>
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
-    <Compile Include="GherkinModel.fs" />
+    <!-- <Compile Include="GherkinModel.fs" />
+    <Compile Include="Model/Step.fs" /> -->
+    <Compile Include="ExpressionBuilders/Model.fs" />
+    <Compile Include="ExpressionBuilders/Data.fs" />
+    <Compile Include="ExpressionBuilders/Tags.fs" />
+    <Compile Include="ExpressionBuilders/Step.fs" />
+    <Compile Include="ExpressionBuilders/Scenario.fs" />
+    <Compile Include="ExpressionBuilders/Background.fs" />
+    <Compile Include="ExpressionBuilders/Feature.fs" />
+    <Compile Include="InstanceBuilders/Feature.fs" />
+    <!-- <Compile Include="FeatureExpression.fs" />
+    <Compile Include="FeatureBuilder.fs" /> -->
     <Compile Include="GherkinProvider.fs" />
+    <!-- <Compile Include="NewNewProvider.fs" /> -->
   </ItemGroup>
   <ItemGroup>
     <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/netstandard.dll">

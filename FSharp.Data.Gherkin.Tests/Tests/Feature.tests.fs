@@ -8,7 +8,7 @@ open Expecto
 [<Tests>]
 let features =
 
-        let feature = TestFeature.``Feature name``
+        let feature = Helpers.TestFeature.Feature
         testList
             "Feature correct"
             [
@@ -19,7 +19,9 @@ let features =
                 testCase
                     "Feature tags correct"
                     <| fun _ ->
-                        let tags = feature.Tags |> Seq.toList
-                        Expect.equal tags.[0] "@featureTag1" (sprintf "Expected tag name %s but got %s" "@featureTag1" tags.[0])
-                        Expect.equal tags.[1] "@featureTag2" (sprintf "Expected tag name %s but got %s" "@featureTag2" tags.[1])
+                        let tag1 = feature.Tags.featureTag1
+                        let tag2 = feature.Tags.featureTag2
+
+                        Expect.equal tag1 "@featureTag1" (sprintf "Expected tag name %s but got %s" "@featureTag1" tag1)
+                        Expect.equal tag2 "@featureTag2" (sprintf "Expected tag name %s but got %s" "@featureTag2" tag2)
             ]
