@@ -139,23 +139,36 @@ module Shared =
         let orderField = ProvidedField("_order",typeof<int>)
         let orderProperty = ProvidedProperty("Order",typeof<int>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],orderField))
 
+        let argumentField = ProvidedField("_argument",ArgumentBaseType.Value)
+        //let visitedProperty = ArgumentBaseType.Value.GetProperty("Visited")
+        let argumentProperty = 
+            ProvidedProperty(
+                "Argument",ArgumentBaseType.Value,isStatic=false,
+                getterCode=fun args -> Expr.FieldGet(args.[0],argumentField))
+                    // Expr.Sequential(
+                    //     Expr.FieldGet(args.[0],argumentField),
+                    //     Expr.PropertySet(args.[0],visitedProperty,Expr.Value(true))))
+
         textField |> step.AddMember
         textProperty |> step.AddMember
         keywordField |> step.AddMember
         keywordProperty |> step.AddMember
         orderField |> step.AddMember
         orderProperty |> step.AddMember
+        argumentField |> step.AddMember
+        argumentProperty |> step.AddMember
 
         let visitedField = addVisitedProperty step
 
         ProvidedConstructor(
-            [ProvidedParameter("text",typeof<string>);ProvidedParameter("keyword",typeof<string>);ProvidedParameter("order",typeof<int>)],
+            [ProvidedParameter("text",typeof<string>);ProvidedParameter("keyword",typeof<string>);ProvidedParameter("order",typeof<int>);ProvidedParameter("argument",ArgumentBaseType.Value)],
             invokeCode = fun args ->
                 let fieldsets =
                     [
                         Expr.FieldSet(args.[0],textField,args.[1])
                         Expr.FieldSet(args.[0],keywordField,args.[2])
                         Expr.FieldSet(args.[0],orderField,args.[3])
+                        Expr.FieldSet(args.[0],argumentField,args.[4])
                         Expr.FieldSet(args.[0],visitedField,Expr.Value(false))
                     ]
                 fieldsets.Tail

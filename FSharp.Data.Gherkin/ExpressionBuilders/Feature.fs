@@ -185,10 +185,10 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
 
 let createFeatureExpression (providerName:string) (root:ProvidedTypeDefinition) (document:GherkinDocument) =
 
-    StepBaseType <- Some (createStepBaseType providerName root)
-    ScenarioBaseType <- Some (createScenarioBaseType providerName root)
     ArgumentBaseType <- Some (createArgumentBaseType providerName root)
     DocStringArgumentType <- Some (createDocStringArgumentType providerName root)
+    StepBaseType <- Some (createStepBaseType providerName root)
+    ScenarioBaseType <- Some (createScenarioBaseType providerName root)
 
     getScenariosFromDocument document 
     |> createFeatureTypeTree root

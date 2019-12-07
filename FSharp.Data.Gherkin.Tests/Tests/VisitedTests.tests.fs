@@ -41,3 +41,17 @@ let visitSteps =
             Expect.isTrue scenario.Steps.[1].Visited "Expected visit to when to be true before visiting"
             Expect.isFalse scenario.Steps.[2].Visited "Expected visit to then to be false as not visited"
 
+[<Tests>]
+let visitArgument =
+    testCase
+        "Arguments marked visited if accessed through type specfic property"
+        <| fun _ ->
+            let stepWithDocstringArg = TestFeature.CreateFeature().``Scenario 1 name``.``0 Given scenario 1 given step``
+
+            Expect.isFalse stepWithDocstringArg.Argument.Visited "Expected visit to step argument to be false before visiting"
+
+            stepWithDocstringArg.DocString |> ignore
+
+            Expect.isTrue stepWithDocstringArg.Argument.Visited "Expected visit to step argument to be false after visiting"
+            
+

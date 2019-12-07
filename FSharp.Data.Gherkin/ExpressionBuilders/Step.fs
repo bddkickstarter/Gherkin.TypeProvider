@@ -62,6 +62,7 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
                 ProvidedParameter("text",typeof<string>)
                 ProvidedParameter("keyword",typeof<string>)
                 ProvidedParameter("order",typeof<int>)
+                ProvidedParameter("order",ArgumentBaseType.Value)
             ]
         | Some (argType) ->
             let argParameter =
@@ -85,7 +86,7 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
                     | None -> <@@ () @@>
                     | Some arg -> Expr.FieldSet(args.[0],arg,args.[4])
         )
-    stepCtr.BaseConstructorCall <- fun args -> baseCtr,[args.[0];args.[1];args.[2];args.[3]]
+    stepCtr.BaseConstructorCall <- fun args -> baseCtr,[args.[0];args.[1];args.[2];args.[3];args.[4]]
     stepCtr |> stepType.AddMember
 
     {

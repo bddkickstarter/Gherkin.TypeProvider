@@ -4,6 +4,8 @@ open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Gherkin.Ast
 open ExpressionBuilders
+open ExpressionBuilders.Shared
+
 
 let buildRows  (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
         dataRow 
@@ -47,6 +49,7 @@ let buildSteps (steps:Step list) (stepsType:StepExpression list) =
                         Expr.Value(text)
                         Expr.Value(keyword)
                         Expr.Value(i)
+                        Expr.Coerce(Expr.Value(null),ArgumentBaseType.Value)
                     ]   
                 | Some arg -> 
                     [
