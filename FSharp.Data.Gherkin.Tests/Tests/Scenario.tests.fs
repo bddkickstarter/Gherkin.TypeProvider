@@ -43,11 +43,11 @@ let scenario1 =
                     let step = scenario1.``0 Given scenario 1 given step``
                     let expectedArgument = "multi line\r\nscenario 1\r\nargument"
                     Expect.equal 
-                        step.Argument.Content expectedArgument
+                        step.DocString.Content expectedArgument
                         (sprintf 
                             "Scenario 1 Given Argument:Expecting %s but got %s" 
                             expectedArgument 
-                            step.Argument.Content)
+                            step.DocString.Content)
 
             testCase
                 "Scenario 1 When correct"
@@ -121,11 +121,11 @@ let scenario2 =
                     let step = scenario2.``0 Given scenario 2 given step``
                     let expectedArgument = "multi line\r\nscenario 2\r\nargument"
                     Expect.equal 
-                        step.Argument.Content expectedArgument
+                        step.DocString.Content expectedArgument
                         (sprintf 
                             "Scenario 2 Given Argument:Expecting %s but got %s" 
                             expectedArgument 
-                            step.Argument.Content)
+                            step.DocString.Content)
 
             // testCase
             //     "Scenario 2 When correct"

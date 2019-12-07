@@ -35,11 +35,11 @@ let background =
                     let step = background.``0 Given background given step``
                     let expectedArgument = "multi line\r\nbackground\r\nargument"
                     Expect.equal 
-                        step.Argument.Content expectedArgument
+                        step.DocString.Content expectedArgument
                         (sprintf 
                             "Background Given Argument:Expecting %s but got %s" 
                             expectedArgument 
-                            step.Argument.Content)
+                            step.DocString.Content)
 
             testCase
                 "Background When correct"

@@ -42,11 +42,11 @@ let scenarioOutline =
                     let step = scenarioOutline.``0 Given scenario outline given step <Example Column 1>``
                     let expectedArgument = "multi line\r\nscenario outline\r\nargument"
                     Expect.equal 
-                        step.Argument.Content expectedArgument
+                        step.DocString.Content expectedArgument
                         (sprintf 
                             "Scenario Outline Given Argument:Expecting %s but got %s" 
                             expectedArgument 
-                            step.Argument.Content)
+                            step.DocString.Content)
 
             // testCase
             //     "Scenario Outline When correct"

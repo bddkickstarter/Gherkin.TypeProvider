@@ -6,8 +6,12 @@ open ExpressionBuilders.Data
 
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
-
+open System
 open Gherkin.Ast
+
+type Argument =
+| DocString of ProvidedTypeDefinition
+| DataTable of ProvidedTypeDefinition*Type
 
 let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherkinStep:Step) =
 
@@ -19,24 +23,34 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
         if isNull gherkinStep.Argument then None
         else
             match gherkinStep.Argument with
-            | :? DocString -> Some (DocStringArgumentType.Value,false)
+            | :? DocString -> Some (DocString DocStringArgumentType.Value)
             | :? DataTable -> 
                 let dataTable = gherkinStep.Argument :?> DataTable
                 let columnNames = (dataTable.Rows |> Seq.head).Cells |> Seq.toList |> List.map (fun c -> c.Value)
                 let dataTableRowType = createDataExpression stepType columnNames
                 
-                Some (dataTableRowType,true)
+                Some (DataTable (dataTableRowType,dataTableRowType.MakeArrayType()))
             | _ -> None
 
     let argumentBackingField = 
         match argumentType with
-        | Some (argType,isArray) ->
-            let argumentType = if isArray then argType.MakeArrayType() else argType.AsType()
-            let argumentField = ProvidedField("_argument",argumentType)
-            let argumentProperty = ProvidedProperty("Argument",argumentType,getterCode = fun args -> Expr.FieldGet(args.[0],argumentField))
+        | Some argType ->
+            let (argumentField,argumentProperty) =
+                match argType with
+                | DocString docStringType ->
+                    let argumentField = ProvidedField("_argument",docStringType)
 
+                    argumentField,
+                    ProvidedProperty("DocString",docStringType,getterCode = fun args -> Expr.FieldGet(args.[0],argumentField))
+
+                | DataTable (_,arrayType) ->
+                    let argumentField = ProvidedField("_argument",arrayType)
+
+                    argumentField,
+                    ProvidedProperty("DataTable",arrayType,getterCode = fun args -> Expr.FieldGet(args.[0],argumentField))
+            
             argumentField |> stepType.AddMember
-            argumentProperty |> stepType.AddMember
+            argumentProperty |> stepType.AddMember        
 
             Some argumentField
         | _ -> None
@@ -49,14 +63,16 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
                 ProvidedParameter("keyword",typeof<string>)
                 ProvidedParameter("order",typeof<int>)
             ]
-        | Some (argType,isArray) ->
-            let argumentType = if isArray then argType.MakeArrayType() else argType.AsType()
-            let argumentParameter = ProvidedParameter("argument",argumentType)
+        | Some (argType) ->
+            let argParameter =
+                match argType with
+                | DocString docStringType -> ProvidedParameter("argument",docStringType)
+                | DataTable (_,dataTableType) -> ProvidedParameter("argument",dataTableType)
             [
                 ProvidedParameter("text",typeof<string>)
                 ProvidedParameter("keyword",typeof<string>)
                 ProvidedParameter("order",typeof<int>)
-                argumentParameter
+                argParameter
             ]
 
     let baseCtr = StepBaseType.Value.GetConstructors().[0]
@@ -76,5 +92,10 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
         Name = gherkinStep.Text
         Type = stepType
         Position = position
-        Argument = match argumentType with | None -> None | Some (argType,_) -> Some argType
+        Argument = match argumentType with 
+                   | None -> None 
+                   | Some argType ->
+                        match argType with 
+                        | DocString t -> Some t
+                        | DataTable (t,_) -> Some t
     }
