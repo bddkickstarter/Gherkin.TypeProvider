@@ -8,7 +8,7 @@ open Expecto
 [<Tests>]
 let features =
 
-        let feature = TestFeature.Feature
+        let feature = TestFeature.CreateFeature()
         testList
             "Feature correct"
             [

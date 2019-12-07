@@ -8,7 +8,7 @@ open Expecto
 [<Tests>]
 let background =
 
-    let background = TestFeature.Feature.Background
+    let background = TestFeature.CreateFeature().Background
         
     testList
         "Background has correct data"

@@ -37,18 +37,13 @@ type FeatureExpression =
         Tags:ProvidedTypeDefinition option
     }
 
-module Global =
+module Shared =
 
     let mutable SanitizeName :string->string= id
 
     let mutable StepBaseType :ProvidedTypeDefinition option= None
     let mutable ScenarioBaseType :ProvidedTypeDefinition option= None
     let mutable DocStringArgumentType :ProvidedTypeDefinition option= None
-
-    
-
-module Shared =
-    open Global
 
     let sanitize  = 
         fun (nm:string) ->
@@ -79,13 +74,6 @@ module Shared =
     let getStepName (position:int) (step:Step) =
         sprintf "%i %s %s" position (step.Keyword.Trim()) (step.Text.Trim())
         |> SanitizeName
-
-
-
-
-module BaseTypes =
-    open Shared
-    open Global
 
     let createDocStringArgumentType (parentName:string) (parent:ProvidedTypeDefinition) =
             let baseName = sprintf "%s_Argument" parentName |> SanitizeName 

@@ -1,6 +1,6 @@
 module ExpressionBuilders.Tags
 
-open ExpressionBuilders.Global
+open ExpressionBuilders.Shared
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 

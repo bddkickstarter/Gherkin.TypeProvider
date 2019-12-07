@@ -1,14 +1,12 @@
 ﻿namespace Gherkin.ProviderImplementation
 
-
 open FSharp.Core.CompilerServices
 open ProviderImplementation.ProvidedTypes
 open System.Reflection
 open Gherkin
 open ExpressionBuilders.Feature
 open InstanceBuilders.Feature
-open ExpressionBuilders.Global
-open ExpressionBuilders.BaseTypes
+open ExpressionBuilders.Shared
 
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
@@ -22,11 +20,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
         let gherkinDocument = Parser().Parse(path)
 
-        StepBaseType <- Some (createStepBaseType providerName root)
-        ScenarioBaseType <- Some (createScenarioBaseType providerName root)
-        DocStringArgumentType <- Some (createDocStringArgumentType providerName root)
-
-        createFeatureExpression root gherkinDocument
+        createFeatureExpression providerName root gherkinDocument
         |> buildFeatureInstance root gherkinDocument
 
         providedAssembly.AddTypes [root]
@@ -49,6 +43,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                     create providerName (unbox<string> args.[0]) )
         this.AddNamespace(ns,[provider])
 
-[<assembly:CompilerServices.TypeProviderAssembly()>]
+[<assembly:TypeProviderAssembly()>]
 do()
 

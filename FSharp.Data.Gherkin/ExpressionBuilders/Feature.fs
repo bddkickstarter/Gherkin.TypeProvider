@@ -1,9 +1,7 @@
 module ExpressionBuilders.Feature
 
 open ExpressionBuilders
-open ExpressionBuilders.BaseTypes
 open ExpressionBuilders.Shared
-open ExpressionBuilders.Global
 open ExpressionBuilders.Scenario
 open ExpressionBuilders.Tags
 open ExpressionBuilders.Background
@@ -185,6 +183,11 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
     }
 
 
-let createFeatureExpression (root:ProvidedTypeDefinition) (document:GherkinDocument) =
+let createFeatureExpression (providerName:string) (root:ProvidedTypeDefinition) (document:GherkinDocument) =
+
+    StepBaseType <- Some (createStepBaseType providerName root)
+    ScenarioBaseType <- Some (createScenarioBaseType providerName root)
+    DocStringArgumentType <- Some (createDocStringArgumentType providerName root)
+
     getScenariosFromDocument document 
     |> createFeatureTypeTree root

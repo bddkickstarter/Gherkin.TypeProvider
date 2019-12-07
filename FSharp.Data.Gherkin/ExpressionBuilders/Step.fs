@@ -1,8 +1,7 @@
 module ExpressionBuilders.Step
 
 open ExpressionBuilders
-open ExpressionBuilders.BaseTypes
-open ExpressionBuilders.Global
+open ExpressionBuilders.Shared
 open ExpressionBuilders.Data
 
 open ProviderImplementation.ProvidedTypes
@@ -72,7 +71,6 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
         )
     stepCtr.BaseConstructorCall <- fun args -> baseCtr,[args.[0];args.[1];args.[2];args.[3]]
     stepCtr |> stepType.AddMember
-
 
     {
         Name = gherkinStep.Text

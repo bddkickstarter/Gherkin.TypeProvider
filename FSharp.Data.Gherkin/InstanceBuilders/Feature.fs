@@ -1,11 +1,9 @@
 module InstanceBuilders.Feature
 
-
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Gherkin.Ast
 open ExpressionBuilders
-
 
 let buildRows  (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
         dataRow 
@@ -16,14 +14,12 @@ let buildRows  (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
                     |> List.map (fun c -> Expr.Value(c.Value))
                 Expr.NewObject(rowType.GetConstructors().[0],parameters))
 
-
 let buildExamples (examples:Examples list) (exampleType:ProvidedTypeDefinition) =
     let rows=
         examples 
         |> List.collect(fun e -> e.TableBody |> Seq.toList)
         |> buildRows exampleType
     Expr.NewArray(exampleType,rows)
-    
 
 let buildArgument (argument:Gherkin.Ast.StepArgument) (stepType:StepExpression) =
     match argument,stepType.Argument with
@@ -38,7 +34,6 @@ let buildArgument (argument:Gherkin.Ast.StepArgument) (stepType:StepExpression) 
         let dataTableRows = buildRows argType (dataTable.Rows |> Seq.toList) 
         Some (Expr.NewArray(argType,dataTableRows))
     | _ -> None
-
 
 let buildSteps (steps:Step list) (stepsType:StepExpression list) =
     List.mapi2(
@@ -65,7 +60,6 @@ let buildSteps (steps:Step list) (stepsType:StepExpression list) =
 
 let createTagInstance (tagType:ProvidedTypeDefinition) (tags:Tag list) =
     Expr.NewObject(tagType.GetConstructors().[0],(tags |> List.map(fun t -> Expr.Value(t.Name))))
-
 
 let buildScenarios (scenarios:Scenario list) (scenarioTypes:ScenarioExpression list) =
 
@@ -102,9 +96,6 @@ let buildScenarios (scenarios:Scenario list) (scenarioTypes:ScenarioExpression l
                         name :: description :: examples :: tagsInstance :: steps
 
             Expr.NewObject(scenarioType.Type.GetConstructors().[0],parameters)
-
-
-
     ) scenarios scenarioTypes
 
 let buildBackground (backgroundType:ProvidedTypeDefinition) (gherkinBackground:Background) (steps:Expr list)=
@@ -113,7 +104,6 @@ let buildBackground (backgroundType:ProvidedTypeDefinition) (gherkinBackground:B
     let parameters = nameParam :: descriptionParam :: steps
 
     Expr.NewObject(backgroundType.GetConstructors().[0],parameters)
-
 
 let buildFeatureInstance (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
 
@@ -173,5 +163,5 @@ let buildFeatureInstance (root:ProvidedTypeDefinition) (gherkinDocument:GherkinD
 
     let feature = Expr.NewObject(featureExpression.Type.GetConstructors().[0],allParams)
 
-    ProvidedProperty("Feature",featureExpression.Type,isStatic=true,getterCode=fun _ -> feature)
+    ProvidedMethod("CreateFeature",[],featureExpression.Type,isStatic=true,invokeCode=fun _ -> feature)
     |> root.AddMember

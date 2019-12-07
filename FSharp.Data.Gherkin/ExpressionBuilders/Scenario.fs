@@ -1,15 +1,13 @@
 module ExpressionBuilders.Scenario
 
 open ExpressionBuilders
-open ExpressionBuilders.BaseTypes
 open ExpressionBuilders.Shared
-
-open ProviderImplementation.ProvidedTypes
-open FSharp.Quotations
 open ExpressionBuilders.Tags
 open ExpressionBuilders.Data
 open ExpressionBuilders.Step
-open ExpressionBuilders.Global
+
+open ProviderImplementation.ProvidedTypes
+open FSharp.Quotations
 
 open Gherkin.Ast
 

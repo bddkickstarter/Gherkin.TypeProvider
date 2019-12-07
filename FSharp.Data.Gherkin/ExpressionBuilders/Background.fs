@@ -1,12 +1,10 @@
 module ExpressionBuilders.Background
 
 open ExpressionBuilders
-open ExpressionBuilders.Global
-open ExpressionBuilders.Step
 open ExpressionBuilders.Shared
+open ExpressionBuilders.Step
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
-
 
 open Gherkin.Ast
 

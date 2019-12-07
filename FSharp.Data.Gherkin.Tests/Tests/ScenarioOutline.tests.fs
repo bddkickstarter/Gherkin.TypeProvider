@@ -7,7 +7,7 @@ open Expecto
 [<Tests>]
 let scenarioOutline =
 
-    let scenarioOutline = TestFeature.Feature.``Scenario outline name``
+    let scenarioOutline = TestFeature.CreateFeature().``Scenario outline name``
 
     testList
         "Scenario Outline has correct data"

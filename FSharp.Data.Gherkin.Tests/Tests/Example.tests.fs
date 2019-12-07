@@ -9,7 +9,7 @@ open Expecto
 let examples =
 
     let examples = TestFeature
-                    .Feature
+                    .CreateFeature()
                     .``Scenario outline name``
                     .Examples
         
