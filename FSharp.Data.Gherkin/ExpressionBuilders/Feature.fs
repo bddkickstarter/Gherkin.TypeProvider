@@ -187,6 +187,7 @@ let createFeatureExpression (providerName:string) (root:ProvidedTypeDefinition) 
 
     StepBaseType <- Some (createStepBaseType providerName root)
     ScenarioBaseType <- Some (createScenarioBaseType providerName root)
+    ArgumentBaseType <- Some (createArgumentBaseType providerName root)
     DocStringArgumentType <- Some (createDocStringArgumentType providerName root)
 
     getScenariosFromDocument document 

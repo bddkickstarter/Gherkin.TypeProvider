@@ -41,6 +41,7 @@ module Shared =
 
     let mutable SanitizeName :string->string= id
 
+    let mutable ArgumentBaseType :ProvidedTypeDefinition option= None
     let mutable StepBaseType :ProvidedTypeDefinition option= None
     let mutable ScenarioBaseType :ProvidedTypeDefinition option= None
     let mutable DocStringArgumentType :ProvidedTypeDefinition option= None
@@ -75,12 +76,22 @@ module Shared =
         sprintf "%i %s %s" position (step.Keyword.Trim()) (step.Text.Trim())
         |> SanitizeName
 
-    let createDocStringArgumentType (parentName:string) (parent:ProvidedTypeDefinition) =
-            let baseName = sprintf "%s_Argument" parentName |> SanitizeName 
-            let docArgument = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false)
-            docArgument |> parent.AddMember
+    let createArgumentBaseType (parentName:string) (parent:ProvidedTypeDefinition) = 
+        let baseName = sprintf "%s_ArgumentBase" parentName |> SanitizeName 
+        let docArgumentBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false)
+        docArgumentBase |> parent.AddMember
 
-            let visitedField = addVisitedProperty docArgument
+        let visitedField = addVisitedProperty docArgumentBase
+
+        ProvidedConstructor([],invokeCode = fun args -> Expr.FieldSet(args.[0],visitedField,Expr.Value(false))) 
+        |> docArgumentBase.AddMember
+
+        docArgumentBase
+
+    let createDocStringArgumentType   (parentName:string) (parent:ProvidedTypeDefinition) =
+            let baseName = sprintf "%s_DocString" parentName |> SanitizeName 
+            let docArgument = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false)
+            docArgument |> parent.AddMember
 
             let contentField = ProvidedField("_content",typeof<string>)
             let contentTypeField = ProvidedField("_contentType",typeof<string>)
@@ -88,18 +99,12 @@ module Shared =
             let contentProperty = 
                 ProvidedProperty(
                     "Content",typeof<string>,
-                    getterCode=fun args -> 
-                    Expr.Sequential(
-                        Expr.FieldSet(args.[0],visitedField,Expr.Value(true)),
-                        Expr.FieldGet(args.[0],contentField)))
+                    getterCode=fun args -> Expr.FieldGet(args.[0],contentField))
 
             let contentTypeProperty = 
                 ProvidedProperty(
                     "ContentType",typeof<string>,
-                    getterCode=fun args -> 
-                    Expr.Sequential(
-                        Expr.FieldSet(args.[0],visitedField,Expr.Value(true)),
-                        Expr.FieldGet(args.[0],contentTypeField)))
+                    getterCode=fun args -> Expr.FieldGet(args.[0],contentTypeField))
 
             contentField |> docArgument.AddMember
             contentTypeField |> docArgument.AddMember
@@ -114,10 +119,8 @@ module Shared =
                 invokeCode =
                     fun args ->
                         Expr.Sequential(
-                            Expr.Sequential(
-                                Expr.FieldSet(args.[0],contentField,args.[1]),
-                                Expr.FieldSet(args.[0],contentTypeField,args.[2])
-                            ),Expr.FieldSet(args.[0],visitedField,Expr.Value(false)))
+                            Expr.FieldSet(args.[0],contentField,args.[1]),
+                            Expr.FieldSet(args.[0],contentTypeField,args.[2]))
             ) |> docArgument.AddMember
 
             docArgument
