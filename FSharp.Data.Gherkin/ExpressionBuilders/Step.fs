@@ -35,19 +35,28 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
     let argumentBackingField = 
         match argumentType with
         | Some argType ->
+            let visitedProperty = ArgumentBaseType.Value.GetProperty("Visited")
             let (argumentField,argumentProperty) =
                 match argType with
                 | DocString docStringType ->
                     let argumentField = ProvidedField("_argument",docStringType)
 
                     argumentField,
-                    ProvidedProperty("DocString",docStringType,getterCode = fun args -> Expr.FieldGet(args.[0],argumentField))
+                    ProvidedProperty(
+                            "DocString",docStringType,
+                            getterCode = fun args -> 
+                                let argField = Expr.FieldGet(args.[0],argumentField)
+                                Expr.Sequential(
+                                   Expr.PropertySet(argField,visitedProperty,Expr.Value(true)),
+                                   Expr.FieldGet(args.[0],argumentField)))
 
                 | DataTable (_,arrayType) ->
                     let argumentField = ProvidedField("_argument",arrayType)
 
                     argumentField,
-                    ProvidedProperty("DataTable",arrayType,getterCode = fun args -> Expr.FieldGet(args.[0],argumentField))
+                    ProvidedProperty(
+                        "DataTable",arrayType,
+                        getterCode = fun args -> Expr.FieldGet(args.[0],argumentField))
             
             argumentField |> stepType.AddMember
             argumentProperty |> stepType.AddMember        

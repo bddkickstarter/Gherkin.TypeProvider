@@ -140,14 +140,7 @@ module Shared =
         let orderProperty = ProvidedProperty("Order",typeof<int>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],orderField))
 
         let argumentField = ProvidedField("_argument",ArgumentBaseType.Value)
-        //let visitedProperty = ArgumentBaseType.Value.GetProperty("Visited")
-        let argumentProperty = 
-            ProvidedProperty(
-                "Argument",ArgumentBaseType.Value,isStatic=false,
-                getterCode=fun args -> Expr.FieldGet(args.[0],argumentField))
-                    // Expr.Sequential(
-                    //     Expr.FieldGet(args.[0],argumentField),
-                    //     Expr.PropertySet(args.[0],visitedProperty,Expr.Value(true))))
+        let argumentProperty = ProvidedProperty("Argument",ArgumentBaseType.Value,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],argumentField))
 
         textField |> step.AddMember
         textProperty |> step.AddMember
