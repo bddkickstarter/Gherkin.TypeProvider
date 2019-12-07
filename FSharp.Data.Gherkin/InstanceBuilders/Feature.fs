@@ -31,7 +31,7 @@ let buildArgument (argument:Gherkin.Ast.StepArgument) (stepType:StepExpression) 
         Some (Expr.NewObject(argType.GetConstructors().[0],[content;contentType]))
     | :? DataTable,Some argType -> 
         let dataTable = argument :?> DataTable
-        let dataTableRows = buildRows argType (dataTable.Rows |> Seq.toList) 
+        let dataTableRows = buildRows argType (dataTable.Rows |> Seq.toList).Tail //first row is column names
         Some (Expr.NewArray(argType,dataTableRows))
     | _ -> None
 

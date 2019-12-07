@@ -19,6 +19,7 @@ let visitScenarios =
 
             Expect.isTrue feature.Scenarios.[0].Visited "Expected visit to scenario 1 to be true after visiting"
             Expect.isTrue feature.Scenarios.[1].Visited "Expected visit to scenario 2 to be true before visiting"
+            Expect.isFalse feature.Scenarios.[2].Visited "Expected visit to scenario outline to be false as not visited"
 
 [<Tests>]
 let visitSteps =
