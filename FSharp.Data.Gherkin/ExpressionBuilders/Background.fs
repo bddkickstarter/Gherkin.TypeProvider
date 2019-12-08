@@ -9,7 +9,7 @@ open FSharp.Quotations
 open Gherkin.Ast
 
 let createBackgroundExpression  (feature:ProvidedTypeDefinition)  (gherkinBackground:Background) =
-    let backgroundType = ProvidedTypeDefinition("BackgroundClass",Some (ScenarioBaseType.Value.AsType()),isErased=false)
+    let backgroundType = ProvidedTypeDefinition("BackgroundClass",Some (ScenarioBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
     backgroundType |> feature.AddMember
 
 

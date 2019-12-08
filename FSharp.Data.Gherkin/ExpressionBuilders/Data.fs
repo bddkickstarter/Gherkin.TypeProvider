@@ -6,7 +6,7 @@ open FSharp.Quotations
 
 let createDataExpression (parent:ProvidedTypeDefinition)  (columnNames:string list) = 
     let dataRowBaseType=DataRowBaseType.Value.AsType()
-    let dataType  = ProvidedTypeDefinition("DataClass",Some dataRowBaseType, isErased=false)
+    let dataType  = ProvidedTypeDefinition("DataClass",Some dataRowBaseType, isErased=false, hideObjectMethods=true)
     dataType |> parent.AddMember
 
     // create constructor parameters for each of the columns

@@ -47,7 +47,7 @@ let getBackgroundExpression (feature:ProvidedTypeDefinition) (background:Backgro
 let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (children:Background option*Scenario list*string list) =
     let (background,scenarios,tags) = children
     let featureName = sprintf "%s_Feature" providerName
-    let featureType= ProvidedTypeDefinition(featureName,Some typeof<obj>,isErased=false)
+    let featureType= ProvidedTypeDefinition(featureName,Some typeof<obj>,isErased=false, hideObjectMethods=true)
 
     //Add Feature
     featureType |> root.AddMember
