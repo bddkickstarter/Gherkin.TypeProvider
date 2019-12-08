@@ -91,8 +91,6 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
         )
     stepCtr.BaseConstructorCall <- 
         fun args -> 
-            // know what type of arg it is here!!!!
-            // last args are doc string then datatable
             match argumentType with
             | None ->  baseCtr,[args.[0];args.[1];args.[2];args.[3];Expr.Value(null);Expr.Value(null)]
             | Some argType ->

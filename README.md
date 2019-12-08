@@ -166,9 +166,9 @@ This allows the test to checked after a test run to ensure all the significant p
     Data 4
     ```
 
-    So accessing the second row of the argument we select the second row of the data table.  
+    So by accessing the second row of the argument we are selecting the second row of the data table.  
     
-    Then by using the named column "Column 2", the data cell for the 2nd row for & 2nd column is returned.
+    Then by using the named column "Column 2", the data cell for the 2nd row & 2nd column is returned.
 
     A _DataCell_ has 2 properties; Header & Value.  The header contains the name of the cell's column, while the value is the contents of the cell
 

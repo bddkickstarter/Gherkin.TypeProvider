@@ -107,7 +107,6 @@ module Shared =
 
         tagBase
 
-
     let createArgumentBaseType (parentName:string) (parent:ProvidedTypeDefinition) = 
         let baseName = sprintf "%s_ArgumentBase" parentName |> SanitizeName 
         let docArgumentBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
