@@ -10,8 +10,8 @@ open Gherkin.Ast
 
 let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherkinStep:Step) =
 
-    let stepName = (sprintf "%i %s" position gherkinStep.Text) |> SanitizeName
-    let stepType = ProvidedTypeDefinition(stepName,Some (StepBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
+    let stepName = (sprintf "%i %sClass" position gherkinStep.Text) |> SanitizeName
+    let stepType = ProvidedTypeDefinition( stepName,Some (StepBaseType.Value.AsType()),isErased=false)
     stepType |> parent.AddMember
    
     let argumentType =

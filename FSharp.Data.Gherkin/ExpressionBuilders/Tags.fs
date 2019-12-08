@@ -9,7 +9,7 @@ let sanitizeTagName (nm:string) = nm.Replace("@","") |> SanitizeName
 let createTagsType (parent:ProvidedTypeDefinition) (tags:string list) = 
     if tags.Length = 0 then None
     else
-        let tagsType = ProvidedTypeDefinition("Tags",Some typeof<obj>,isErased = false, hideObjectMethods=true)
+        let tagsType = ProvidedTypeDefinition("TagsClass",Some typeof<obj>,isErased = false)
         
         tagsType |> parent.AddMember
 

@@ -85,7 +85,7 @@ module Shared =
 
     let createTagBase (parentName:string) (parent:ProvidedTypeDefinition) =
         let baseName = sprintf "%s_TagBase" parentName |> SanitizeName 
-        let tagBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
+        let tagBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false)
         tagBase |> parent.AddMember
 
         let nameField = ProvidedField("_name",typeof<string>)
@@ -110,7 +110,7 @@ module Shared =
 
     let createArgumentBaseType (parentName:string) (parent:ProvidedTypeDefinition) = 
         let baseName = sprintf "%s_ArgumentBase" parentName |> SanitizeName 
-        let docArgumentBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
+        let docArgumentBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false)
         docArgumentBase |> parent.AddMember
 
         let visitedField = addVisitedProperty docArgumentBase
@@ -122,7 +122,7 @@ module Shared =
 
     let createDataCellType (parentName:string) (parent:ProvidedTypeDefinition) =
             let baseName = sprintf "%s_DataCell" parentName |> SanitizeName 
-            let dataCellType = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
+            let dataCellType = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false)
             dataCellType |> parent.AddMember
 
             let headerField = ProvidedField("_header",typeof<string>)
@@ -162,7 +162,7 @@ module Shared =
 
     let createDataRowBaseType (parentName:string) (parent:ProvidedTypeDefinition) =
             let baseName = sprintf "%s_DataRowBase" parentName |> SanitizeName 
-            let dataRowBaseType = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
+            let dataRowBaseType = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false)
             dataRowBaseType |> parent.AddMember
 
             let cellsArrayType = DataCellType.Value.MakeArrayType()
@@ -180,7 +180,7 @@ module Shared =
 
     let createDocStringArgumentType   (parentName:string) (parent:ProvidedTypeDefinition) =
             let baseName = sprintf "%s_DocString" parentName |> SanitizeName 
-            let docArgument = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
+            let docArgument = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false)
             docArgument |> parent.AddMember
 
             let contentField = ProvidedField("_content",typeof<string>)
@@ -217,7 +217,7 @@ module Shared =
     
     let createStepBaseType (parentName:string)  (parent:ProvidedTypeDefinition) =
         let baseName = sprintf "%s_StepBase" parentName |> SanitizeName  
-        let step = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
+        let step = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false)
         step |> parent.AddMember
 
         let textField = ProvidedField("_text",typeof<string>)
@@ -271,7 +271,7 @@ module Shared =
 
     let createScenarioBaseType (parentName:string) (parent:ProvidedTypeDefinition) =
         let baseName = sprintf "%s_ScenarioBase" parentName |> SanitizeName  
-        let scenarioBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
+        let scenarioBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false)
         scenarioBase |> parent.AddMember
 
         let nameField = ProvidedField("_name",typeof<string>)

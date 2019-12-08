@@ -1,7 +1,7 @@
 module FSharp.Data.Gherkin.Tests.Visited
 
+open FSharp.Data.Gherkin.Features
 open Expecto
-open FSharp.Data.Gherkin.Tests.Model
 
 [<Tests>]
 let visitScenarios =
