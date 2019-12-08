@@ -191,7 +191,7 @@ This allows the test to checked after a test run to ensure all the significant p
     |    data 1   |     true!       |
     ```
 
-    The *data 2* cell's data can be accessed using
+    The data from the second column of the first row would be accessed using:
 
     ```
     myTestFeature
@@ -202,7 +202,7 @@ This allows the test to checked after a test run to ensure all the significant p
         .Value
     ```
 
-    Which would evaluate to
+    And would evaluate to
 
     ```console
     true!
