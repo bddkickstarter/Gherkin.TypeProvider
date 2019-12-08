@@ -7,34 +7,51 @@ open ExpressionBuilders
 open ExpressionBuilders.Shared
 
 
-let buildRows  (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
+let buildRows (columns:string list) (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
         dataRow 
         |> List.map(
             fun dr -> 
                 let parameters =
-                    dr.Cells |> Seq.toList 
-                    |> List.map (fun c -> Expr.Value(c.Value))
+                    List.map2 (
+                        fun (column:string) (cell:TableCell) -> 
+                            Expr.NewObject(
+                                DataCellType.Value.GetConstructors().[0],
+                                [Expr.Value(column);Expr.Value(cell.Value)])) columns (dr.Cells |> Seq.toList) 
+
                 Expr.NewObject(rowType.GetConstructors().[0],parameters))
 
 let buildExamples (examples:Examples list) (exampleType:ProvidedTypeDefinition) =
-    let rows=
-        examples 
-        |> List.collect(fun e -> e.TableBody |> Seq.toList)
-        |> buildRows exampleType
-    Expr.NewArray(exampleType,rows)
+    match examples with
+    | [] -> Expr.NewArray(exampleType,[])
+    | examplesList ->
+        let headers = examplesList.[0].TableHeader.Cells |> Seq.toList |> List.map(fun th -> th.Value)
+        let rows=
+            examplesList 
+            |> List.collect(fun e -> e.TableBody |> Seq.toList)
+            |> buildRows headers exampleType
+
+        Expr.NewArray(exampleType,rows)
 
 let buildArgument (argument:Gherkin.Ast.StepArgument) (stepType:StepExpression) =
     match argument,stepType.Argument with
-    | :? DocString,Some argType -> 
-        let docString = argument :?> DocString
-        let content = Expr.Value(docString.Content)
-        let contentType = Expr.Value(docString.ContentType)
-
-        Some (Expr.NewObject(argType.GetConstructors().[0],[content;contentType]))
-    | :? DataTable,Some argType -> 
-        let dataTable = argument :?> DataTable
-        let dataTableRows = buildRows argType (dataTable.Rows |> Seq.toList).Tail //first row is column names
-        Some (Expr.NewArray(argType,dataTableRows))
+    | :? DocString,Some argTypeExpression -> 
+        match argTypeExpression with
+        | DocStringType docStringType ->
+            let docString = argument :?> DocString
+            let content = Expr.Value(docString.Content)
+            let contentType = Expr.Value(docString.ContentType)
+            Some (Expr.NewObject(docStringType.GetConstructors().[0],[content;contentType]))
+        | _ -> None
+    | :? DataTable,Some argTypeExpression -> 
+        match argTypeExpression with
+        | DataTableType (dataTableType) ->
+            let dataTable = (argument :?> DataTable).Rows |> Seq.toList
+            let headers = dataTable.Head.Cells |> Seq.toList |> List.map(fun th -> th.Value)
+            let rows = dataTable.Tail
+            let dataTableRows = buildRows headers dataTableType rows
+            
+            Some (Expr.NewArray(dataTableType,dataTableRows))
+        | _ -> None
     | _ -> None
 
 let buildSteps (steps:Step list) (stepsType:StepExpression list) =

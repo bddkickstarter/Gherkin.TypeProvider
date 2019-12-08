@@ -9,11 +9,11 @@ module Helpers =
     
     open Expecto
 
-    let validateFeature (feature:TestFeature.Feature) (name:string) (description:string) =
+    let validateFeature (feature:TestFeature.TestFeature_Feature) (name:string) (description:string) =
         Expect.equal feature.Name name (sprintf "Feature name:Expected %s but got %s" name feature.Name)
         Expect.equal feature.Description description (sprintf "Feature description:Expected %s but got %s" description feature.Description)
 
-    let validateBackground (background:TestFeature.Feature.Background) (name:string) (description:string) =
+    let validateBackground (background:TestFeature.TestFeature_Feature.Background) (name:string) (description:string) =
         Expect.equal background.Name name (sprintf "Background name:Expected %s but got %s" name background.Name)
         Expect.equal background.Description description (sprintf "Background description:Expected %s but got %s" description background.Description)
 
@@ -26,6 +26,6 @@ module Helpers =
         Expect.equal step.Keyword expectedKeyword (sprintf "Step Keyword:Expected %s but got %s" expectedKeyword step.Keyword)
         Expect.equal step.Text expectedText (sprintf "Step Text:Expected %s but got %s" expectedText step.Text)
 
-    // let validateData (row:DataCell) (header:string) (value:string) =
-    //     Expect.equal row.Header header (sprintf "Background When Data Row 1 Header:Expected %s but got %s" header row.Header)
-    //     Expect.equal row.Value value (sprintf "Background When Data Row 1 Value:Expected %s but got %s" value row.Value)
+    let validateData (row:TestFeature.TestFeature_DataCell) (header:string) (value:string) =
+        Expect.equal row.Header header (sprintf "Background When Data Row 1 Header:Expected %s but got %s" header row.Header)
+        Expect.equal row.Value value (sprintf "Background When Data Row 1 Value:Expected %s but got %s" value row.Value)

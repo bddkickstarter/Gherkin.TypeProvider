@@ -44,10 +44,10 @@ let getBackgroundExpression (feature:ProvidedTypeDefinition) (background:Backgro
             Some (backgroundType,backgroundField)
 
 
-let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background option*Scenario list*string list) =
+let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (children:Background option*Scenario list*string list) =
     let (background,scenarios,tags) = children
-
-    let featureType= ProvidedTypeDefinition("Feature",Some typeof<obj>,isErased=false)
+    let featureName = sprintf "%s_Feature" providerName
+    let featureType= ProvidedTypeDefinition(featureName,Some typeof<obj>,isErased=false, hideObjectMethods=true)
 
     //Add Feature
     featureType |> root.AddMember
@@ -185,10 +185,13 @@ let createFeatureTypeTree (root:ProvidedTypeDefinition) (children:Background opt
 
 let createFeatureExpression (providerName:string) (root:ProvidedTypeDefinition) (document:GherkinDocument) =
 
+    TagBaseType <- Some (createTagBase providerName root)
     ArgumentBaseType <- Some (createArgumentBaseType providerName root)
+    DataCellType <- Some (createDataCellType providerName root)
+    DataRowBaseType <- Some (createDataRowBaseType providerName root)
     DocStringArgumentType <- Some (createDocStringArgumentType providerName root)
     StepBaseType <- Some (createStepBaseType providerName root)
     ScenarioBaseType <- Some (createScenarioBaseType providerName root)
 
     getScenariosFromDocument document 
-    |> createFeatureTypeTree root
+    |> createFeatureTypeTree providerName root

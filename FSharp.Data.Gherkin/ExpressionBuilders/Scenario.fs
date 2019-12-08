@@ -13,7 +13,7 @@ open Gherkin.Ast
 
 let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
 
-    let scenarioType = ProvidedTypeDefinition(gherkinScenario.Name |> SanitizeName,Some (ScenarioBaseType.Value.AsType()),isErased=false)
+    let scenarioType = ProvidedTypeDefinition(gherkinScenario.Name |> SanitizeName,Some (ScenarioBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
     scenarioType |> feature.AddMember
 
     //create tags

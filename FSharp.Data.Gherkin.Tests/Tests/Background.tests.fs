@@ -35,11 +35,11 @@ let background =
                     let step = background.``0 Given background given step``
                     let expectedArgument = "multi line\r\nbackground\r\nargument"
                     Expect.equal 
-                        step.DocString.Content expectedArgument
+                        step.Argument.Content expectedArgument
                         (sprintf 
                             "Background Given Argument:Expecting %s but got %s" 
                             expectedArgument 
-                            step.DocString.Content)
+                            step.Argument.Content)
 
             testCase
                 "Background When correct"
@@ -51,17 +51,17 @@ let background =
                         "When"
                         "background when step"
 
-            // testCase
-            //     "Background When data table argument correct"
-            //     <| fun _ ->
+            testCase
+                "Background When data table argument correct"
+                <| fun _ ->
 
-            //         let step = background.``1 When background when step``
-            //         Expect.equal dataTableRows.Length 2 (sprintf "Background When Data:Expected 2 rows but got %i" step.Argument.Length)
+                    let step = background.``1 When background when step``
+                    Expect.equal step.Argument.Length 2 (sprintf "Background When Data:Expected 2 rows but got %i" step.Argument.Length)
 
-            //         validateData step.Argument.[0].column1 "column1" "data1"
-            //         validateData step.Argument.[0].column2 "column2" "data2"
-            //         validateData step.Argument.[1].column1 "column1" "data3"
-            //         validateData step.Argument.[1].column2 "column2" "data4"
+                    validateData step.Argument.[0].column1 "column1" "data1"
+                    validateData step.Argument.[0].column2 "column2" "data2"
+                    validateData step.Argument.[1].column1 "column1" "data3"
+                    validateData step.Argument.[1].column2 "column2" "data4"
 
             testCase
                 "Background Then correct"

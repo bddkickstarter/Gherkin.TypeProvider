@@ -17,7 +17,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
     let create providerName (path:string) =
         let providedAssembly = ProvidedAssembly()
-        let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
+        let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false, hideObjectMethods=true)
         let gherkinDocument = Parser().Parse(path)
 
         createFeatureExpression providerName root gherkinDocument
@@ -27,7 +27,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         root
 
     do
-        let provider = ProvidedTypeDefinition(asm, ns, "GherkinProvider", None, isErased=false)
+        let provider = ProvidedTypeDefinition(asm, ns, "GherkinProvider", None, isErased=false, hideObjectMethods=true)
 
         provider.DefineStaticParameters( 
                 [
