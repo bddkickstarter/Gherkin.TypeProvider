@@ -1,6 +1,6 @@
 module FSharp.Data.Gherkin.Tests.Scenario
 
-open FSharp.Data.Gherkin.Features
+open FSharp.Data.Gherkin.Tests
 open FSharp.Data.Gherkin.Tests.Helpers
 
 open Expecto

@@ -1,4 +1,4 @@
-﻿namespace Gherkin.ProviderImplementation
+﻿namespace ProviderImplementation
 
 open FSharp.Core.CompilerServices
 open ProviderImplementation.ProvidedTypes
@@ -10,10 +10,13 @@ open ExpressionBuilders.Shared
 
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
-    inherit TypeProviderForNamespaces (config)
+    inherit TypeProviderForNamespaces (config,assemblyReplacementMap=[("FSharp.Data.Gherkin.DesignTime", "FSharp.Data.Gherkin")],addDefaultProbingLocation=true)
 
     let ns = "FSharp.Data.Gherkin"
     let asm = Assembly.GetExecutingAssembly()
+
+    // check we contain a copy of runtime files, and are not referencing the runtime DLL
+    do assert (typeof<GherkinProvider.Runtime.AssemblyChecker>.Assembly.GetName().Name = asm.GetName().Name)  
 
     let create providerName (path:string) =
         let providedAssembly = ProvidedAssembly()
@@ -42,7 +45,3 @@ type GherkinProvider (config : TypeProviderConfig) as this =
 
                     create providerName (unbox<string> args.[0]) )
         this.AddNamespace(ns,[provider])
-
-[<assembly:TypeProviderAssembly()>]
-do()
-
