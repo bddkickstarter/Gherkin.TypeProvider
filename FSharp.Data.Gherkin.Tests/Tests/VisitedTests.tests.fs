@@ -1,6 +1,6 @@
 module FSharp.Data.Gherkin.Tests.Visited
 
-open FSharp.Data.Gherkin.Features
+open FSharp.Data.Gherkin.Tests
 open Expecto
 
 [<Tests>]

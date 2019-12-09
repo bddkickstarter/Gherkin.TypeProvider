@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\netfx.props" />
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.0;net45</TargetFrameworks>
+     <DefineConstants>NO_GENERATIVE</DefineConstants>
+     <DefineConstants>IS_DESIGNTIME</DefineConstants>
+     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+
+    <Compile Include="..\FSharp.Data.Gherkin\GherkinProvider.Runtime.fs">
+      <Link>GherkinProvider.Runtime.fs</Link>
+    </Compile>
+
+    <Compile Include="ProvidedTypes.fsi" />
+    <Compile Include="ProvidedTypes.fs" />
+    <Compile Include="ExpressionBuilders/Model.fs" />
+    <Compile Include="ExpressionBuilders/Data.fs" />
+    <Compile Include="ExpressionBuilders/Tags.fs" />
+    <Compile Include="ExpressionBuilders/Step.fs" />
+    <Compile Include="ExpressionBuilders/Scenario.fs" />
+    <Compile Include="ExpressionBuilders/Background.fs" />
+    <Compile Include="ExpressionBuilders/Feature.fs" />
+    <Compile Include="InstanceBuilders/Feature.fs" />
+    <Compile Include="GherkinProvider.fs" />
+  </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
+</Project>

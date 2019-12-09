@@ -4,12 +4,12 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <IsPackable>false</IsPackable>
+    <DefineConstants>NO_GENERATIVE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
-
     <Compile Include="Model.fs" />
     <Compile Include="Tests/Example.tests.fs" />
     <Compile Include="Tests/Scenario.tests.fs" />
@@ -20,9 +20,8 @@
 
     <Compile Include="Program.fs" />
 
-    <!-- <Content Include="test.feature" CopyToOutputDirectory="Always" /> -->
+    <ProjectReference Include="..\FSharp.Data.Gherkin\FSharp.Data.Gherkin.fsproj" />
 
-    <ProjectReference Include="..\FSharp.Data.Gherkin.Features\FSharp.Data.Gherkin.Features.fsproj" />
   </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

@@ -1,44 +1,47 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="..\netfx.props" />
+
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
   <ItemGroup>
-    <Compile Include="ProvidedTypes.fsi" />
-    <Compile Include="ProvidedTypes.fs" />
-    <!-- <Compile Include="GherkinModel.fs" />
-    <Compile Include="Model/Step.fs" /> -->
-    <Compile Include="ExpressionBuilders/Model.fs" />
-    <Compile Include="ExpressionBuilders/Data.fs" />
-    <Compile Include="ExpressionBuilders/Tags.fs" />
-    <Compile Include="ExpressionBuilders/Step.fs" />
-    <Compile Include="ExpressionBuilders/Scenario.fs" />
-    <Compile Include="ExpressionBuilders/Background.fs" />
-    <Compile Include="ExpressionBuilders/Feature.fs" />
-    <Compile Include="InstanceBuilders/Feature.fs" />
-    <!-- <Compile Include="FeatureExpression.fs" />
-    <Compile Include="FeatureBuilder.fs" /> -->
-    <Compile Include="GherkinProvider.fs" />
-    <!-- <Compile Include="NewNewProvider.fs" /> -->
+    <Compile Include="GherkinProvider.Runtime.fs" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/netstandard.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/System.Reflection.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="../packages/NETStandard.Library.NETFramework/build/net461/lib/System.Runtime.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <Reference Include="../packages/Gherkin/lib/netstandard2.0/Gherkin.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Reference>
-    <Reference Include="../packages/Utf8Json/lib/netstandard2.0/Utf8Json.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Reference>
-  </ItemGroup>
+  
+  <Target Name="AfterBuild">  
+
+    <!-- We place EACH of the net45, netcoreapp2.0 and netstandard2.0 design-time DLLs in well-known locations with resepct to the runtime DLL -->
+    <!-- This enables any runtime DLL to be used with any host tooling running in either netcoreapp2.0+ or net45+ -->
+    <Copy SourceFiles="..\FSharp.Data.Gherkin.DesignTime\bin\$(Configuration)\net45\FSharp.Data.Gherkin.DesignTime.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\net45" />
+    <Copy SourceFiles="..\FSharp.Data.Gherkin.DesignTime\bin\$(Configuration)\netcoreapp2.0\FSharp.Data.Gherkin.DesignTime.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netcoreapp2.0" />
+    <Copy SourceFiles="..\FSharp.Data.Gherkin.DesignTime\bin\$(Configuration)\netstandard2.0\FSharp.Data.Gherkin.DesignTime.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netstandard2.0" />
+
+    <!-- Copy Gherkin & Utf8Json specific files based on framework -->
+    <Copy SourceFiles="..\packages\Gherkin\lib\net45\Gherkin.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\net45" />
+    <Copy SourceFiles="..\packages\Utf8Json\lib\net45\Utf8Json.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\net45" />
+    
+    <Copy SourceFiles="..\packages\Gherkin\lib\netstandard2.0\Gherkin.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netcoreapp2.0" />
+    <Copy SourceFiles="..\packages\Utf8Json\lib\netstandard2.0\Utf8Json.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netcoreapp2.0" />
+    
+    <Copy SourceFiles="..\packages\Gherkin\lib\netstandard2.0\Gherkin.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netstandard2.0" />
+    <Copy SourceFiles="..\packages\Utf8Json\lib\netstandard2.0\Utf8Json.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netstandard2.0" />
+
+
+    <!-- We also place the net45 design-time DLLs alongside the runtime DLL for loading by legacy F# toolchains -->
+    <Copy SourceFiles="..\FSharp.Data.Gherkin.DesignTime\bin\$(Configuration)\net45\FSharp.Data.Gherkin.DesignTime.dll" DestinationFolder="$(OutputPath)" Condition="'$(TargetFramework)' == 'net45'"/>
+
+    <!-- Copy net45 Gherkin &Utf8Json specific files based on framework -->
+    <Copy SourceFiles="..\packages\Gherkin\lib\net45\Gherkin.dll" DestinationFolder="$(OutputPath)" Condition="'$(TargetFramework)' == 'net45'" />
+    <Copy SourceFiles="..\packages\Utf8Json\lib\net45\Utf8Json.dll" DestinationFolder="$(OutputPath)" Condition="'$(TargetFramework)' == 'net45'"  />
+
+  </Target>
+  
   <Import Project="..\.paket\Paket.Restore.targets" />
+  
+
 </Project>
