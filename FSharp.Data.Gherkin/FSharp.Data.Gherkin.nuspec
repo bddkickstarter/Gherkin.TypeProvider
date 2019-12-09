@@ -3,7 +3,7 @@
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
     <id>Gherkin.TypeProvider</id>
     <title>Gherkin Typeprovider</title>
-    <version>0.0.1</version>
+    <version>0.0.5</version>
     <authors>Bdd Kickstarter</authors>
     <owners>Bdd Kickstarter</owners>
     <!--
@@ -18,10 +18,10 @@
     <!-- These are the dependencies of the type provider runtime component --> 
     <dependencies>
       <group targetFramework="netstandard2.0">
-        <dependency id="FSharp.Core"/>
+        <dependency id="FSharp.Core" version="4.3.4"/>
       </group>
       <group targetFramework="net45">
-        <dependency id="FSharp.Core"/>
+        <dependency id="FSharp.Core" version="4.3.4"/>
       </group>
     </dependencies>
       <references>
@@ -54,6 +54,19 @@
     <file src="..\FSharp.Data.Gherkin.DesignTime\bin\Release\netstandard2.0\FSharp.Data.Gherkin.DesignTime.pdb" target="typeproviders/fsharp41/netstandard2.0" />
     <file src="..\packages\Gherkin\lib\netstandard2.0\Gherkin.dll" target="typeproviders/fsharp41/netstandard2.0" />
     <file src="..\packages\Utf8Json\lib\netstandard2.0\Utf8Json.dll" target="typeproviders/fsharp41/netstandard2.0" />
+
+
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\FSharp.Data.Gherkin.dll" target="ref/netstandard2.0" />
+    <!-- <file src="..\FSharp.Data.Gherkin.DesignTime\bin\Release\netstandard2.0\FSharp.Data.Gherkin.DesignTime.dll" target="ref/netstandard2.0" /> -->
+    <!-- <file src="..\packages\Gherkin\lib\netstandard2.0\Gherkin.dll" target="ref/netstandard2.0" />
+    <file src="..\packages\Utf8Json\lib\netstandard2.0\Utf8Json.dll" target="ref/netstandard2.0" />
+    <file src="..\FSharp.Data.Gherkin.DesignTime\bin\Release\netstandard2.0\FSharp.Data.Gherkin.DesignTime.dll" target="ref/netstandard2.0" /> -->
+
+    <file src="..\FSharp.Data.Gherkin\bin\Release\netstandard2.0\FSharp.Data.Gherkin.dll" target="ref/net45" />
+    <!-- <file src="..\FSharp.Data.Gherkin.DesignTime\bin\Release\netstandard2.0\FSharp.Data.Gherkin.DesignTime.dll" target="ref/net45" /> -->
+    <!-- <file src="..\packages\Gherkin\lib\netstandard2.0\Gherkin.dll" target="ref/net45" />
+    <file src="..\packages\Utf8Json\lib\netstandard2.0\Utf8Json.dll" target="ref/net45" />
+    <file src="..\FSharp.Data.Gherkin.DesignTime\bin\Release\netstandard2.0\FSharp.Data.Gherkin.DesignTime.dll" target="ref/net45" /> -->
 
 
   </files>

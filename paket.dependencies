@@ -1,6 +1,6 @@
 source https://api.nuget.org/v3/index.json
 
-nuget FSharp.Core
+nuget FSharp.Core = 4.3.4
 nuget Gherkin
 nuget Expecto
 
