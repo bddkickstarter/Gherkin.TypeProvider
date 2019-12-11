@@ -12,7 +12,6 @@ let examples =
                     .CreateFeature()
                     .``Scenario outline name``
                     .Examples
-        
     testList
         "Examples have correct data"
         [
