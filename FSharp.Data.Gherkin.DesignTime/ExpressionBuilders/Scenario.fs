@@ -26,21 +26,12 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
         | examples -> 
             let columns = examples.[0].TableHeader.Cells |> Seq.map (fun c -> c.Value) |> Seq.toList
             let exampleType  = createDataExpression scenarioType columns
-            let exampleField = ProvidedField("_examples",exampleType.MakeArrayType())
-            let exampleProperty = ProvidedProperty("Examples",exampleType.MakeArrayType(),getterCode = fun args -> Expr.FieldGet(args.[0],exampleField))
-
-            exampleField |> scenarioType.AddMember
-            exampleProperty |> scenarioType.AddMember
-
+            let exampleField = addProperty scenarioType "Examples" (exampleType.MakeArrayType())
             Some (exampleType,exampleField)
 
     //add the steps array backing field & property
     let stepsType = StepBaseType.Value.MakeArrayType()
-    let stepsField = ProvidedField("_steps",stepsType)
-    let stepsProperty = ProvidedProperty("Steps",stepsType,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],stepsField))
-
-    stepsField |> scenarioType.AddMember
-    stepsProperty |> scenarioType.AddMember
+    let stepsField = addProperty scenarioType "Steps" stepsType
 
     //add step specific constructor params, properties & fields
     let gherkinStepList = gherkinScenario.Steps |> Seq.toList

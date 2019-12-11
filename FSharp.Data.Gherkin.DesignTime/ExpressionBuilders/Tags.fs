@@ -34,12 +34,7 @@ let createTagsType (parent:ProvidedTypeDefinition) (tags:string list) =
         properties |> Seq.iter(tagsType.AddMember)
 
         //add the all tags array
-        let allTagsType = TagBaseType.Value.MakeArrayType()
-        let allTagsField = ProvidedField("_allTags",allTagsType)
-        let allTagsProperty = ProvidedProperty("AllTags",allTagsType,getterCode=fun args -> Expr.FieldGet(args.[0],allTagsField))
-
-        allTagsField |> tagsType.AddMember
-        allTagsProperty |> tagsType.AddMember
+        let allTagsField = addProperty tagsType "AllTages" (TagBaseType.Value.MakeArrayType())        
 
         ProvidedConstructor(
             parameters,
@@ -75,10 +70,5 @@ let createTagsExpression (parent:ProvidedTypeDefinition) (tags:string list) =
     match createTagsType parent tags  with
     | None -> None
     | Some tagType ->
-        let tagField = ProvidedField("_tags",tagType)
-        let tagProperty = ProvidedProperty("Tags",tagType,getterCode = fun args -> Expr.FieldGet(args.[0],tagField))
-
-        tagField |> parent.AddMember
-        tagProperty |> parent.AddMember
-
+        let tagField = addProperty parent "Tags" tagType
         Some (tagType,tagField)

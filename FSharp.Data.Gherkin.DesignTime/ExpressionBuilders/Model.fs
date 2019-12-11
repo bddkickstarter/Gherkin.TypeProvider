@@ -55,16 +55,13 @@ module Shared =
 
     let sanitize  = 
         fun (nm:string) ->
-            let sanitizeFirstNumber =
+            let sanitizeFirstNumber  =
                 match (nm.ToCharArray() |> Seq.toList) with
                 | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" nm
                 | _ -> nm 
 
-            sanitizeFirstNumber
-                .Replace(" ","_")
-                .Replace("<","_")
-                .Replace(">","_")
-                .Replace("@","_")
+            [' ';'<';'>'] @ (System.IO.Path.GetInvalidPathChars() |> Seq.toList)
+            |> Seq.fold (fun (a:string) c -> a.Replace(c.ToString(),"_") ) sanitizeFirstNumber
 
     let addVisitedProperty (parent:ProvidedTypeDefinition) =
         let visitedField = ProvidedField("_visited",typeof<bool>)
@@ -79,6 +76,20 @@ module Shared =
 
         visitedField
 
+    let addProperty (parent:ProvidedTypeDefinition) (name:string) (propertyType:System.Type)=
+        let fieldName = sprintf "_%s" name
+        let field = ProvidedField(fieldName,typeof<bool>)
+        let property = 
+            ProvidedProperty(
+                name,propertyType,isStatic=false,
+                getterCode = (fun args -> Expr.FieldGet(args.[0],field)))
+
+        field |> parent.AddMember
+        property |> parent.AddMember
+
+        field
+
+
     let getStepName (position:int) (step:Step) =
         sprintf "%i %s %s" position (step.Keyword.Trim()) (step.Text.Trim())
         |> SanitizeName
@@ -88,12 +99,7 @@ module Shared =
         let tagBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
         tagBase |> parent.AddMember
 
-        let nameField = ProvidedField("_name",typeof<string>)
-        let nameProperty= ProvidedProperty("Name",typeof<string>,getterCode=fun args -> Expr.FieldGet(args.[0],nameField))
-
-        nameField |> tagBase.AddMember
-        nameProperty |> tagBase.AddMember
-
+        let nameField = addProperty tagBase "Name" typeof<string>
         let visitedField = addVisitedProperty tagBase
 
         ProvidedConstructor(
@@ -124,24 +130,8 @@ module Shared =
             let dataCellType = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
             dataCellType |> parent.AddMember
 
-            let headerField = ProvidedField("_header",typeof<string>)
-            let valueField = ProvidedField("_value",typeof<string>)
-
-            let headerProperty = 
-                ProvidedProperty(
-                    "Header",typeof<string>,
-                    getterCode=fun args -> Expr.FieldGet(args.[0],headerField))
-
-            let valueProperty = 
-                ProvidedProperty(
-                    "Value",typeof<string>,
-                    getterCode=fun args -> Expr.FieldGet(args.[0],valueField))
-
-            headerField |> dataCellType.AddMember
-            valueField |> dataCellType.AddMember
-            headerProperty |> dataCellType.AddMember
-            valueProperty |> dataCellType.AddMember
-
+            let headerField = addProperty dataCellType "Header" typeof<string>
+            let valueField = addProperty dataCellType "Value" typeof<string>
             let visitedField = addVisitedProperty dataCellType
 
             ProvidedConstructor(
@@ -165,11 +155,7 @@ module Shared =
             dataRowBaseType |> parent.AddMember
 
             let cellsArrayType = DataCellType.Value.MakeArrayType()
-            let cellsField = ProvidedField("_cells",cellsArrayType)
-            let cellsProperty =ProvidedProperty("Cells",cellsArrayType,getterCode = fun args -> Expr.FieldGet(args.[0],cellsField))
-
-            cellsField |> dataRowBaseType.AddMember
-            cellsProperty |> dataRowBaseType.AddMember
+            let cellsField = addProperty dataRowBaseType "Cells" cellsArrayType
             
             ProvidedConstructor([ProvidedParameter("cells",cellsArrayType)],
                 invokeCode = fun args -> Expr.FieldSet(args.[0],cellsField,args.[1]))
@@ -182,23 +168,8 @@ module Shared =
             let docArgument = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
             docArgument |> parent.AddMember
 
-            let contentField = ProvidedField("_content",typeof<string>)
-            let contentTypeField = ProvidedField("_contentType",typeof<string>)
-
-            let contentProperty = 
-                ProvidedProperty(
-                    "Content",typeof<string>,
-                    getterCode=fun args -> Expr.FieldGet(args.[0],contentField))
-
-            let contentTypeProperty = 
-                ProvidedProperty(
-                    "ContentType",typeof<string>,
-                    getterCode=fun args -> Expr.FieldGet(args.[0],contentTypeField))
-
-            contentField |> docArgument.AddMember
-            contentTypeField |> docArgument.AddMember
-            contentProperty |> docArgument.AddMember
-            contentTypeProperty |> docArgument.AddMember
+            let contentField = addProperty docArgument "Content" typeof<string> 
+            let contentTypeField = addProperty docArgument "ContentType" typeof<string>
 
             ProvidedConstructor(
                 [
@@ -219,34 +190,12 @@ module Shared =
         let step = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
         step |> parent.AddMember
 
-        let textField = ProvidedField("_text",typeof<string>)
-        let textProperty = ProvidedProperty("Text",typeof<string>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],textField))
-
-        let keywordField = ProvidedField("_keyword",typeof<string>)
-        let keywordProperty = ProvidedProperty("Keyword",typeof<string>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],keywordField))
-
-        let orderField = ProvidedField("_order",typeof<int>)
-        let orderProperty = ProvidedProperty("Order",typeof<int>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],orderField))
-
-        let docStringField = ProvidedField("_docString",ArgumentBaseType.Value)
-        let docStringProperty = ProvidedProperty("DocString",ArgumentBaseType.Value,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],docStringField))
-
+        let textField = addProperty step "Text" typeof<string>
+        let keywordField =addProperty step "Keyword" typeof<string> 
+        let orderField = addProperty step "Order" typeof<int>  
+        let docStringField = addProperty step "DocString" ArgumentBaseType.Value  
         let dataTableType = DataRowBaseType.Value.MakeArrayType()
-        let dataTableField = ProvidedField("_dataTable",dataTableType)
-        let dataTableProperty = ProvidedProperty("DataTable",dataTableType,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],dataTableField))
-
-
-        textField |> step.AddMember
-        textProperty |> step.AddMember
-        keywordField |> step.AddMember
-        keywordProperty |> step.AddMember
-        orderField |> step.AddMember
-        orderProperty |> step.AddMember
-        docStringField |> step.AddMember
-        docStringProperty |> step.AddMember
-        dataTableField |> step.AddMember
-        dataTableProperty |> step.AddMember
-
+        let dataTableField =  addProperty step "DataTable" dataTableType  
         let visitedField = addVisitedProperty step
 
         ProvidedConstructor(
@@ -273,19 +222,8 @@ module Shared =
         let scenarioBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
         scenarioBase |> parent.AddMember
 
-        let nameField = ProvidedField("_name",typeof<string>)
-        let descriptionField = ProvidedField("_description",typeof<string>)
-
-        let nameProperty = ProvidedProperty("Name",typeof<string>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],nameField))
-        let descriptionProperty= ProvidedProperty("Description",typeof<string>,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],descriptionField))
-
-
-        nameField |> scenarioBase.AddMember
-        descriptionField |> scenarioBase.AddMember
-
-        nameProperty |> scenarioBase.AddMember
-        descriptionProperty |> scenarioBase.AddMember
-
+        let nameField = addProperty scenarioBase "Name" typeof<string> 
+        let descriptionField =  addProperty scenarioBase "Description" typeof<string> 
         let visitedField = addVisitedProperty scenarioBase
 
         ProvidedConstructor(

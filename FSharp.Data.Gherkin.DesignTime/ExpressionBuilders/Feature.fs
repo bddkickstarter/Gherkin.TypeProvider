@@ -53,17 +53,8 @@ let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (c
     featureType |> root.AddMember
 
     // add name & description
-    let nameField = ProvidedField("_name",typeof<string>)
-    let descriptionField = ProvidedField("_description",typeof<string>)
-
-    let nameProperty = ProvidedProperty("Name",typeof<string>,getterCode=fun args -> Expr.FieldGet(args.[0],nameField))
-    let descriptionProperty= ProvidedProperty("Description",typeof<string>,getterCode=fun args -> Expr.FieldGet(args.[0],descriptionField))
-
-    nameField |> featureType.AddMember
-    descriptionField |> featureType.AddMember
-
-    nameProperty |> featureType.AddMember
-    descriptionProperty |> featureType.AddMember
+    let nameField = addProperty featureType "Name" typeof<string> 
+    let descriptionField = addProperty featureType "Description" typeof<string>
 
     //get background if it exists
     let backgroundExpression = getBackgroundExpression featureType background
@@ -73,12 +64,7 @@ let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (c
 
     //untyped scenarios array - add the typed scenarios as scenariobase
     let scenariosType = ScenarioBaseType.Value.MakeArrayType()
-    let scenariosField = ProvidedField("_scenarios",scenariosType)
-    let scenariosProperty = ProvidedProperty("Scenarios",scenariosType,isStatic=false,getterCode=fun args -> Expr.FieldGet(args.[0],scenariosField))
-
-    //add the non-derived Scenarios field & property to the feature
-    scenariosField |> featureType.AddMember
-    scenariosProperty |> featureType.AddMember
+    let scenariosField = addProperty featureType "Scenarios" scenariosType
 
     //create tags
     let tagExpression = (createTagsExpression featureType tags) 
