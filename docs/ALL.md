@@ -1,7 +1,4 @@
 # Gherkin.TypeProvider
-## Type provider for the Gherkin language
-
-The Gherkin TypeProvider allows access to the data in Gherkin feature files by generating an type system representing the feature file supplied as an argument
 
 ### Background
 
@@ -24,9 +21,7 @@ The Gherkin Type Provider simply adds to this structure by creating named proper
 
 Referencing the properties generated from the text of the feature means that if the feature file changes then the property names will change, and code referencing the old property names will fail to compile.
 
-
 ## Usage
-
 
 * ### Add the package [__Gherkin.TypeProvider__](https://www.nuget.org/packages/Gherkin.TypeProvider)
 
