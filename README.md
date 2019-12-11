@@ -30,12 +30,11 @@ This allows the test to checked after a test run to ensure all the significant p
 
 ## Usage
 
-### **Note:** **Nuget package not currently available.  This will be the usage when available**
 
 * ### Add a reference package Gherkin.TypeProvider
 
-    Either nuget or paket whichever is easiet
-* ### Reference the FSharp.Data.Gherkin namepsace
+
+* ### Reference the FSharp.Data.Gherkin namespace
     
     ```fsharp
     open FSharp.Data.Gherkin

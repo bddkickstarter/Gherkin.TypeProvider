@@ -3,3 +3,4 @@
 **/.ionide/**
 packages/**
 .vs/**
+**/*.nupkg
