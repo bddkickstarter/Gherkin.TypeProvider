@@ -231,6 +231,78 @@ Reference the F# project containing the sanitized type system and take advantage
 There is an example of an F# wrapper [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/tree/master/tests/FSharp.Data.Gherkin.Tests.CSharp.Shim/Library.fs) which is then consumed in a C# console app [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/blob/master/tests/FSharp.Data.Gherkin.Tests.CSharp/Program.cs)
 
 
+# The __Visited__ property
+
+So far the code & the feature file have been kept in sync by referencing the named properties (scenarios, steps etc) directly.  If the scenario name changes, the property based on the name will change and the build will fail.
+
+But what about properties that haven't been referenced (either because they haven't been used in the test code, or a completely new scenario, step or column name is added to the feature file)?
+
+To keep the code and feature file complete in sync when a named property is accessed it sets a _Visited_ property to true on the underlying field.
+
+The underlying field can be accessed via an array on the parent (a Scenarios array for a feature, Steps array for a Scenario etc etc) as each property derives from a base class/
+
+For example,when the scenario from the first feature is accessed like:
+
+```fsharp
+let scenario = 
+    myTestFeature
+        .``this is a scenario``
+```
+
+The type of the scenario will be 
+
+```fsharp
+``this is a scenario Class`` 
+```
+
+However the feature also contains an array of all its Scenarios as their base classes (_TestFeature_ScenarioBase_), so if the only scenario in this feature was accessed like:
+
+```fsharp
+let scenario = 
+    myTestFeature
+        .Scenarios.[0]
+```
+
+The type of the scenario will be 
+
+```fsharp
+``TestFeature_ScenarioBase`` 
+```
+
+The base class has the _Visited_ property which is set to true __only__ when the named property is used, so the following test will pass:
+
+```fsharp
+let before = myTestFeature.Scenarios.[0].Visited
+
+Expect.isFalse before "Should be false"
+
+myTestFeature.``this is a scenario`` |> ignore
+
+let after = myTestFeature.Scenarios.[0].Visited
+
+Expect.isTrue after "Should be true"
+```
+
+The same is true of steps:
+
+```fsharp
+let before = myTestFeature.Scenarios.[0].Steps.[0].Visited
+
+Expect.isFalse before "Should be false"
+
+myTestFeature
+    .``this is a scenario``
+    .``this is a given step`` |> ignore
+
+let after = myTestFeature.Scenarios.[0].Steps.[0].Visited
+
+Expect.isTrue after "Should be true"
+```
+
+(There are a set of visited tests [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/blob/master/tests/FSharp.Data.Gherkin.Tests/Tests/VisitedTests.tests.fs))
+
+The entire feature can be "walked" using the underlying arrays so it is possible to find any named properties that have not been visited.
+
 
     
 
