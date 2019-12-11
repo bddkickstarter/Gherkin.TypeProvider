@@ -11,13 +11,13 @@ open FSharp.Quotations
 
 open Gherkin.Ast
 
-let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
+let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
 
-    let scenarioType = ProvidedTypeDefinition((sprintf "%sClass" gherkinScenario.Name) |> SanitizeName,Some (ScenarioBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
+    let scenarioType = ProvidedTypeDefinition((sprintf "%sClass" gherkinScenario.Name) |> context.SanitizeName,Some (context.ScenarioBaseType.AsType()),isErased=false, hideObjectMethods=true)
     scenarioType |> feature.AddMember
 
     //create tags
-    let tagExpression = createTagsExpression scenarioType (gherkinScenario.Tags |> Seq.toList |> List.map(fun t -> t.Name))
+    let tagExpression = createTagsExpression context scenarioType (gherkinScenario.Tags |> Seq.toList |> List.map(fun t -> t.Name))
 
     //get the examples if any
     let exampleExpression = 
@@ -25,27 +25,27 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
         | [] -> None
         | examples -> 
             let columns = examples.[0].TableHeader.Cells |> Seq.map (fun c -> c.Value) |> Seq.toList
-            let exampleType  = createDataExpression scenarioType columns
+            let exampleType  = createDataExpression context scenarioType columns
             let exampleField = addProperty scenarioType "Examples" (exampleType.MakeArrayType())
             Some (exampleType,exampleField)
 
     //add the steps array backing field & property
-    let stepsType = StepBaseType.Value.MakeArrayType()
+    let stepsType = context.StepBaseType.MakeArrayType()
     let stepsField = addProperty scenarioType "Steps" stepsType
 
     //add step specific constructor params, properties & fields
     let gherkinStepList = gherkinScenario.Steps |> Seq.toList
-    let stepExpressions =  gherkinStepList |> List.mapi(createStepExpression scenarioType)
+    let stepExpressions =  gherkinStepList |> List.mapi(createStepExpression context scenarioType)
 
-    let parameters = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter(getStepName i step,stepExpression.Type)) gherkinStepList stepExpressions 
-    let stepFields = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField(getStepName i step,stepExpression.Type)) gherkinStepList stepExpressions 
-    let visitedProperty = StepBaseType.Value.GetProperty("Visited")
+    let parameters = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter(getStepName context.SanitizeName i step,stepExpression.Type)) gherkinStepList stepExpressions 
+    let stepFields = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField(getStepName context.SanitizeName i step,stepExpression.Type)) gherkinStepList stepExpressions 
+    let visitedProperty = context.StepBaseType.GetProperty("Visited")
 
     let stepProperties = 
         List.mapi2(
             fun i step (stepExpression:StepExpression) -> 
                 ProvidedProperty(
-                    getStepName i step,
+                    getStepName context.SanitizeName i step,
                     stepExpression.Type,
                     getterCode=fun args-> 
 
@@ -63,7 +63,7 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
     stepProperties |> Seq.iter(scenarioType.AddMember)
 
     // override base constructor 
-    let baseCtr = ScenarioBaseType.Value.GetConstructors().[0]
+    let baseCtr = context.ScenarioBaseType.GetConstructors().[0]
 
     let constructorParams =
         match exampleExpression,tagExpression with
@@ -91,8 +91,8 @@ let createScenarioExpression (feature:ProvidedTypeDefinition) (gherkinScenario:S
                             | None,Some(_) -> args.GetSlice(Some 4,Some (args.Length-1))
 
                         // create the steps array
-                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,StepBaseType.Value))
-                        let stepsArray = Expr.NewArray(StepBaseType.Value,coercedSteps)
+                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,context.StepBaseType))
+                        let stepsArray = Expr.NewArray(context.StepBaseType,coercedSteps)
                         let first = Expr.FieldSet(this,stepsField, stepsArray)
 
                         //set each parameter to its non-derived backing field

@@ -4,31 +4,31 @@ open ExpressionBuilders.Shared
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 
-let createDataExpression (parent:ProvidedTypeDefinition)  (columnNames:string list) = 
-    let dataRowBaseType=DataRowBaseType.Value.AsType()
+let createDataExpression (context:GeneratedTypeContext) (parent:ProvidedTypeDefinition)  (columnNames:string list) = 
+    let dataRowBaseType= context.DataRowBaseType.AsType()
     let dataType  = ProvidedTypeDefinition("DataClass",Some dataRowBaseType, isErased=false, hideObjectMethods=true)
     dataType |> parent.AddMember
 
     // create constructor parameters for each of the columns
     let parameters = 
         columnNames
-        |> List.map(fun h -> ProvidedParameter(h |> SanitizeName,DataCellType.Value))
+        |> List.map(fun h -> ProvidedParameter(h |> context.SanitizeName,context.DataCellType))
     
     // create fields for each of the columns
     let fields = 
         columnNames 
-        |> List.map(fun h -> ProvidedField( sprintf "_%s" (h |> SanitizeName),DataCellType.Value))
+        |> List.map(fun h -> ProvidedField( sprintf "_%s" (h |> context.SanitizeName),context.DataCellType))
 
     fields |> Seq.iter (dataType.AddMember)
 
     // create properties getting the correct backing field
-    let visitedProperty = DataCellType.Value.GetProperty("Visited")
+    let visitedProperty = context.DataCellType.GetProperty("Visited")
     let properties =
         Seq.map2(
             fun columnName field -> 
                 ProvidedProperty(
-                    columnName |> SanitizeName,
-                    DataCellType.Value,
+                    columnName |> context.SanitizeName,
+                    context.DataCellType,
                     getterCode= 
                         fun args ->
                             //set visited of the field's visited property
@@ -50,8 +50,8 @@ let createDataExpression (parent:ProvidedTypeDefinition)  (columnNames:string li
                 fieldSets.Tail |> List.fold (fun a c -> Expr.Sequential(a, c)) fieldSets.Head
                 )
     
-    let baseCtr = DataRowBaseType.Value.GetConstructors().[0]
-    ctr.BaseConstructorCall <- fun args -> baseCtr,[args.Head;Expr.NewArray(DataCellType.Value,args.Tail)]
+    let baseCtr = context.DataRowBaseType.GetConstructors().[0]
+    ctr.BaseConstructorCall <- fun args -> baseCtr,[args.Head;Expr.NewArray(context.DataCellType,args.Tail)]
     ctr |> dataType.AddMember
 
 

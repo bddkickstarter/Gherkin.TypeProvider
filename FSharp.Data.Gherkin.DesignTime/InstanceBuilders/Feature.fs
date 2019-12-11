@@ -7,7 +7,7 @@ open ExpressionBuilders
 open ExpressionBuilders.Shared
 
 
-let buildRows (columns:string list) (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
+let buildRows (context:GeneratedTypeContext) (columns:string list) (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
         dataRow 
         |> List.map(
             fun dr -> 
@@ -15,12 +15,12 @@ let buildRows (columns:string list) (rowType:ProvidedTypeDefinition) (dataRow:Ta
                     List.map2 (
                         fun (column:string) (cell:TableCell) -> 
                             Expr.NewObject(
-                                DataCellType.Value.GetConstructors().[0],
+                                context.DataCellType.GetConstructors().[0],
                                 [Expr.Value(column);Expr.Value(cell.Value)])) columns (dr.Cells |> Seq.toList) 
 
                 Expr.NewObject(rowType.GetConstructors().[0],parameters))
 
-let buildExamples (examples:Examples list) (exampleType:ProvidedTypeDefinition) =
+let buildExamples (context:GeneratedTypeContext) (examples:Examples list) (exampleType:ProvidedTypeDefinition) =
     match examples with
     | [] -> Expr.NewArray(exampleType,[])
     | examplesList ->
@@ -28,11 +28,11 @@ let buildExamples (examples:Examples list) (exampleType:ProvidedTypeDefinition) 
         let rows=
             examplesList 
             |> List.collect(fun e -> e.TableBody |> Seq.toList)
-            |> buildRows headers exampleType
+            |> buildRows context headers exampleType
 
         Expr.NewArray(exampleType,rows)
 
-let buildArgument (argument:Gherkin.Ast.StepArgument) (stepType:StepExpression) =
+let buildArgument (context:GeneratedTypeContext) (argument:Gherkin.Ast.StepArgument) (stepType:StepExpression) =
     match argument,stepType.Argument with
     | :? DocString,Some argTypeExpression -> 
         match argTypeExpression with
@@ -48,25 +48,25 @@ let buildArgument (argument:Gherkin.Ast.StepArgument) (stepType:StepExpression) 
             let dataTable = (argument :?> DataTable).Rows |> Seq.toList
             let headers = dataTable.Head.Cells |> Seq.toList |> List.map(fun th -> th.Value)
             let rows = dataTable.Tail
-            let dataTableRows = buildRows headers dataTableType rows
+            let dataTableRows = buildRows context headers dataTableType rows
             
             Some (Expr.NewArray(dataTableType,dataTableRows))
         | _ -> None
     | _ -> None
 
-let buildSteps (steps:Step list) (stepsType:StepExpression list) =
+let buildSteps (context:GeneratedTypeContext) (steps:Step list) (stepsType:StepExpression list) =
     List.mapi2(
         fun i (step:Step) (stepType:StepExpression) ->
             let parameters = 
                 let text = step.Text.Trim()
                 let keyword = step.Keyword.Trim()
-                match buildArgument step.Argument stepType with
+                match buildArgument context step.Argument stepType with
                 | None -> 
                     [
                         Expr.Value(text)
                         Expr.Value(keyword)
                         Expr.Value(i)
-                        Expr.Coerce(Expr.Value(null),ArgumentBaseType.Value)
+                        Expr.Coerce(Expr.Value(null),context.ArgumentBaseType)
                     ]   
                 | Some arg -> 
                     [
@@ -81,13 +81,13 @@ let buildSteps (steps:Step list) (stepsType:StepExpression list) =
 let createTagInstance (tagType:ProvidedTypeDefinition) (tags:Tag list) =
     Expr.NewObject(tagType.GetConstructors().[0],(tags |> List.map(fun t -> Expr.Value(t.Name))))
 
-let buildScenarios (scenarios:Scenario list) (scenarioTypes:ScenarioExpression list) =
+let buildScenarios (context:GeneratedTypeContext) (scenarios:Scenario list) (scenarioTypes:ScenarioExpression list) =
 
     List.map2(
         fun (scenario:Scenario) (scenarioType:ScenarioExpression) ->
             let name = Expr.Value(scenario.Name)
             let description = Expr.Value(scenario.Description)
-            let steps = buildSteps (scenario.Steps |> Seq.toList) scenarioType.Steps
+            let steps = buildSteps context (scenario.Steps |> Seq.toList) scenarioType.Steps
 
             let parameters = 
                 match scenarioType.Examples,(scenario.Tags |> Seq.toList)  with
@@ -95,7 +95,7 @@ let buildScenarios (scenarios:Scenario list) (scenarioTypes:ScenarioExpression l
                     name :: description :: steps
 
                 | Some exampleType,[] ->
-                    let examples = buildExamples (scenario.Examples |> Seq.toList) exampleType
+                    let examples = buildExamples context (scenario.Examples |> Seq.toList) exampleType
                     name :: description :: examples :: steps
 
                 | None,tags ->
@@ -107,7 +107,7 @@ let buildScenarios (scenarios:Scenario list) (scenarioTypes:ScenarioExpression l
 
                 | Some exampleType,tags ->
 
-                    let examples = buildExamples (scenario.Examples |> Seq.toList) exampleType
+                    let examples = buildExamples context (scenario.Examples |> Seq.toList) exampleType
 
                     match scenarioType.Tags with
                     | None -> name :: description :: examples :: steps
@@ -125,7 +125,7 @@ let buildBackground (backgroundType:ProvidedTypeDefinition) (gherkinBackground:B
 
     Expr.NewObject(backgroundType.GetConstructors().[0],parameters)
 
-let buildFeatureInstance (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
+let buildFeatureInstance (context:GeneratedTypeContext) (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
 
     let gherkinScenarios =
         gherkinDocument.Feature.Children |> Seq.toList
@@ -150,14 +150,14 @@ let buildFeatureInstance (root:ProvidedTypeDefinition) (gherkinDocument:GherkinD
 
          | Some bgType,Some gherkinBackground,[] ->
 
-            let steps =  buildSteps (gherkinBackground.Steps |> Seq.toList) bgType.Steps
+            let steps =  buildSteps context (gherkinBackground.Steps |> Seq.toList) bgType.Steps
             let background = buildBackground bgType.Type gherkinBackground steps
             
             [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);background]
 
          | Some bgType,Some gherkinBackground,tags ->
             
-            let steps =  buildSteps (gherkinBackground.Steps |> Seq.toList) bgType.Steps
+            let steps =  buildSteps context (gherkinBackground.Steps |> Seq.toList) bgType.Steps
             let background = buildBackground bgType.Type gherkinBackground steps
 
             match featureExpression.Tags with
@@ -177,7 +177,7 @@ let buildFeatureInstance (root:ProvidedTypeDefinition) (gherkinDocument:GherkinD
 
          | _ -> [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description)]
 
-    let scenarios = buildScenarios gherkinScenarios featureExpression.Scenarios
+    let scenarios = buildScenarios context gherkinScenarios featureExpression.Scenarios
 
     let allParams = parameters @ scenarios
 

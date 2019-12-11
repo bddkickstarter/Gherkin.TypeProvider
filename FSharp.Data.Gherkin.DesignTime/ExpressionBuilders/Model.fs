@@ -8,6 +8,17 @@ type ArgumentExpression =
 | DocStringType of ProvidedTypeDefinition
 | DataTableType of ProvidedTypeDefinition
 
+type GeneratedTypeContext =
+    {
+        SanitizeName :string->string
+        TagBaseType :ProvidedTypeDefinition
+        ArgumentBaseType :ProvidedTypeDefinition
+        DataCellType :ProvidedTypeDefinition
+        DataRowBaseType :ProvidedTypeDefinition
+        StepBaseType :ProvidedTypeDefinition
+        ScenarioBaseType :ProvidedTypeDefinition
+        DocStringArgumentType :ProvidedTypeDefinition
+    }
 
 type StepExpression = 
     {
@@ -41,17 +52,9 @@ type FeatureExpression =
         Tags:ProvidedTypeDefinition option
     }
 
+
+
 module Shared =
-
-    let mutable SanitizeName :string->string= id
-
-    let mutable TagBaseType :ProvidedTypeDefinition option= None
-    let mutable ArgumentBaseType :ProvidedTypeDefinition option= None
-    let mutable DataCellType :ProvidedTypeDefinition option= None
-    let mutable DataRowBaseType :ProvidedTypeDefinition option= None
-    let mutable StepBaseType :ProvidedTypeDefinition option= None
-    let mutable ScenarioBaseType :ProvidedTypeDefinition option= None
-    let mutable DocStringArgumentType :ProvidedTypeDefinition option= None
 
     let sanitize  = 
         fun (nm:string) ->
@@ -89,13 +92,12 @@ module Shared =
 
         field
 
-
-    let getStepName (position:int) (step:Step) =
+    let getStepName sanitizeName (position:int) (step:Step) =
         sprintf "%i %s %s" position (step.Keyword.Trim()) (step.Text.Trim())
-        |> SanitizeName
+        |> sanitizeName
 
-    let createTagBase (parentName:string) (parent:ProvidedTypeDefinition) =
-        let baseName = sprintf "%s_TagBase" parentName |> SanitizeName 
+    let createTagBase sanitizeName (parentName:string) (parent:ProvidedTypeDefinition) =
+        let baseName = sprintf "%s_TagBase" parentName |> sanitizeName 
         let tagBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
         tagBase |> parent.AddMember
 
@@ -113,8 +115,8 @@ module Shared =
 
         tagBase
 
-    let createArgumentBaseType (parentName:string) (parent:ProvidedTypeDefinition) = 
-        let baseName = sprintf "%s_ArgumentBase" parentName |> SanitizeName 
+    let createArgumentBaseType sanitizeName (parentName:string) (parent:ProvidedTypeDefinition) = 
+        let baseName = sprintf "%s_ArgumentBase" parentName |> sanitizeName 
         let docArgumentBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
         docArgumentBase |> parent.AddMember
 
@@ -125,9 +127,9 @@ module Shared =
 
         docArgumentBase
 
-    let createDataCellType (parentName:string) (parent:ProvidedTypeDefinition) =
-            let baseName = sprintf "%s_DataCell" parentName |> SanitizeName 
-            let dataCellType = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
+    let createDataCellType sanitizeName (argumentBaseType:ProvidedTypeDefinition) (parentName:string) (parent:ProvidedTypeDefinition) =
+            let baseName = sprintf "%s_DataCell" parentName |> sanitizeName 
+            let dataCellType = ProvidedTypeDefinition(baseName,Some (argumentBaseType.AsType()),isErased=false, hideObjectMethods=true)
             dataCellType |> parent.AddMember
 
             let headerField = addProperty dataCellType "Header" typeof<string>
@@ -149,12 +151,12 @@ module Shared =
 
             dataCellType
 
-    let createDataRowBaseType (parentName:string) (parent:ProvidedTypeDefinition) =
-            let baseName = sprintf "%s_DataRowBase" parentName |> SanitizeName 
+    let createDataRowBaseType sanitizeName (dataCellType:ProvidedTypeDefinition) (parentName:string) (parent:ProvidedTypeDefinition) =
+            let baseName = sprintf "%s_DataRowBase" parentName |> sanitizeName 
             let dataRowBaseType = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false, isSealed=false, hideObjectMethods=true)
             dataRowBaseType |> parent.AddMember
 
-            let cellsArrayType = DataCellType.Value.MakeArrayType()
+            let cellsArrayType = dataCellType.MakeArrayType()
             let cellsField = addProperty dataRowBaseType "Cells" cellsArrayType
             
             ProvidedConstructor([ProvidedParameter("cells",cellsArrayType)],
@@ -163,9 +165,9 @@ module Shared =
 
             dataRowBaseType
 
-    let createDocStringArgumentType   (parentName:string) (parent:ProvidedTypeDefinition) =
-            let baseName = sprintf "%s_DocString" parentName |> SanitizeName 
-            let docArgument = ProvidedTypeDefinition(baseName,Some (ArgumentBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
+    let createDocStringArgumentType sanitizeName (argumentBaseType:ProvidedTypeDefinition) (parentName:string) (parent:ProvidedTypeDefinition) =
+            let baseName = sprintf "%s_DocString" parentName |> sanitizeName 
+            let docArgument = ProvidedTypeDefinition(baseName,Some (argumentBaseType.AsType()),isErased=false, hideObjectMethods=true)
             docArgument |> parent.AddMember
 
             let contentField = addProperty docArgument "Content" typeof<string> 
@@ -185,21 +187,21 @@ module Shared =
 
             docArgument
     
-    let createStepBaseType (parentName:string)  (parent:ProvidedTypeDefinition) =
-        let baseName = sprintf "%s_StepBase" parentName |> SanitizeName  
+    let createStepBaseType sanitizeName (argumentBaseType:ProvidedTypeDefinition) (dataRowBaseType:ProvidedTypeDefinition) (parentName:string)  (parent:ProvidedTypeDefinition) =
+        let baseName = sprintf "%s_StepBase" parentName |> sanitizeName  
         let step = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
         step |> parent.AddMember
 
         let textField = addProperty step "Text" typeof<string>
         let keywordField =addProperty step "Keyword" typeof<string> 
         let orderField = addProperty step "Order" typeof<int>  
-        let docStringField = addProperty step "DocString" ArgumentBaseType.Value  
-        let dataTableType = DataRowBaseType.Value.MakeArrayType()
+        let docStringField = addProperty step "DocString" argumentBaseType  
+        let dataTableType = dataRowBaseType.MakeArrayType()
         let dataTableField =  addProperty step "DataTable" dataTableType  
         let visitedField = addVisitedProperty step
 
         ProvidedConstructor(
-            [ProvidedParameter("text",typeof<string>);ProvidedParameter("keyword",typeof<string>);ProvidedParameter("order",typeof<int>);ProvidedParameter("docString",ArgumentBaseType.Value);ProvidedParameter("dataTable",DataRowBaseType.Value.MakeArrayType())],
+            [ProvidedParameter("text",typeof<string>);ProvidedParameter("keyword",typeof<string>);ProvidedParameter("order",typeof<int>);ProvidedParameter("docString",argumentBaseType);ProvidedParameter("dataTable",dataRowBaseType.MakeArrayType())],
             invokeCode = fun args ->
                 let fieldsets =
                     [
@@ -217,8 +219,8 @@ module Shared =
 
         step
 
-    let createScenarioBaseType (parentName:string) (parent:ProvidedTypeDefinition) =
-        let baseName = sprintf "%s_ScenarioBase" parentName |> SanitizeName  
+    let createScenarioBaseType sanitizeName (parentName:string) (parent:ProvidedTypeDefinition) =
+        let baseName = sprintf "%s_ScenarioBase" parentName |> sanitizeName  
         let scenarioBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
         scenarioBase |> parent.AddMember
 
@@ -239,5 +241,24 @@ module Shared =
                     )|> scenarioBase.AddMember
 
         scenarioBase
+
+
+    let createContext (providerName:string) (root:ProvidedTypeDefinition) (shouldSantize:bool)=
+
+        let nameSanitizer = if shouldSantize then sanitize else id
+        let argumentBase = createArgumentBaseType nameSanitizer providerName root
+        let dataCellType = createDataCellType nameSanitizer argumentBase providerName root
+        let dataRowBase = createDataRowBaseType nameSanitizer dataCellType providerName root
+
+        {
+            SanitizeName = nameSanitizer
+            TagBaseType = createTagBase nameSanitizer providerName root
+            ArgumentBaseType = argumentBase
+            DataCellType = dataCellType
+            DataRowBaseType = dataRowBase
+            DocStringArgumentType = createDocStringArgumentType nameSanitizer argumentBase providerName root
+            StepBaseType = createStepBaseType nameSanitizer argumentBase dataRowBase providerName root
+            ScenarioBaseType = createScenarioBaseType nameSanitizer providerName root
+        }
 
 

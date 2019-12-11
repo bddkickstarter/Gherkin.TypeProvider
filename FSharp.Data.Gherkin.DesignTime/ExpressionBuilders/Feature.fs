@@ -30,11 +30,11 @@ let getScenariosFromDocument (document:GherkinDocument) =
 
     background,scenarios,(document.Feature.Tags |> Seq.toList |> List.map(fun t -> t.Name))
 
-let getBackgroundExpression (feature:ProvidedTypeDefinition) (background:Background option) =
+let getBackgroundExpression (context:GeneratedTypeContext) (feature:ProvidedTypeDefinition) (background:Background option) =
         match background with
         | None -> None
         | Some b -> 
-            let backgroundType = createBackgroundExpression feature b
+            let backgroundType = createBackgroundExpression context feature b
             let backgroundField = ProvidedField("_background",backgroundType.Type)
             let backgroundProperty = ProvidedProperty("Background",backgroundType.Type,getterCode = fun args -> Expr.FieldGet(args.[0],backgroundField))
 
@@ -44,7 +44,7 @@ let getBackgroundExpression (feature:ProvidedTypeDefinition) (background:Backgro
             Some (backgroundType,backgroundField)
 
 
-let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (children:Background option*Scenario list*string list) =
+let createFeatureTypeTree (context:GeneratedTypeContext) (providerName:string) (root:ProvidedTypeDefinition) (children:Background option*Scenario list*string list) =
     let (background,scenarios,tags) = children
     let featureName = sprintf "%s_Feature" providerName
     let featureType= ProvidedTypeDefinition(featureName,Some typeof<obj>,isErased=false, hideObjectMethods=true)
@@ -57,17 +57,17 @@ let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (c
     let descriptionField = addProperty featureType "Description" typeof<string>
 
     //get background if it exists
-    let backgroundExpression = getBackgroundExpression featureType background
+    let backgroundExpression = getBackgroundExpression context featureType background
 
-    let scenarioExpressions = scenarios |> List.map(createScenarioExpression featureType)
-    let scenarioParameters =  scenarioExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> SanitizeName,st.Type))
+    let scenarioExpressions = scenarios |> List.map(createScenarioExpression context featureType)
+    let scenarioParameters =  scenarioExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> context.SanitizeName,st.Type))
 
     //untyped scenarios array - add the typed scenarios as scenariobase
-    let scenariosType = ScenarioBaseType.Value.MakeArrayType()
+    let scenariosType = context.ScenarioBaseType.MakeArrayType()
     let scenariosField = addProperty featureType "Scenarios" scenariosType
 
     //create tags
-    let tagExpression = (createTagsExpression featureType tags) 
+    let tagExpression = (createTagsExpression context featureType tags) 
 
     //add the optional parameters
     let parameters = 
@@ -78,17 +78,17 @@ let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (c
         | Some (backgroundType,_),Some(tagType,_) -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("background",backgroundType.Type);ProvidedParameter("tags",tagType)]
 
     //create individual fields to hold the derived scenarios
-    let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> SanitizeName, sArg.Type))
+    let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> context.SanitizeName, sArg.Type))
 
     //get the visited property of the scenario base
-    let visitedProperty = ScenarioBaseType.Value.GetProperty("Visited")
+    let visitedProperty = context.ScenarioBaseType.GetProperty("Visited")
 
     //properties named after the scenario names, accessing backing fields as typed scenarios
     let scenarioProperties = 
         List.map2(
                 fun  (scenarioExpression:ScenarioExpression) (scenarioField:ProvidedField) -> 
                 ProvidedProperty(
-                    scenarioExpression.Name |> SanitizeName,
+                    scenarioExpression.Name |> context.SanitizeName,
                     scenarioExpression.Type,
                     isStatic = false,
                     getterCode = 
@@ -132,10 +132,10 @@ let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (c
                 | None,Some(_) -> args.GetSlice(Some 4,Some (args.Length-1))
 
             //coerce the derived scenarios to their base class
-            let coercedParams = scenarios |> List.map (fun p -> Expr.Coerce(p,ScenarioBaseType.Value))
+            let coercedParams = scenarios |> List.map (fun p -> Expr.Coerce(p,context.ScenarioBaseType))
 
             //then add them to the array 
-            let baseArray = Expr.NewArray(ScenarioBaseType.Value,coercedParams)
+            let baseArray = Expr.NewArray(context.ScenarioBaseType,coercedParams)
 
             //set the array with the descriptors
             let first = Expr.Sequential(Expr.FieldSet(this,scenariosField, baseArray),setDescriptors)
@@ -169,15 +169,9 @@ let createFeatureTypeTree (providerName:string) (root:ProvidedTypeDefinition) (c
     }
 
 
-let createFeatureExpression (providerName:string) (root:ProvidedTypeDefinition) (document:GherkinDocument) =
 
-    TagBaseType <- Some (createTagBase providerName root)
-    ArgumentBaseType <- Some (createArgumentBaseType providerName root)
-    DataCellType <- Some (createDataCellType providerName root)
-    DataRowBaseType <- Some (createDataRowBaseType providerName root)
-    DocStringArgumentType <- Some (createDocStringArgumentType providerName root)
-    StepBaseType <- Some (createStepBaseType providerName root)
-    ScenarioBaseType <- Some (createScenarioBaseType providerName root)
+
+let createFeatureExpression (context:GeneratedTypeContext) (providerName:string) (root:ProvidedTypeDefinition) (document:GherkinDocument) =
 
     getScenariosFromDocument document 
-    |> createFeatureTypeTree providerName root
+    |> createFeatureTypeTree context providerName root

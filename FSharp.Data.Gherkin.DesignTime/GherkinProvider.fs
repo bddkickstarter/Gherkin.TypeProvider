@@ -18,13 +18,15 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     // check we contain a copy of runtime files, and are not referencing the runtime DLL
     do assert (typeof<GherkinProvider.Runtime.AssemblyChecker>.Assembly.GetName().Name = asm.GetName().Name)  
 
-    let create providerName (path:string) =
+    let create providerName (path:string) (shouldSantize:bool) =
         let providedAssembly = ProvidedAssembly()
         let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
         let gherkinDocument = Parser().Parse(path)
 
-        createFeatureExpression providerName root gherkinDocument
-        |> buildFeatureInstance root gherkinDocument
+        let context = createContext providerName root shouldSantize
+        
+        createFeatureExpression context providerName root gherkinDocument
+        |> buildFeatureInstance context root gherkinDocument
 
         providedAssembly.AddTypes [root]
         root
@@ -38,10 +40,5 @@ type GherkinProvider (config : TypeProviderConfig) as this =
                     ProvidedStaticParameter("Sanitize", typeof<bool>,false)
                 ], 
                 fun providerName args -> 
-                
-                    match (unbox<bool> args.[1]) with 
-                    | true -> SanitizeName <- ExpressionBuilders.Shared.sanitize
-                    | _ -> ()
-
-                    create providerName (unbox<string> args.[0]) )
+                    create providerName (unbox<string> args.[0]) (unbox<bool> args.[1])  )
         this.AddNamespace(ns,[provider])

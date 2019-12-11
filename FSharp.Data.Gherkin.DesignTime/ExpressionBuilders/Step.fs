@@ -8,21 +8,21 @@ open FSharp.Quotations
 open Gherkin.Ast
 
 
-let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherkinStep:Step) =
+let createStepExpression (context:GeneratedTypeContext)  (parent:ProvidedTypeDefinition) (position:int)  (gherkinStep:Step) =
 
-    let stepName = (sprintf "%i %sClass" position gherkinStep.Text) |> SanitizeName
-    let stepType = ProvidedTypeDefinition( stepName,Some (StepBaseType.Value.AsType()),isErased=false, hideObjectMethods=true)
+    let stepName = (sprintf "%i %sClass" position gherkinStep.Text) |> context.SanitizeName
+    let stepType = ProvidedTypeDefinition( stepName,Some (context.StepBaseType.AsType()),isErased=false, hideObjectMethods=true)
     stepType |> parent.AddMember
    
     let argumentType =
         if isNull gherkinStep.Argument then None
         else
             match gherkinStep.Argument with
-            | :? DocString -> Some (DocStringType DocStringArgumentType.Value)
+            | :? DocString -> Some (DocStringType context.DocStringArgumentType)
             | :? DataTable -> 
                 let dataTable = gherkinStep.Argument :?> DataTable
                 let columnNames = (dataTable.Rows |> Seq.head).Cells |> Seq.toList |> List.map (fun c -> c.Value)
-                let dataTableRowType = createDataExpression stepType columnNames
+                let dataTableRowType = createDataExpression context stepType columnNames
                 
                 Some (DataTableType (dataTableRowType))
             | _ -> None
@@ -30,7 +30,7 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
     let argumentBackingField = 
         match argumentType with
         | Some argType ->
-            let visitedProperty = ArgumentBaseType.Value.GetProperty("Visited")
+            let visitedProperty = context.ArgumentBaseType.GetProperty("Visited")
             let (argumentField,argumentProperty) =
                 match argType with
                 | DocStringType docStringType ->
@@ -68,7 +68,7 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
                 ProvidedParameter("text",typeof<string>)
             ]
         match argumentType with
-        | None -> ProvidedParameter("argument",ArgumentBaseType.Value)
+        | None -> ProvidedParameter("argument",context.ArgumentBaseType)
         | Some (argType) ->
                 match argType with
                 | DocStringType docStringType -> ProvidedParameter("argument",docStringType)
@@ -77,7 +77,7 @@ let createStepExpression  (parent:ProvidedTypeDefinition) (position:int)  (gherk
         :: staticParameters |> List.rev
 
 
-    let baseCtr = StepBaseType.Value.GetConstructors().[0]
+    let baseCtr = context.StepBaseType.GetConstructors().[0]
     let stepCtr =
         ProvidedConstructor(
             parameters,
