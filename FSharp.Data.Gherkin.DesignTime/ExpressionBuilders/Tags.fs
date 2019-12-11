@@ -34,7 +34,7 @@ let createTagsType (parent:ProvidedTypeDefinition) (tags:string list) =
         properties |> Seq.iter(tagsType.AddMember)
 
         //add the all tags array
-        let allTagsField = addProperty tagsType "AllTages" (TagBaseType.Value.MakeArrayType())        
+        let allTagsField = addProperty tagsType "AllTags" (TagBaseType.Value.MakeArrayType())        
 
         ProvidedConstructor(
             parameters,

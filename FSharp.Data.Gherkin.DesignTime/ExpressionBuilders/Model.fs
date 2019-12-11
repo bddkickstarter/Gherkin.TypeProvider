@@ -78,7 +78,7 @@ module Shared =
 
     let addProperty (parent:ProvidedTypeDefinition) (name:string) (propertyType:System.Type)=
         let fieldName = sprintf "_%s" name
-        let field = ProvidedField(fieldName,typeof<bool>)
+        let field = ProvidedField(fieldName,propertyType)
         let property = 
             ProvidedProperty(
                 name,propertyType,isStatic=false,
