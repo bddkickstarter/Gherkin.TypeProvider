@@ -80,7 +80,7 @@ module Shared =
         visitedField
 
     let addProperty (parent:ProvidedTypeDefinition) (name:string) (propertyType:System.Type)=
-        let fieldName = sprintf "_%s" name
+        let fieldName = sprintf "_%s" (name.ToLower())
         let field = ProvidedField(fieldName,propertyType)
         let property = 
             ProvidedProperty(
@@ -175,8 +175,8 @@ module Shared =
 
             ProvidedConstructor(
                 [
-                    ProvidedParameter("_content",typeof<string>)
-                    ProvidedParameter("_contentType",typeof<string>)
+                    ProvidedParameter("content",typeof<string>)
+                    ProvidedParameter("contentType",typeof<string>)
                 ],
                 invokeCode =
                     fun args ->

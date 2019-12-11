@@ -9,7 +9,7 @@ open FSharp.Quotations
 let createTagsType (context:GeneratedTypeContext) (parent:ProvidedTypeDefinition) (tags:string list) = 
     if tags.Length = 0 then None
     else
-        let tagsType = ProvidedTypeDefinition("TagsClass",Some typeof<obj>,isErased = false, hideObjectMethods=true)
+        let tagsType = ProvidedTypeDefinition("TagsClass",Some typeof<obj>,isErased = false, hideObjectMethods=true, isSealed=false)
         
         tagsType |> parent.AddMember
 

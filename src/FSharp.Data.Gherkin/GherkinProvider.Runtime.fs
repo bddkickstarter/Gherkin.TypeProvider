@@ -5,7 +5,7 @@
 namespace GherkinProvider.Runtime
 
 type AssemblyChecker() = 
-    static member Check() = ""
+    static member Check() = true
 
 
 #if !IS_DESIGNTIME

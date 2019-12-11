@@ -3,18 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28803.452
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin", "FSharp.Data.Gherkin\FSharp.Data.Gherkin.fsproj", "{9A5C30BD-069D-45BF-A215-E7EBD1EF2CE9}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin", "src\FSharp.Data.Gherkin\FSharp.Data.Gherkin.fsproj", "{9A5C30BD-069D-45BF-A215-E7EBD1EF2CE9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{8F777CF2-2C1E-48C9-9A00-AA36E53DF96E} = {8F777CF2-2C1E-48C9-9A00-AA36E53DF96E}
 	EndProjectSection
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin.Tests", "FSharp.Data.Gherkin.Tests\FSharp.Data.Gherkin.Tests.fsproj", "{053C512D-14D9-4B21-AC5B-FF0818EE3484}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin.Tests", "tests\FSharp.Data.Gherkin.Tests\FSharp.Data.Gherkin.Tests.fsproj", "{053C512D-14D9-4B21-AC5B-FF0818EE3484}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin.Tests.CSharp.Shim", "FSharp.Data.Gherkin.Tests.CSharp.Shim\FSharp.Data.Gherkin.Tests.CSharp.Shim.fsproj", "{96078690-6E15-43EF-AC18-9BD502863B74}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin.Tests.CSharp.Shim", "tests\FSharp.Data.Gherkin.Tests.CSharp.Shim\FSharp.Data.Gherkin.Tests.CSharp.Shim.fsproj", "{96078690-6E15-43EF-AC18-9BD502863B74}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.Data.Gherkin.Tests.CSharp", "FSharp.Data.Gherkin.Tests.CSharp\FSharp.Data.Gherkin.Tests.CSharp.csproj", "{95964C8E-0AA2-4125-BD2A-4702C4466A0C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FSharp.Data.Gherkin.Tests.CSharp", "tests\FSharp.Data.Gherkin.Tests.CSharp\FSharp.Data.Gherkin.Tests.CSharp.csproj", "{95964C8E-0AA2-4125-BD2A-4702C4466A0C}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin.DesignTime", "FSharp.Data.Gherkin.DesignTime\FSharp.Data.Gherkin.DesignTime.fsproj", "{8F777CF2-2C1E-48C9-9A00-AA36E53DF96E}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Data.Gherkin.DesignTime", "src\FSharp.Data.Gherkin.DesignTime\FSharp.Data.Gherkin.DesignTime.fsproj", "{8F777CF2-2C1E-48C9-9A00-AA36E53DF96E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

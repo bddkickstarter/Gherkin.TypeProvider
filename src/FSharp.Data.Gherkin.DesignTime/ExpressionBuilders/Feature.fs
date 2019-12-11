@@ -35,19 +35,14 @@ let getBackgroundExpression (context:GeneratedTypeContext) (feature:ProvidedType
         | None -> None
         | Some b -> 
             let backgroundType = createBackgroundExpression context feature b
-            let backgroundField = ProvidedField("_background",backgroundType.Type)
-            let backgroundProperty = ProvidedProperty("Background",backgroundType.Type,getterCode = fun args -> Expr.FieldGet(args.[0],backgroundField))
-
-            backgroundField |> feature.AddMember
-            backgroundProperty |> feature.AddMember
-
+            let backgroundField = addProperty feature "Background"  backgroundType.Type
             Some (backgroundType,backgroundField)
 
 
 let createFeatureTypeTree (context:GeneratedTypeContext) (providerName:string) (root:ProvidedTypeDefinition) (children:Background option*Scenario list*string list) =
     let (background,scenarios,tags) = children
     let featureName = sprintf "%s_Feature" providerName
-    let featureType= ProvidedTypeDefinition(featureName,Some typeof<obj>,isErased=false, hideObjectMethods=true)
+    let featureType= ProvidedTypeDefinition(featureName,Some typeof<obj>,isErased=false, hideObjectMethods=true, isSealed=false)
 
     //Add Feature
     featureType |> root.AddMember
@@ -120,7 +115,6 @@ let createFeatureTypeTree (context:GeneratedTypeContext) (providerName:string) (
             //set the name & description fields
             let setName = Expr.FieldSet(this,nameField, args.[1])
             let setDescription = Expr.FieldSet(this,descriptionField,args.[2])
-
             let setDescriptors = Expr.Sequential(setName,setDescription)
 
             //get the scenarios from arguments based on whether there are tags and/or background
@@ -154,9 +148,7 @@ let createFeatureTypeTree (context:GeneratedTypeContext) (providerName:string) (
                 | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[3]);Expr.FieldSet(this,tagField,args.[4])]
                 | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[3])]
 
-
             additionalSets |> Seq.fold(fun a c -> Expr.Sequential(a,c)) scenarioFieldSet
-
 
             )) |> featureType.AddMember
 
@@ -167,9 +159,6 @@ let createFeatureTypeTree (context:GeneratedTypeContext) (providerName:string) (
         Background = match backgroundExpression with | None -> None | Some (backgroundExp,_) -> Some backgroundExp
         Tags = match tagExpression with | None -> None | Some (tagExpr,_) -> Some tagExpr
     }
-
-
-
 
 let createFeatureExpression (context:GeneratedTypeContext) (providerName:string) (root:ProvidedTypeDefinition) (document:GherkinDocument) =
 
