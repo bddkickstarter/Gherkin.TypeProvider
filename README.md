@@ -207,6 +207,33 @@ This allows the test to checked after a test run to ensure all the significant p
     true!
     ```
 
+    # Consuming from C#
+
+    To consume the output in a C# project, we first have to santize the names as C# won't recognised properties with illegal characters in them (such as spaces).
+
+    To do that simply use the Santize option
+    
+    ```fsharp
+    type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"), Sanitize=true>
+    ```
+
+    Which will replace illegal characters with underscores.  The previous example will now look like
+
+    ```csharp
+    myTestFeature
+        .some_group_of_examples
+        .Examples
+        .[0]
+        .checks_the_result
+        .Value
+    ```
+
+    Reference the F# project containing the sanitized type system and take advantage of a typed gherkin file in C#.
+
+    There is an example of an F# wrapper [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/tree/master/tests/FSharp.Data.Gherkin.Tests.CSharp.Shim/Library.fs) which is then consumed in a C# console app [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/blob/master/tests/FSharp.Data.Gherkin.Tests.CSharp/Program.cs)
+
+
+
     
 
 
