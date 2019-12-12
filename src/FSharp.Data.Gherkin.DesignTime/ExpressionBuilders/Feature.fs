@@ -55,7 +55,7 @@ let createFeatureTypeTree (context:GeneratedTypeContext) (providerName:string) (
     let backgroundExpression = getBackgroundExpression context featureType background
 
     let scenarioExpressions = scenarios |> List.map(createScenarioExpression context featureType)
-    let scenarioParameters =  scenarioExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> context.SanitizeName,st.Type))
+    let scenarioParameters =  scenarioExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> sanitize,st.Type))
 
     //untyped scenarios array - add the typed scenarios as scenariobase
     let scenariosType = context.ScenarioBaseType.MakeArrayType()
@@ -73,7 +73,7 @@ let createFeatureTypeTree (context:GeneratedTypeContext) (providerName:string) (
         | Some (backgroundType,_),Some(tagType,_) -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("background",backgroundType.Type);ProvidedParameter("tags",tagType)]
 
     //create individual fields to hold the derived scenarios
-    let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> context.SanitizeName, sArg.Type))
+    let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> sanitize, sArg.Type))
 
     //get the visited property of the scenario base
     let visitedProperty = context.ScenarioBaseType.GetProperty("Visited")

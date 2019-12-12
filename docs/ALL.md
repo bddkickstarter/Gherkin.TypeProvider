@@ -247,7 +247,7 @@ let scenario =
 The type of the scenario will be 
 
 ```fsharp
-``this is a scenario Class`` 
+``this_is_a_scenario_Class`` 
 ```
 
 However the feature also contains an array of all its Scenarios as their base classes (_TestFeature_ScenarioBase_), so if the only scenario in this feature was accessed like:

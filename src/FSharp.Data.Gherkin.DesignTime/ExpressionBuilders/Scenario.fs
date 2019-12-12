@@ -13,7 +13,7 @@ open Gherkin.Ast
 
 let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
 
-    let scenarioType = ProvidedTypeDefinition((sprintf " %sClass" gherkinScenario.Name) |> context.SanitizeName,Some (context.ScenarioBaseType.AsType()),isErased=false, hideObjectMethods=true, isSealed=false)
+    let scenarioType = ProvidedTypeDefinition((sprintf "%sClass" gherkinScenario.Name) |> sanitize,Some (context.ScenarioBaseType.AsType()),isErased=false, hideObjectMethods=true, isSealed=false)
     scenarioType |> feature.AddMember
 
     //create tags
@@ -37,8 +37,8 @@ let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTyp
     let gherkinStepList = gherkinScenario.Steps |> Seq.toList
     let stepExpressions =  gherkinStepList |> List.mapi(createStepExpression context scenarioType)
 
-    let parameters = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter(getStepName context.SanitizeName i step,stepExpression.Type)) gherkinStepList stepExpressions 
-    let stepFields = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField(getStepName context.SanitizeName i step,stepExpression.Type)) gherkinStepList stepExpressions 
+    let parameters = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter((getStepName context.SanitizeName i step) |> sanitize ,stepExpression.Type)) gherkinStepList stepExpressions 
+    let stepFields = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField((getStepName context.SanitizeName i step) |> sanitize  ,stepExpression.Type)) gherkinStepList stepExpressions 
     let visitedProperty = context.StepBaseType.GetProperty("Visited")
 
     let stepProperties = 
