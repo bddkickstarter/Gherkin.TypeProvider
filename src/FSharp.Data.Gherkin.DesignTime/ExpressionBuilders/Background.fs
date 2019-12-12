@@ -12,9 +12,9 @@ let createBackgroundExpression (context:GeneratedTypeContext)  (feature:Provided
     let backgroundType = ProvidedTypeDefinition("BackgroundClass",Some (context.ScenarioBaseType.AsType()),isErased=false, hideObjectMethods=true, isSealed=false)
     backgroundType |> feature.AddMember
 
-    //add the steps array backing field & property
-    let stepsType = context.StepBaseType.MakeArrayType()
-    let stepsField =addProperty backgroundType "Steps" stepsType
+    // //add the steps array backing field & property
+    // let stepsType = context.StepBaseType.MakeArrayType()
+    // let stepsField =addProperty backgroundType "Steps" stepsType
     
     //add step specific constructor params, properties & fields
     let backgroundStepList = gherkinBackground.Steps |> Seq.toList
@@ -58,20 +58,21 @@ let createBackgroundExpression (context:GeneratedTypeContext)  (feature:Provided
                         //get the steps from arguments (after name & desc)
                         let steps = args.GetSlice(Some 3,Some (args.Length-1))
 
-                        // create the steps array
-                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,context.StepBaseType))
-                        let stepsArray = Expr.NewArray(context.StepBaseType,coercedSteps)
-                        let first = Expr.FieldSet(this,stepsField, stepsArray)
-
                         //set each parameter to its non-derived backing field
                         let stepFieldSets = List.map2( fun stepField stepValue -> Expr.FieldSet(this,stepField,stepValue))  stepFields steps
 
                         //create a single expression with all the step sets & the new array
-                        stepFieldSets |> Seq.fold (fun a c -> Expr.Sequential(a,c) ) first
+                        stepFieldSets.Tail |> Seq.fold (fun a c -> Expr.Sequential(a,c) ) stepFieldSets.Head
 
             )
 
-    backgroundCtr.BaseConstructorCall <- fun args -> baseCtr,[args.[0];args.[1];args.[2]] // pass in name & descr to base class
+    backgroundCtr.BaseConstructorCall <- 
+        fun args -> 
+            let steps = 
+                args.GetSlice(Some 3,Some(args.Length - 1))
+                |> List.map (fun s -> Expr.Coerce(s,context.StepBaseType.AsType()))
+                
+            baseCtr,[args.[0];args.[1];args.[2];Expr.NewArray(context.StepBaseType,steps)] // pass in name & descr to base class
 
     backgroundCtr |> backgroundType.AddMember
     

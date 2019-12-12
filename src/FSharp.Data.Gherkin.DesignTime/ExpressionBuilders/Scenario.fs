@@ -75,6 +75,14 @@ let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTyp
         | Some (exampleType,_),Some(tagType,_) ->
             (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: ProvidedParameter("tags",tagType) :: parameters)
 
+    let getStepsFromArgs (args:Expr list) examples tags =
+            //get the steps from arguments based on whether there are examples & or tags
+            match examples,tags with
+            | None,None -> args.GetSlice(Some 3,Some (args.Length-1))
+            | Some(_),None ->args.GetSlice(Some 4,Some (args.Length-1))
+            | Some(_),Some(_) ->args.GetSlice(Some 5,Some (args.Length-1))
+            | None,Some(_) -> args.GetSlice(Some 4,Some (args.Length-1))
+
     let scenarioCtr = 
         ProvidedConstructor(
             constructorParams,
@@ -82,13 +90,7 @@ let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTyp
                 fun args -> 
                         let this = args.[0]
 
-                        //get the steps from arguments based on whether there are examples & or tags
-                        let steps = 
-                            match exampleExpression,tagExpression with
-                            | None,None -> args.GetSlice(Some 3,Some (args.Length-1))
-                            | Some(_),None ->args.GetSlice(Some 4,Some (args.Length-1))
-                            | Some(_),Some(_) ->args.GetSlice(Some 5,Some (args.Length-1))
-                            | None,Some(_) -> args.GetSlice(Some 4,Some (args.Length-1))
+                        let steps = getStepsFromArgs args exampleExpression tagExpression
 
                         // create the steps array
                         let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,context.StepBaseType))
@@ -113,7 +115,15 @@ let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTyp
 
             )
 
-    scenarioCtr.BaseConstructorCall <- fun args -> baseCtr,[args.[0];args.[1];args.[2]] // pass in name & descr to base class
+    scenarioCtr.BaseConstructorCall <- 
+        fun args -> 
+            let steps = 
+                getStepsFromArgs args exampleExpression tagExpression
+                |> List.map(fun s -> Expr.Coerce(s,context.StepBaseType))
+                
+            let stepsArray = Expr.NewArray(context.StepBaseType.AsType(),steps)
+           
+            baseCtr,[args.[0];args.[1];args.[2];stepsArray] // pass in name,descr & all the steps as an array to base class
 
     scenarioCtr |> scenarioType.AddMember
     

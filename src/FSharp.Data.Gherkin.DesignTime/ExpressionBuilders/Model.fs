@@ -220,26 +220,29 @@ module Shared =
 
         step
 
-    let createScenarioBaseType (parentName:string) (parent:ProvidedTypeDefinition) =
+    let createScenarioBaseType (stepBase:ProvidedTypeDefinition) (parentName:string) (parent:ProvidedTypeDefinition) =
         let baseName = sprintf "%s_ScenarioBase" parentName |> sanitize  
         let scenarioBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
         scenarioBase |> parent.AddMember
 
         let nameField = addProperty scenarioBase "Name" typeof<string> 
-        let descriptionField =  addProperty scenarioBase "Description" typeof<string> 
+        let descriptionField =  addProperty scenarioBase "Description" typeof<string>
+        let stepsType = stepBase.AsType().MakeArrayType()
+        let stepsField =  addProperty scenarioBase "Steps" stepsType
         let visitedField = addVisitedProperty scenarioBase
 
         ProvidedConstructor(
-            [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);],
+            [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("steps",stepsType)],
             invokeCode = 
                 fun args ->
-                    Expr.Sequential(
-                        Expr.Sequential(
-                            Expr.FieldSet(args.[0],visitedField,Expr.Value(false)),
-                            Expr.FieldSet(args.[0],nameField,args.[1])
-                        ),Expr.FieldSet(args.[0],descriptionField,args.[2]))
+                    [
+                        Expr.FieldSet(args.[0],nameField,args.[1])
+                        Expr.FieldSet(args.[0],descriptionField,args.[2])
+                        Expr.FieldSet(args.[0],stepsField,args.[3])
+                    ]
+                    |> Seq.fold(fun a c -> Expr.Sequential(a,c)) (Expr.FieldSet(args.[0],visitedField,Expr.Value(false)))
                    
-                    )|> scenarioBase.AddMember
+                )|> scenarioBase.AddMember
 
         scenarioBase
 
@@ -249,6 +252,7 @@ module Shared =
         let argumentBase = createArgumentBaseType providerName root
         let dataCellType = createDataCellType argumentBase providerName root
         let dataRowBase = createDataRowBaseType dataCellType providerName root
+        let stepBase = createStepBaseType argumentBase dataRowBase providerName root
 
         {
             SanitizeName =  if shouldSantize then sanitize else id
@@ -257,8 +261,8 @@ module Shared =
             DataCellType = dataCellType
             DataRowBaseType = dataRowBase
             DocStringArgumentType = createDocStringArgumentType argumentBase providerName root
-            StepBaseType = createStepBaseType argumentBase dataRowBase providerName root
-            ScenarioBaseType = createScenarioBaseType providerName root
+            StepBaseType = stepBase
+            ScenarioBaseType = createScenarioBaseType stepBase providerName root
         }
 
 

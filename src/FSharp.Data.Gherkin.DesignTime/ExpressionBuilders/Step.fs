@@ -8,7 +8,7 @@ open FSharp.Quotations
 open Gherkin.Ast
 
 
-let createStepExpression (context:GeneratedTypeContext)  (parent:ProvidedTypeDefinition) (position:int)  (gherkinStep:Step) =
+let createStepExpression (context:GeneratedTypeContext) (parent:ProvidedTypeDefinition) (position:int) (gherkinStep:Step) =
 
     let stepName = (sprintf "%i%sClass" position gherkinStep.Text) |> sanitize
     let stepType = ProvidedTypeDefinition( stepName,Some (context.StepBaseType.AsType()),isErased=false, hideObjectMethods=true,isSealed=false)

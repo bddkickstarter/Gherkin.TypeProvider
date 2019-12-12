@@ -112,3 +112,112 @@ let visitExampleCell =
             example.``Example Column 1`` |> ignore
 
             Expect.isTrue example.Cells.[0].Visited "Expected visit to example cell to be true after visiting"
+
+
+let walkTags (tags:TestFeature.TestFeature_TagBase[]) =
+    match 
+        tags
+        |> Array.filter(fun t -> not t.Visited)
+        |> Array.fold(fun a c -> sprintf "Tag%s not visited\r\n%s" c.Name a) "" with
+    | "" -> Ok()
+    | err -> Error err
+
+let walkData (data:TestFeature.TestFeature_DataRowBase[]) =
+    if isNull data then Ok()
+    else
+        match 
+            data
+            |> Array.mapi(fun i row -> 
+                row.Cells 
+                |> Array.filter (fun c -> not c.Visited)
+                |> Array.fold(
+                           fun a c -> 
+                            sprintf "Row %i Column %s not visited\r\n%s" i c.Header a) "") 
+            |> Array.fold(fun (a:string) c ->
+                if a.Length = 0 then  sprintf "%s%s" a c
+                else sprintf "%s%s\r\n" a c
+                ) "" with
+        | "" -> Ok()
+        | err -> Error err
+
+let walkSteps (steps:TestFeature.TestFeature_StepBase[]) =
+    match
+        steps
+        |> Array.map(fun s ->
+                if not s.Visited then sprintf "Step %i not visited" s.Order
+                else if not (isNull s.DocString) && not s.DocString.Visited then sprintf "Step %i Doc String argument not visited" s.Order
+                else
+                    match walkData s.DataTable with
+                    | Error err -> sprintf "Step:%i %s" s.Order err
+                    | Ok() ->
+                        if not s.Visited then sprintf "Step %i not visited" s.Order
+                        else "")
+        |> Array.fold (fun (a:string) c -> 
+                if a.Length = 0 then  sprintf "%s%s" a c
+                else sprintf "%s%s\r\n" a c
+         ) "" with
+    | "" -> Ok()
+    | err -> Error err
+
+let walkScenarios (scenarios:TestFeature.TestFeature_ScenarioBase[]) =
+    match 
+        scenarios
+        |> Array.map(fun s ->
+            if not s.Visited then sprintf "Scenario %s not visited" s.Name
+            else 
+                match walkSteps s.Steps with
+                | Error err -> sprintf "%s\r\n%s" s.Name err
+                | Ok() -> "")
+        |> Array.fold (fun (a:string) c ->
+                if a.Length = 0 then  sprintf "%s%s" a c
+                else sprintf "%s%s\r\n" a c
+         ) "" with
+    | "" -> Ok()
+    | err -> Error err
+
+let walkFeature (feature:TestFeature.TestFeature_Feature) =
+    match walkTags feature.Tags.AllTags with
+    | Error err -> failwith err
+    | Ok() ->
+
+    walkScenarios feature.Scenarios
+        
+
+[<Tests>]
+let walkTheFeature =
+    testCase
+        "Walk the feature using underlying arrays"
+        <| fun _ ->
+            let feature = TestFeature.CreateFeature()
+
+            feature.Tags.featureTag1 |> ignore
+            feature.Tags.featureTag2 |> ignore
+
+            let scenario1 = feature.``Scenario 1 name``
+            let scenario2 = feature.``Scenario 2 name``
+            let scenarioOutline = feature.``Scenario outline name``
+
+            scenario1.``0 Given scenario 1 given step``.Argument.Content |> ignore
+            scenario1.``1 When scenario 1 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
+            scenario1.``2 Then scenario 1 then step`` |> ignore
+            
+            scenario2.``0 Given scenario 2 given step``.Argument.Content |> ignore
+            scenario2.``1 When scenario 2 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
+            scenario2.``2 Then scenario 2 then step`` |> ignore
+
+            let scenarioOutlineGiven = scenarioOutline.``0 Given scenario outline given step <Example Column 1>``
+            let scenarioOutlineWhen = scenarioOutline.``1 When scenario outline when step <Example Column 2>``
+            scenarioOutline.``2 Then scenario outline then step <Example Column 3>`` |> ignore
+
+            scenarioOutlineGiven.Argument.Content |> ignore
+            scenarioOutlineWhen.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
+            
+            match walkFeature feature with
+            | Ok() -> ()
+            | Error err -> failwith err
+            
+
+            
+
+            
+

@@ -4,7 +4,6 @@ open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Gherkin.Ast
 open ExpressionBuilders
-open ExpressionBuilders.Shared
 
 
 let buildRows (context:GeneratedTypeContext) (columns:string list) (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
