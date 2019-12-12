@@ -58,14 +58,30 @@ module Shared =
 
     let sanitize  = 
         fun (nm:string) ->
-            let sanitizeFirstNumber  =
-                match (nm.ToCharArray() |> Seq.toList) with
-                | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" nm
-                | _ -> nm 
 
-            [' ';'<';'>';'£';'$';'%';'&'] 
-            @ (System.IO.Path.GetInvalidPathChars() |> Seq.toList)
-            |> Seq.fold (fun (a:string) c -> a.Replace(c.ToString(),"_") ) sanitizeFirstNumber
+            let sanitizeFirstNumber (str:string)  =
+                match (str.ToCharArray() |> Seq.toList) with
+                | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" str
+                | _ -> str
+            
+            let removeIllegalChars (str:string) =
+                
+                let sanitizedChars =
+                    str.ToCharArray() 
+                    |> Seq.map(
+                        fun c -> 
+                            let ansiiCode = (c |> int) 
+                            if ansiiCode < 48 then '_'
+                            else if ansiiCode > 57 && ansiiCode < 65 then '_'
+                            else if ansiiCode > 90 && ansiiCode < 97 then '_'
+                            else if ansiiCode > 122 then '_' else c )
+                    |> Seq.toArray
+                    
+                System.String(sanitizedChars)
+
+
+            nm |> sanitizeFirstNumber |> removeIllegalChars
+
 
     let addVisitedProperty (parent:ProvidedTypeDefinition) =
         let visitedField = ProvidedField("_visited",typeof<bool>)
