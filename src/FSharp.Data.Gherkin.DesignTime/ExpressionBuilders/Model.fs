@@ -53,35 +53,43 @@ type FeatureExpression =
     }
 
 
-
 module Shared =
 
-    let sanitize  = 
-        fun (nm:string) ->
+    let sanitizeFirstNumber (str:string)  =
+            match (str.ToCharArray() |> Seq.toList) with
+            | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" str
+            | _ -> str
 
-            let sanitizeFirstNumber (str:string)  =
-                match (str.ToCharArray() |> Seq.toList) with
-                | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" str
-                | _ -> str
-            
-            let removeIllegalChars (str:string) =
-                
-                let sanitizedChars =
-                    str.ToCharArray() 
-                    |> Seq.map(
-                        fun c -> 
-                            let ansiiCode = (c |> int) 
-                            if ansiiCode < 48 then '_'
-                            else if ansiiCode > 57 && ansiiCode < 65 then '_'
-                            else if ansiiCode > 90 && ansiiCode < 97 then '_'
-                            else if ansiiCode > 122 then '_' else c )
-                    |> Seq.toArray
-                    
-                System.String(sanitizedChars)
+    let sanitizeByType =
 
+        let numbers = [48..57]
+        let lowercaseChars = [97..122]
+        let uppercaseChars = [65..90]
+        let allowedFSharpCharacters = [32]
 
-            nm |> sanitizeFirstNumber |> removeIllegalChars
+        let allowCharacters  (validCharacters:int list) (str:string) =
+                str.ToCharArray() 
+                |> Seq.map(
+                    fun c -> 
+                        let asciiCode = (c |> int) 
+                        if validCharacters |> Seq.exists(fun a -> a = asciiCode) then c
+                        else '_'
+                        )
+                |> Seq.toArray
 
+        fun (sanitizeType:string) (nm:string) ->
+            if sanitizeType = "c#" 
+            then
+                nm 
+                |> sanitizeFirstNumber
+                |> allowCharacters (numbers @ lowercaseChars @ uppercaseChars)
+                |> System.String
+            else 
+                nm 
+                |> allowCharacters (allowedFSharpCharacters @ numbers @ lowercaseChars @ uppercaseChars)
+                |> System.String
+
+    let sanitize  = sanitizeByType "c#"
 
     let addVisitedProperty (parent:ProvidedTypeDefinition) =
         let visitedField = ProvidedField("_visited",typeof<bool>)
@@ -112,6 +120,7 @@ module Shared =
     let getStepName (sanitizeName) (position:int) (step:Step) =
         sprintf "%i %s %s" position (step.Keyword.Trim()) (step.Text.Trim())
         |> sanitizeName
+
 
     let createTagBase (parentName:string) (parent:ProvidedTypeDefinition) =
         let baseName = sprintf "%s_TagBase" parentName |> sanitize 
@@ -263,7 +272,7 @@ module Shared =
         scenarioBase
 
 
-    let createContext (providerName:string) (root:ProvidedTypeDefinition) (shouldSantize:bool)=
+    let createContext (providerName:string) (root:ProvidedTypeDefinition) (sanitizeType:string)=
 
         let argumentBase = createArgumentBaseType providerName root
         let dataCellType = createDataCellType argumentBase providerName root
@@ -271,7 +280,7 @@ module Shared =
         let stepBase = createStepBaseType argumentBase dataRowBase providerName root
 
         {
-            SanitizeName =  if shouldSantize then sanitize else id
+            SanitizeName =  if sanitizeType = "none" then id else sanitizeByType sanitizeType
             TagBaseType = createTagBase providerName root
             ArgumentBaseType = argumentBase
             DataCellType = dataCellType

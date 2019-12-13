@@ -68,14 +68,14 @@ Scenario Outline: Scenario outline name
 Multi-line
 Scenario Outline Description
 
-  Given scenario outline given step <Example Column 1>
+  Given scenario outline given step (Example Column 1)
   """
 multi line
 scenario outline
 argument
 """
    
-   When scenario outline when step <Example Column 2>
+   When scenario outline when step <Example Column 2> 
 |column1|column2|
 | data1 | data2 |
 | data3 | data4 |

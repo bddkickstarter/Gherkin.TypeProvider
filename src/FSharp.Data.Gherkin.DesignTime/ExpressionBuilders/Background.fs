@@ -12,10 +12,7 @@ let createBackgroundExpression (context:GeneratedTypeContext)  (feature:Provided
     let backgroundType = ProvidedTypeDefinition("BackgroundClass",Some (context.ScenarioBaseType.AsType()),isErased=false, hideObjectMethods=true, isSealed=false)
     backgroundType |> feature.AddMember
 
-    // //add the steps array backing field & property
-    // let stepsType = context.StepBaseType.MakeArrayType()
-    // let stepsField =addProperty backgroundType "Steps" stepsType
-    
+
     //add step specific constructor params, properties & fields
     let backgroundStepList = gherkinBackground.Steps |> Seq.toList
     let stepExpressions =  backgroundStepList |> List.mapi(createStepExpression context backgroundType)

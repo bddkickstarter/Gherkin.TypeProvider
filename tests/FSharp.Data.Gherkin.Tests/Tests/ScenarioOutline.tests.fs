@@ -34,7 +34,7 @@ let scenarioOutline =
                 <| fun _ ->
 
                     validateStep
-                        scenarioOutline.``0 Given scenario outline given step <Example Column 1>``
+                        scenarioOutline.``0 Given scenario outline given step _Example Column 1_``
                         0
                         "Given"
                         "scenario outline given step <Example Column 1>"
@@ -43,7 +43,7 @@ let scenarioOutline =
                 "Scenario Outline Given multiline argument correct"
                 <| fun _ ->
 
-                    let step = scenarioOutline.``0 Given scenario outline given step <Example Column 1>``
+                    let step = scenarioOutline.``0 Given scenario outline given step _Example Column 1_``
                     let expectedArgument = "multi line\r\nscenario outline\r\nargument"
                     Expect.equal 
                         step.Argument.Content expectedArgument
@@ -57,7 +57,7 @@ let scenarioOutline =
                 <| fun _ ->
 
                     validateStep
-                        scenarioOutline.``1 When scenario outline when step <Example Column 2>``
+                        scenarioOutline.``1 When scenario outline when step _Example Column 2_``
                         1
                         "When"
                         "scenario outline when step <Example Column 2>"
@@ -66,7 +66,7 @@ let scenarioOutline =
                 "Scenario Outline When data table argument correct"
                 <| fun _ ->
 
-                    let step = scenarioOutline.``1 When scenario outline when step <Example Column 2>``
+                    let step = scenarioOutline.``1 When scenario outline when step _Example Column 2_``
                     Expect.equal step.Argument.Length 2 (sprintf "Scenario Outline When Data:Expected 2 rows but got %i" step.Argument.Length)
 
                     validateData step.Argument.[0].column1 "column1" "data1"
@@ -79,7 +79,7 @@ let scenarioOutline =
                 <| fun _ ->
 
                     validateStep
-                        scenarioOutline.``2 Then scenario outline then step <Example Column 3>``
+                        scenarioOutline.``2 Then scenario outline then step _Example Column 3_``
                         2
                         "Then"
                         "scenario outline then step <Example Column 3>"

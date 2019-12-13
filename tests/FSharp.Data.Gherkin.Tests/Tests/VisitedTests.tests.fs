@@ -205,9 +205,9 @@ let walkTheFeature =
             scenario2.``1 When scenario 2 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
             scenario2.``2 Then scenario 2 then step`` |> ignore
 
-            let scenarioOutlineGiven = scenarioOutline.``0 Given scenario outline given step <Example Column 1>``
-            let scenarioOutlineWhen = scenarioOutline.``1 When scenario outline when step <Example Column 2>``
-            scenarioOutline.``2 Then scenario outline then step <Example Column 3>`` |> ignore
+            let scenarioOutlineGiven = scenarioOutline.``0 Given scenario outline given step _Example Column 1_``
+            let scenarioOutlineWhen = scenarioOutline.``1 When scenario outline when step _Example Column 2_``
+            scenarioOutline.``2 Then scenario outline then step _Example Column 3_`` |> ignore
 
             scenarioOutlineGiven.Argument.Content |> ignore
             scenarioOutlineWhen.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)

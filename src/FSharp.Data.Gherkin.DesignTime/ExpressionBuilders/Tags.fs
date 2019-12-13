@@ -5,7 +5,6 @@ open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 
 
-
 let createTagsType (context:GeneratedTypeContext) (parent:ProvidedTypeDefinition) (tags:string list) = 
     if tags.Length = 0 then None
     else

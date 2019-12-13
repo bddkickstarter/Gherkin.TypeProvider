@@ -29,16 +29,12 @@ let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTyp
             let exampleField = addProperty scenarioType "Examples" (exampleType.MakeArrayType())
             Some (exampleType,exampleField)
 
-    //add the steps array backing field & property
-    let stepsType = context.StepBaseType.MakeArrayType()
-    let stepsField = addProperty scenarioType "Steps" stepsType
-
     //add step specific constructor params, properties & fields
     let gherkinStepList = gherkinScenario.Steps |> Seq.toList
     let stepExpressions =  gherkinStepList |> List.mapi(createStepExpression context scenarioType)
 
-    let parameters = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter((getStepName context.SanitizeName i step) |> sanitize ,stepExpression.Type)) gherkinStepList stepExpressions 
-    let stepFields = List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField((getStepName context.SanitizeName i step) |> sanitize  ,stepExpression.Type)) gherkinStepList stepExpressions 
+    let parameters = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedParameter(sprintf "step%i" i ,stepExpression.Type))  
+    let stepFields = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedField(sprintf "_step%i" i ,stepExpression.Type))  
     let visitedProperty = context.StepBaseType.GetProperty("Visited")
 
     let stepProperties = 
@@ -92,16 +88,11 @@ let createScenarioExpression (context:GeneratedTypeContext) (feature:ProvidedTyp
 
                         let steps = getStepsFromArgs args exampleExpression tagExpression
 
-                        // create the steps array
-                        let coercedSteps = steps |> List.map(fun s -> Expr.Coerce(s,context.StepBaseType))
-                        let stepsArray = Expr.NewArray(context.StepBaseType,coercedSteps)
-                        let first = Expr.FieldSet(this,stepsField, stepsArray)
-
                         //set each parameter to its non-derived backing field
                         let stepFieldSets = List.map2( fun stepField stepValue -> Expr.FieldSet(this,stepField,stepValue))  stepFields steps
 
                         //create a single expression with all the step sets & the new array
-                        let stepFieldSet = stepFieldSets |> Seq.fold (fun a c -> Expr.Sequential(a,c) ) first
+                        let stepFieldSet = stepFieldSets.Tail |> Seq.fold (fun a c -> Expr.Sequential(a,c) ) stepFieldSets.Head
 
                         // add any background and tags
                         let additionalSets =
