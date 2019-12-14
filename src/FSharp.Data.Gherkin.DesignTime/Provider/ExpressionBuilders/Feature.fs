@@ -20,7 +20,7 @@ type FeatureExpressionBuilder
             tagExpressionBuilder:TagsExpressionBuilder,
             propertyNameSanitizer:string->string) =
 
-    let getScenariosFromDocument (document:GherkinDocument) =
+    let getFeatureItemsFromDocument (document:GherkinDocument) =
         let scenarios =
             document.Feature.Children |> Seq.toList
             |> List.choose(
@@ -49,7 +49,7 @@ type FeatureExpressionBuilder
 
     member __.CreateExpression (providerName:string) (root:ProvidedTypeDefinition) (document:GherkinDocument) = 
 
-            let (background,scenarios,tags) = getScenariosFromDocument document 
+            let (background,scenarios,tags) = getFeatureItemsFromDocument document 
             let featureName = sprintf "%s_Feature" providerName
             let featureType= ProvidedTypeDefinition(featureName,Some typeof<obj>,isErased=false, hideObjectMethods=true, isSealed=false)
 
@@ -98,7 +98,6 @@ type FeatureExpressionBuilder
                             isStatic = false,
                             getterCode = 
                                 fun args -> 
-
                                     //get the specific scenario field
                                     let scenarioFieldGet = Expr.FieldGet(args.[0],scenarioField)
 
@@ -106,8 +105,7 @@ type FeatureExpressionBuilder
                                         //visit scenario
                                         Expr.PropertySet(scenarioFieldGet,visitedProperty,Expr.Value(true)),
                                         //return scenario
-                                        scenarioFieldGet
-                                        )
+                                        scenarioFieldGet)
 
                                     )) scenarioExpressions scenarioFields
 
@@ -184,9 +182,3 @@ type FeatureExpressionBuilder
             providerModel.ScenarioBaseType,
             tagExpressionBuilder,
             propertyNameSanitizer)
-
-
-
-
-
-

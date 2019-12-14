@@ -36,8 +36,8 @@ type DataTypeBuilder  (dataRowBaseType:System.Type,dataCellType:System.Type,sani
                                 //set visited of the field's visited property
                                 let dataField = Expr.FieldGet(args.[0],field)
                                 let visitField = Expr.PropertySet(dataField,visitedProperty,Expr.Value(true))
+                                
                                 Expr.Sequential(visitField,dataField)
-
                                 )) columnNames fields
 
         properties |> Seq.iter (dataType.AddMember)

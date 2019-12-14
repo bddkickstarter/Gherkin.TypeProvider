@@ -10,10 +10,8 @@ type TagsExpressionBuilder (tagBaseType:System.Type) =
         if tags.Length = 0 then None
         else
             let tagsType = ProvidedTypeDefinition("TagsClass",Some typeof<obj>,isErased = false, hideObjectMethods=true, isSealed=false)
-            
-            tagsType |> parent.AddMember
-
             let sanitizeTagName (nm:string) = nm.Replace("@","") |> Sanitizer().Sanitize
+            tagsType |> parent.AddMember
 
             //create params, fields & named properties for all the tags
             let parameters = tags |> List.map(fun t -> ProvidedParameter(t |> sanitizeTagName,typeof<string>))
@@ -58,12 +56,10 @@ type TagsExpressionBuilder (tagBaseType:System.Type) =
                             |> List.map(fun field -> Expr.FieldGet(this,field))
 
                         let allTagsArray = Expr.FieldSet(this,allTagsField,Expr.NewArray(tagBaseType,tatgFields))
-
                         let setAllFields = fieldSets.Tail |> List.fold(fun a c -> Expr.Sequential(a,c)) fieldSets.Head
 
                         // set fields before building the array
-                        Expr.Sequential(setAllFields,allTagsArray)
-                        )
+                        Expr.Sequential(setAllFields,allTagsArray))
              |> tagsType.AddMember
 
             Some tagsType

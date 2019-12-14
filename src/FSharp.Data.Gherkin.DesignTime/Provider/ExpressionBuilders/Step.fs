@@ -80,8 +80,6 @@ type StepExpressionBuilder
                         ProvidedParameter("argument",dataTableType.MakeArrayType())
             :: staticParameters |> List.rev
 
-
-        let baseCtr = stepBaseType.GetConstructors().[0]
         let stepCtr =
             ProvidedConstructor(
                 parameters,
@@ -91,8 +89,9 @@ type StepExpressionBuilder
                         | None -> <@@ () @@>
                         | Some arg -> 
                             
-                            Expr.FieldSet(args.[0],arg,args.[4])
-            )
+                            Expr.FieldSet(args.[0],arg,args.[4]))
+        
+        let baseCtr = stepBaseType.GetConstructors().[0]
         stepCtr.BaseConstructorCall <- 
             fun args -> 
                 match argumentType with

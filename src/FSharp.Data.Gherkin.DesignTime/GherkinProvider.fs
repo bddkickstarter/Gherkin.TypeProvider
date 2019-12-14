@@ -24,7 +24,7 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
         let gherkinDocument = Parser().Parse(path)
         
-        let providerModel = GherkinProviderModel(providerName,root,sanitizetype)
+        let providerModel = GherkinProviderModel(providerName,root)
         let expressionBuilder = FeatureExpressionBuilder.CreateNew providerModel (Sanitizer(sanitizetype).Sanitize)
         let instanceBuilder= FeatureBuilder.CreateNew providerModel
 

@@ -20,7 +20,6 @@ type RowBuilder (dataCellType:System.Type) =
 
                 Expr.NewObject(rowType.GetConstructors().[0],parameters))
 
-
 type ExampleBuilder (rowBuilder:RowBuilder) =
     
     member __.BuildExamples (examples:Examples list) (exampleType:ProvidedTypeDefinition) = 
@@ -34,7 +33,6 @@ type ExampleBuilder (rowBuilder:RowBuilder) =
                 |> rowBuilder.BuildRows headers exampleType
 
             Expr.NewArray(exampleType,rows)
-
 
 type ArgumentBuilder (rowBuilder:RowBuilder) =
 

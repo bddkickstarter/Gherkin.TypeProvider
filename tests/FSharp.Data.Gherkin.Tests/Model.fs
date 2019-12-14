@@ -2,7 +2,7 @@ namespace FSharp.Data.Gherkin.Tests
 
 open FSharp.Data.Gherkin
 
-type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"),Sanitize="f#">
+type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"),Sanitize="partial">
 
 module Helpers =
 

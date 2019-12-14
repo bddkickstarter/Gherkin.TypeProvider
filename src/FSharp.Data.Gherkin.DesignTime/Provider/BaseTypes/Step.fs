@@ -32,17 +32,14 @@ type StepBase (argumentBase:ArgumentBase,dataRowBase:DataRowBase,parentName:stri
                 ProvidedParameter("docString",argumentBase.Type)
                 ProvidedParameter("dataTable",dataRowBase.Type.MakeArrayType())],
             invokeCode = fun args ->
-                let fieldsets =
-                    [
-                        Expr.FieldSet(args.[0],textField,args.[1])
-                        Expr.FieldSet(args.[0],keywordField,args.[2])
-                        Expr.FieldSet(args.[0],orderField,args.[3])
-                        Expr.FieldSet(args.[0],docStringField,args.[4])
-                        Expr.FieldSet(args.[0],dataTableField,args.[5])
-                        Expr.FieldSet(args.[0],visitedField,Expr.Value(false))
-                    ]
-                fieldsets.Tail
-                |> List.fold (fun a c -> Expr.Sequential(a,c)) fieldsets.Head
+                [
+                    Expr.FieldSet(args.[0],textField,args.[1])
+                    Expr.FieldSet(args.[0],keywordField,args.[2])
+                    Expr.FieldSet(args.[0],orderField,args.[3])
+                    Expr.FieldSet(args.[0],docStringField,args.[4])
+                    Expr.FieldSet(args.[0],dataTableField,args.[5])
+                ]
+                |> List.fold (fun a c -> Expr.Sequential(a,c)) (Expr.FieldSet(args.[0],visitedField,Expr.Value(false)))
                     
                 ) |> step.AddMember
 

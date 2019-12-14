@@ -47,7 +47,7 @@ open BaseTypes.DocString
 open BaseTypes.Step
 open BaseTypes.Scenario
 
-type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition,sanitizeType:string) =
+type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
 
     let argumentBase = ArgumentBase(providerName,root)
     let dataCellType = DataCellBase(argumentBase,providerName,root)
@@ -64,4 +64,3 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition,sanit
     member val DataRowBaseType = dataRowBase.Type with get
     member val DataCellBaseType = dataCellType.Type with get
     member val ArgumentBaseType = argumentBase.Type with get
-    member __.SanitizeProperty = Sanitizer(sanitizeType).Sanitize

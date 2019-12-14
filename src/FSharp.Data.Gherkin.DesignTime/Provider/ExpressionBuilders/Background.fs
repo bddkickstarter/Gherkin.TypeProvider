@@ -36,7 +36,6 @@ type BackgroundExpressionBuilder
                         StepBase.GetStepName(propertySanitizer,i,step),
                         stepExpression.Type,
                         getterCode=fun args-> 
-
                             //get the specific step field
                             let stepField = Expr.FieldGet(args.[0],stepFields.[i])
 
@@ -49,9 +48,6 @@ type BackgroundExpressionBuilder
 
         stepFields |> Seq.iter(backgroundType.AddMember)
         stepProperties |> Seq.iter(backgroundType.AddMember)
-
-        // override base constructor 
-        let baseCtr = scenarioBaseType.GetConstructors().[0]
 
         let backgroundCtr = 
             ProvidedConstructor(
@@ -69,6 +65,8 @@ type BackgroundExpressionBuilder
                             //create a single expression with all the step sets & the new array
                             stepFieldSets.Tail |> Seq.fold (fun a c -> Expr.Sequential(a,c) ) stepFieldSets.Head)
 
+        // override base constructor 
+        let baseCtr = scenarioBaseType.GetConstructors().[0]
         backgroundCtr.BaseConstructorCall <- 
             fun args -> 
                 let steps = 

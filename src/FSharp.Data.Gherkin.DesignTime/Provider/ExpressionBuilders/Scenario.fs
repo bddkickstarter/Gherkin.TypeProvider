@@ -42,7 +42,8 @@ type ScenarioExpressionBuilder
         let stepExpressions =  gherkinStepList |> List.mapi((stepExpressionBuilder.CreateExpression scenarioType))
 
         let parameters = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedParameter(sprintf "step%i" i ,stepExpression.Type))  
-        let stepFields = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedField(sprintf "_step%i" i ,stepExpression.Type))  
+        let stepFields = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedField(sprintf "_step%i" i ,stepExpression.Type))
+
         let visitedProperty = stepBaseType.GetProperty("Visited")
 
         let stepProperties = 
@@ -52,7 +53,6 @@ type ScenarioExpressionBuilder
                         StepBase.GetStepName(propertySanitizer,i,step),
                         stepExpression.Type,
                         getterCode=fun args-> 
-
                             //get the specific step field
                             let stepField = Expr.FieldGet(args.[0],stepFields.[i])
 
@@ -65,9 +65,6 @@ type ScenarioExpressionBuilder
 
         stepFields |> Seq.iter(scenarioType.AddMember)
         stepProperties |> Seq.iter(scenarioType.AddMember)
-
-        // override base constructor 
-        let baseCtr = scenarioBaseType.GetConstructors().[0]
 
         let constructorParams =
             match exampleExpression,tagExpression with
@@ -111,6 +108,9 @@ type ScenarioExpressionBuilder
                                 | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[3])]
 
                             additionalSets |> Seq.fold(fun a c -> Expr.Sequential(a,c)) stepFieldSet)
+
+        // override base constructor 
+        let baseCtr = scenarioBaseType.GetConstructors().[0]
 
         scenarioCtr.BaseConstructorCall <- 
             fun args -> 

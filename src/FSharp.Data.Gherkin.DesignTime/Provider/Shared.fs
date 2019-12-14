@@ -8,11 +8,15 @@ type Sanitizer(?sanitizeType:string) =
     let lowercaseChars = [97..122]
     let uppercaseChars = [65..90]
     let allowedFSharpCharacters = [32]
+    let illegalFSharpChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"'; '`' |]
 
     let sanitizeFirstNumber  (str:string) =
             match (str.ToCharArray() |> Seq.toList) with
             | n :: _ when System.Char.IsNumber(n) -> sprintf "_%s" str
             | _ -> str
+
+    let removeIllegalFSharpChars (str:string) = 
+        str
 
     let allowCharacters  (validCharacters:int list)  (str:string) =
             str.ToCharArray() 
@@ -24,16 +28,16 @@ type Sanitizer(?sanitizeType:string) =
 
     let sanitizeByType (nm:string) =
         match sanitizeType with
-        | None | Some "c#" ->
+        | None | Some "full" ->
             nm 
             |> sanitizeFirstNumber
             |> allowCharacters (numbers @ lowercaseChars @ uppercaseChars)
             |> System.String
-        | Some "f#" -> 
+        | Some "partial" -> 
             nm 
             |> allowCharacters (allowedFSharpCharacters @ numbers @ lowercaseChars @ uppercaseChars)
             |> System.String
-        | _ -> nm
+        | _ -> nm |> removeIllegalFSharpChars
 
     member __.Sanitize(str:string) = sanitizeByType str
 
