@@ -1,35 +1,36 @@
 module ExpressionBuilders.Data
 
-open ObjectModel
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
+open Shared
 
-type DataType  (context:GeneratedTypeContext,parent:ProvidedTypeDefinition,columnNames:string list) = 
-    let dataType = 
-        let dataRowBaseType= context.DataRowBaseType.AsType()
+let sanitize = Sanitizer().Sanitize
+
+type DataTypeBuilder  (dataRowBaseType:System.Type,dataCellType:System.Type,sanitizePropertyName:string->string) = 
+    member __.GetDataType (parent:ProvidedTypeDefinition) (columnNames:string list) =
         let dataType  = ProvidedTypeDefinition("DataClass",Some dataRowBaseType, isErased=false, hideObjectMethods=true, isSealed=false)
         dataType |> parent.AddMember
 
         // create constructor parameters for each of the columns
         let parameters = 
             columnNames
-            |> List.map(fun h -> ProvidedParameter(h |> context.SanitizeName,context.DataCellType))
+            |> List.map(fun h -> ProvidedParameter(h |> sanitize,dataCellType))
         
         // create fields for each of the columns
         let fields = 
             columnNames 
-            |> List.map(fun h -> ProvidedField( sprintf "_%s" (h |> context.SanitizeName),context.DataCellType))
+            |> List.map(fun h -> ProvidedField( sprintf "_%s" (h |> sanitize),dataCellType))
 
         fields |> Seq.iter (dataType.AddMember)
 
         // create properties getting the correct backing field
-        let visitedProperty = context.DataCellType.GetProperty("Visited")
+        let visitedProperty = dataCellType.GetProperty("Visited")
         let properties =
             Seq.map2(
                 fun columnName field -> 
                     ProvidedProperty(
-                        columnName |> context.SanitizeName,
-                        context.DataCellType,
+                        columnName |> sanitizePropertyName,
+                        dataCellType,
                         getterCode= 
                             fun args ->
                                 //set visited of the field's visited property
@@ -50,10 +51,9 @@ type DataType  (context:GeneratedTypeContext,parent:ProvidedTypeDefinition,colum
 
                     fieldSets.Tail |> List.fold (fun a c -> Expr.Sequential(a, c)) fieldSets.Head)
         
-        let baseCtr = context.DataRowBaseType.GetConstructors().[0]
-        ctr.BaseConstructorCall <- fun args -> baseCtr,[args.Head;Expr.NewArray(context.DataCellType,args.Tail)]
+        let baseCtr = dataRowBaseType.GetConstructors().[0]
+        ctr.BaseConstructorCall <- fun args -> baseCtr,[args.Head;Expr.NewArray(dataCellType,args.Tail)]
         ctr |> dataType.AddMember
 
         dataType
     
-    member val Type = dataType with get

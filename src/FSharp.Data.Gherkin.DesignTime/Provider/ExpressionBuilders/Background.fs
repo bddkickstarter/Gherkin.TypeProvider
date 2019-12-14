@@ -4,28 +4,36 @@ open ObjectModel
 open ExpressionBuilders.Step
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
-
+open Shared
+open BaseTypes.Step
 open Gherkin.Ast
 
-type BackgroundExpression (context:GeneratedTypeContext,feature:ProvidedTypeDefinition,gherkinBackground:Background) =
-    let expression =
-        let backgroundType = ProvidedTypeDefinition("BackgroundClass",Some (context.ScenarioBaseType.AsType()),isErased=false, hideObjectMethods=true, isSealed=false)
+let sanitize = Sanitizer().Sanitize
+
+type BackgroundExpressionBuilder 
+            (scenarioBaseType:System.Type,
+            stepBaseType:System.Type,
+            stepsExpressionBuilder:StepExpressionBuilder,
+            propertySanitizer:string->string) =
+
+    member __.CreateExpression (feature:ProvidedTypeDefinition) (gherkinBackground:Background) =
+    
+        let backgroundType = ProvidedTypeDefinition("BackgroundClass",Some scenarioBaseType,isErased=false, hideObjectMethods=true, isSealed=false)
         backgroundType |> feature.AddMember
 
         //add step specific constructor params, properties & fields
-        let stepExpressionBuilder = StepExpressionBuilder(context,backgroundType)
         let backgroundStepList = gherkinBackground.Steps |> Seq.toList
-        let stepExpressions =  backgroundStepList |> List.mapi(stepExpressionBuilder.CreateExpression)
+        let stepExpressions =  backgroundStepList |> List.mapi(stepsExpressionBuilder.CreateExpression backgroundType)
 
-        let parameters =List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter(StepBase.GetStepName(context.SanitizeName,i,step),stepExpression.Type)) backgroundStepList stepExpressions
-        let stepFields =List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField(StepBase.GetStepName(context.SanitizeName,i,step) ,stepExpression.Type))  backgroundStepList stepExpressions
-        let visitedProperty = context.StepBaseType.GetProperty("Visited")
+        let parameters =List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedParameter(StepBase.GetStepName(sanitize,i,step),stepExpression.Type)) backgroundStepList stepExpressions
+        let stepFields =List.mapi2(fun i step (stepExpression:StepExpression) -> ProvidedField(StepBase.GetStepName(sanitize,i,step) ,stepExpression.Type))  backgroundStepList stepExpressions
+        let visitedProperty = stepBaseType.GetProperty("Visited")
 
         let stepProperties = 
             List.mapi2(
                 fun i step (stepExpression:StepExpression) -> 
                     ProvidedProperty(
-                        StepBase.GetStepName(context.SanitizeName,i,step),
+                        StepBase.GetStepName(propertySanitizer,i,step),
                         stepExpression.Type,
                         getterCode=fun args-> 
 
@@ -43,7 +51,7 @@ type BackgroundExpression (context:GeneratedTypeContext,feature:ProvidedTypeDefi
         stepProperties |> Seq.iter(backgroundType.AddMember)
 
         // override base constructor 
-        let baseCtr = context.ScenarioBaseType.GetConstructors().[0]
+        let baseCtr = scenarioBaseType.GetConstructors().[0]
 
         let backgroundCtr = 
             ProvidedConstructor(
@@ -65,9 +73,9 @@ type BackgroundExpression (context:GeneratedTypeContext,feature:ProvidedTypeDefi
             fun args -> 
                 let steps = 
                     args.GetSlice(Some 3,Some(args.Length - 1))
-                    |> List.map (fun s -> Expr.Coerce(s,context.StepBaseType.AsType()))
+                    |> List.map (fun s -> Expr.Coerce(s,stepBaseType))
                     
-                baseCtr,[args.[0];args.[1];args.[2];Expr.NewArray(context.StepBaseType,steps)] // pass in name & descr to base class
+                baseCtr,[args.[0];args.[1];args.[2];Expr.NewArray(stepBaseType,steps)] // pass in name & descr to base class
 
         backgroundCtr |> backgroundType.AddMember
         
@@ -76,6 +84,5 @@ type BackgroundExpression (context:GeneratedTypeContext,feature:ProvidedTypeDefi
             Steps = stepExpressions
         }
 
-    member val Expression = expression with get
 
 

@@ -5,23 +5,28 @@ open ExpressionBuilders.Data
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Gherkin.Ast
+open Shared
 
-type StepExpressionBuilder (context:GeneratedTypeContext,parent:ProvidedTypeDefinition) =
+type StepExpressionBuilder 
+        (stepBaseType:System.Type,
+        docStringArgumentType:ProvidedTypeDefinition,
+        argumentBaseType:System.Type,
+        dataType:DataTypeBuilder) =
 
-    member __.CreateExpression (position:int) (gherkinStep:Step) =
+    member __.CreateExpression (parent:ProvidedTypeDefinition) (position:int) (gherkinStep:Step)  =
         let stepName = (sprintf "%i%sClass" position gherkinStep.Text) |> Sanitizer().Sanitize
-        let stepType = ProvidedTypeDefinition( stepName,Some (context.StepBaseType.AsType()),isErased=false, hideObjectMethods=true,isSealed=false)
+        let stepType = ProvidedTypeDefinition( stepName,Some stepBaseType,isErased=false, hideObjectMethods=true,isSealed=false)
         stepType |> parent.AddMember
        
         let argumentType =
             if isNull gherkinStep.Argument then None
             else
                 match gherkinStep.Argument with
-                | :? DocString -> Some (DocStringType context.DocStringArgumentType)
+                | :? DocString -> Some (DocStringType docStringArgumentType)
                 | :? DataTable -> 
                     let dataTable = gherkinStep.Argument :?> DataTable
                     let columnNames = (dataTable.Rows |> Seq.head).Cells |> Seq.toList |> List.map (fun c -> c.Value)
-                    let dataTableRowType = DataType(context,stepType,columnNames).Type
+                    let dataTableRowType = dataType.GetDataType stepType columnNames
                     
                     Some (DataTableType (dataTableRowType))
                 | _ -> None
@@ -29,7 +34,7 @@ type StepExpressionBuilder (context:GeneratedTypeContext,parent:ProvidedTypeDefi
         let argumentBackingField = 
             match argumentType with
             | Some argType ->
-                let visitedProperty = context.ArgumentBaseType.GetProperty("Visited")
+                let visitedProperty = argumentBaseType.GetProperty("Visited")
                 let (argumentField,argumentProperty) =
                     match argType with
                     | DocStringType docStringType ->
@@ -67,7 +72,7 @@ type StepExpressionBuilder (context:GeneratedTypeContext,parent:ProvidedTypeDefi
                     ProvidedParameter("text",typeof<string>)
                 ]
             match argumentType with
-            | None -> ProvidedParameter("argument",context.ArgumentBaseType)
+            | None -> ProvidedParameter("argument",argumentBaseType)
             | Some (argType) ->
                     match argType with
                     | DocStringType docStringType -> ProvidedParameter("argument",docStringType)
@@ -76,7 +81,7 @@ type StepExpressionBuilder (context:GeneratedTypeContext,parent:ProvidedTypeDefi
             :: staticParameters |> List.rev
 
 
-        let baseCtr = context.StepBaseType.GetConstructors().[0]
+        let baseCtr = stepBaseType.GetConstructors().[0]
         let stepCtr =
             ProvidedConstructor(
                 parameters,

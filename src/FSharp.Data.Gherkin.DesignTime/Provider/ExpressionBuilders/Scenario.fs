@@ -4,20 +4,28 @@ open ObjectModel
 open ExpressionBuilders.Tags
 open ExpressionBuilders.Data
 open ExpressionBuilders.Step
+open BaseTypes.Step
+open Shared
 
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 
 open Gherkin.Ast
 
-type ScenarioExpressionBuilder (context:GeneratedTypeContext,feature:ProvidedTypeDefinition) =
+type ScenarioExpressionBuilder 
+        (tagExpressionBuilder:TagsExpressionBuilder,
+        dataType:DataTypeBuilder,
+        scenarioBaseType:System.Type,
+        stepExpressionBuilder:StepExpressionBuilder,
+        stepBaseType:System.Type,
+        propertySanitizer:string->string) =
 
-    member __.CreateExpression (gherkinScenario:Scenario) =
-        let scenarioType = ProvidedTypeDefinition((sprintf "%sClass" gherkinScenario.Name) |> Sanitizer().Sanitize ,Some (context.ScenarioBaseType.AsType()),isErased=false, hideObjectMethods=true, isSealed=false)
+    member __.CreateExpression (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
+        let scenarioType = ProvidedTypeDefinition((sprintf "%sClass" gherkinScenario.Name) |> Sanitizer().Sanitize ,Some scenarioBaseType,isErased=false, hideObjectMethods=true, isSealed=false)
         scenarioType |> feature.AddMember
 
         //create tags
-        let tagExpression = TagsExpressionBuilder(context,scenarioType,(gherkinScenario.Tags |> Seq.toList |> List.map(fun t -> t.Name))).Expression
+        let tagExpression = tagExpressionBuilder.CreateExpression scenarioType (gherkinScenario.Tags |> Seq.toList |> List.map(fun t -> t.Name))
 
         //get the examples if any
         let exampleExpression = 
@@ -25,24 +33,23 @@ type ScenarioExpressionBuilder (context:GeneratedTypeContext,feature:ProvidedTyp
             | [] -> None
             | examples -> 
                 let columns = examples.[0].TableHeader.Cells |> Seq.map (fun c -> c.Value) |> Seq.toList
-                let exampleType  = DataType(context,scenarioType,columns).Type
-                let exampleField = PropertyHelper(scenarioType).AddProperty("Examples",(exampleType.MakeArrayType()))
+                let exampleType  = dataType.GetDataType scenarioType columns
+                let exampleField = PropertyHelper(scenarioType).AddProperty("Examples",exampleType.MakeArrayType())
                 Some (exampleType,exampleField)
 
         //add step specific constructor params, properties & fields
-        let stepExpressionBuilder = StepExpressionBuilder(context,scenarioType)
         let gherkinStepList = gherkinScenario.Steps |> Seq.toList
-        let stepExpressions =  gherkinStepList |> List.mapi(stepExpressionBuilder.CreateExpression)
+        let stepExpressions =  gherkinStepList |> List.mapi((stepExpressionBuilder.CreateExpression scenarioType))
 
         let parameters = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedParameter(sprintf "step%i" i ,stepExpression.Type))  
         let stepFields = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedField(sprintf "_step%i" i ,stepExpression.Type))  
-        let visitedProperty = context.StepBaseType.GetProperty("Visited")
+        let visitedProperty = stepBaseType.GetProperty("Visited")
 
         let stepProperties = 
             List.mapi2(
                 fun i step (stepExpression:StepExpression) -> 
                     ProvidedProperty(
-                        StepBase.GetStepName(context.SanitizeName,i,step),
+                        StepBase.GetStepName(propertySanitizer,i,step),
                         stepExpression.Type,
                         getterCode=fun args-> 
 
@@ -60,7 +67,7 @@ type ScenarioExpressionBuilder (context:GeneratedTypeContext,feature:ProvidedTyp
         stepProperties |> Seq.iter(scenarioType.AddMember)
 
         // override base constructor 
-        let baseCtr = context.ScenarioBaseType.GetConstructors().[0]
+        let baseCtr = scenarioBaseType.GetConstructors().[0]
 
         let constructorParams =
             match exampleExpression,tagExpression with
@@ -109,9 +116,9 @@ type ScenarioExpressionBuilder (context:GeneratedTypeContext,feature:ProvidedTyp
             fun args -> 
                 let steps = 
                     getStepsFromArgs args exampleExpression tagExpression
-                    |> List.map(fun s -> Expr.Coerce(s,context.StepBaseType))
+                    |> List.map(fun s -> Expr.Coerce(s,stepBaseType))
                     
-                let stepsArray = Expr.NewArray(context.StepBaseType.AsType(),steps)
+                let stepsArray = Expr.NewArray(stepBaseType,steps)
                
                 baseCtr,[args.[0];args.[1];args.[2];stepsArray] // pass in name,descr & all the steps as an array to base class
 
