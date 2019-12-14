@@ -15,7 +15,7 @@
 
     <Compile Include="ProvidedTypes.fsi" />
     <Compile Include="ProvidedTypes.fs" />
-    <Compile Include="ExpressionBuilders/Model.fs" />
+    <Compile Include="ObjectModel.fs" />
     <Compile Include="ExpressionBuilders/Data.fs" />
     <Compile Include="ExpressionBuilders/Tags.fs" />
     <Compile Include="ExpressionBuilders/Step.fs" />

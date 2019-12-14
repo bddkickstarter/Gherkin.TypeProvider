@@ -6,7 +6,7 @@ open System.Reflection
 open Gherkin
 open ExpressionBuilders.Feature
 open InstanceBuilders.Feature
-open ExpressionBuilders.Shared
+open ObjectModel
 
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
@@ -22,10 +22,9 @@ type GherkinProvider (config : TypeProviderConfig) as this =
         let providedAssembly = ProvidedAssembly()
         let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
         let gherkinDocument = Parser().Parse(path)
-
-        let context = createContext providerName root sanitizetype
+        let context = FeatureBase(providerName,root,sanitizetype).GetContext()
         
-        createFeatureExpression context providerName root gherkinDocument
+        FeatureExpressionBuilder(context,providerName,root,gherkinDocument).Expression
         |> buildFeatureInstance context root gherkinDocument
 
         providedAssembly.AddTypes [root]

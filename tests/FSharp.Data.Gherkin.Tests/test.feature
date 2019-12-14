@@ -68,7 +68,7 @@ Scenario Outline: Scenario outline name
 Multi-line
 Scenario Outline Description
 
-  Given scenario outline given step (Example Column 1)
+  Given scenario outline given step <Example Column 1>
   """
 multi line
 scenario outline

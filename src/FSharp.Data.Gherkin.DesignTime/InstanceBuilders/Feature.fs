@@ -3,7 +3,7 @@ module InstanceBuilders.Feature
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Gherkin.Ast
-open ExpressionBuilders
+open ObjectModel
 
 
 let buildRows (context:GeneratedTypeContext) (columns:string list) (rowType:ProvidedTypeDefinition) (dataRow:TableRow list) =
