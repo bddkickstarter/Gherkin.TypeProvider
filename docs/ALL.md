@@ -207,7 +207,7 @@ To consume the type system in a C# project create an F# project to host the type
 As C# won't recognised properties with illegal characters in them (such as spaces)  santize the names by using the Santize option:
 
 ```fsharp
-type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"), Sanitize=true>
+type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"), Sanitize="c#">
 ```
 
 Which will replace illegal characters with underscores.  The previous example now looks like this:
