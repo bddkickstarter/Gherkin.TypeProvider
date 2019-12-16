@@ -15,7 +15,7 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
             let find =  sprintf "<%s>" header
             a.Replace(find,value))  txt 
         
-    member private __.CopyStep<'T> (step:'T) (text:string) =
+    member private __.CopyStep (step:obj) (text:string) =
         let stepType = step.GetType()
         let keyword = stepType.GetProperty("Keyword").GetValue(step)
         let order = stepType.GetProperty("Order").GetValue(step)
@@ -26,9 +26,9 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
 
         let constructor = stepType.GetConstructors().[0]
 
-        (constructor.Invoke([|text;keyword;order;argumentBase|])) :?> 'T
+        (constructor.Invoke([|text;keyword;order;argumentBase|])) 
 
-    member private __.CopyScenario<'T> (scenario:'T) (steps:obj []) (name:string)=
+    member private __.CopyScenario (scenario:obj) (steps:obj []) (name:string)=
         let scenarioType = scenario.GetType()
         let description = scenarioType.GetProperty("Description").GetValue(scenario)
 
@@ -46,9 +46,9 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
             | Some t -> [|(name :> obj);description;examples;t |] |> Seq.toList
         let allParameters = parameters @ (steps |> Seq.toList) |> Seq.toArray
 
-        (constructor.Invoke(allParameters)) :?> 'T
+        (constructor.Invoke(allParameters)) :?> 'S
 
-    member private __.ToScenarios<'T> (scenarioOutline:'T) =
+    member private __.ToScenarios (scenarioOutline:obj) =
         let scenarioType = scenarioOutline.GetType()
         let examples = scenarioType.GetProperty("Examples").GetValue(scenarioOutline) :?> System.Collections.Generic.IEnumerable<_>
         let steps = scenarioType.GetProperty("Steps").GetValue(scenarioOutline) :?> System.Collections.Generic.IEnumerable<_> |> Seq.toArray
@@ -71,16 +71,18 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
                 cells 
                 |> Seq.map(fun c -> 
                      c.GetType().GetProperty("Header").GetValue(c) |> string,
-                     c.GetType().GetProperty("Value").GetValue(c) |> string
-                    )  
+                     c.GetType().GetProperty("Value").GetValue(c) |> string)  
                 |> Seq.toList
                 |>  this.MakeName
                          
             this.CopyScenario scenarioOutline copiedSteps name)
-        |> Seq.cast<'T>
+        |> Seq.cast<'S>
         |> Seq.toList
+    
+    member __.GetScenarioName(scenario:obj) = 
+        scenario.GetType().GetProperty("Name").GetValue(scenario) |> string
 
     member this.ReturnFrom (x:'S->'T) =
-        scenarioOutline.GetType().GetProperty("Name").GetValue(scenarioOutline) |> string,
-        (this.ToScenarios(scenarioOutline) |> List.map (x))
+        (this.GetScenarioName scenarioOutline),(this.ToScenarios(scenarioOutline) |> List.map (x))
+
 
