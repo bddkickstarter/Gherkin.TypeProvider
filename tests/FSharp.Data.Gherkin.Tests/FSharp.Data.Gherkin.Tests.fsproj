@@ -17,6 +17,7 @@
     <Compile Include="Tests/Background.tests.fs" />
     <Compile Include="Tests/Feature.tests.fs" />
     <Compile Include="Tests/VisitedTests.tests.fs" />
+    <Compile Include="Tests/ScenarioOutlineBuilder.tests.fs" />
 
     <Compile Include="Program.fs" />
 
