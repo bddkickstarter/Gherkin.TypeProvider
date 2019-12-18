@@ -2,19 +2,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.0;net45</TargetFrameworks>
-     <DefineConstants>NO_GENERATIVE</DefineConstants>
-     <DefineConstants>IS_DESIGNTIME</DefineConstants>
-     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.2;net45</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <DefineConstants>NO_GENERATIVE</DefineConstants>
+    <DefineConstants>IS_DESIGNTIME</DefineConstants>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
-
+    <Compile Include="..\..\paket-files\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
+      <Paket>True</Paket>
+      <Link>paket-files/ProvidedTypes.fsi</Link>
+    </Compile>
+    <Compile Include="..\..\paket-files\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fs">
+      <Paket>True</Paket>
+      <Link>paket-files/ProvidedTypes.fs</Link>
+    </Compile>
     <Compile Include="..\FSharp.Data.Gherkin\GherkinProvider.Runtime.fs">
       <Link>GherkinProvider.Runtime.fs</Link>
     </Compile>
-
-    <Compile Include="ProvidedTypes.fsi" />
-    <Compile Include="ProvidedTypes.fs" />
     <Compile Include="Provider/Shared.fs" />
     <Compile Include="Provider/BaseTypes/Tag.fs" />
     <Compile Include="Provider/BaseTypes/Argument.fs" />
@@ -32,6 +42,7 @@
     <Compile Include="Provider/ExpressionBuilders/Feature.fs" />
     <Compile Include="Provider/InstanceBuilders/Builders.fs" />
     <Compile Include="GherkinProvider.fs" />
+    <None Include="paket.references" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

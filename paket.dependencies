@@ -4,5 +4,5 @@ nuget FSharp.Core = 4.3.4
 nuget Gherkin
 nuget Expecto
 
-
-
+github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
+github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs
