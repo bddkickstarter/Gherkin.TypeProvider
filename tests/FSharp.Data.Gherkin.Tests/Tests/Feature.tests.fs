@@ -27,5 +27,5 @@ let features =
 
                 testCase
                     "Feature has correct number of scenarios"
-                    <| fun _ -> Expect.isTrue (feature.Scenarios.Length = 3) (sprintf "Expected 3 scenarios but got %i" feature.Scenarios.Length)
+                    <| fun _ -> Expect.isTrue (feature.Scenarios.Length = 4) (sprintf "Expected 4 scenarios but got %i" feature.Scenarios.Length)
             ]

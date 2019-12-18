@@ -51,8 +51,11 @@ type FeatureValidator() =
             match featureType.GetProperty("Tags") with
             | null -> Seq.empty
             | tags ->
-                let tagsType = tags.GetType()
-                tagsType.GetProperty("AllTags").GetValue(tags) :?> IEnumerable<_>
+                let allTags = tags.GetValue(feature)
+                let allTagsType = allTags.GetType()
+
+                allTagsType.GetProperty("AllTags").GetValue(allTags) :?> IEnumerable<_>
+
 
         let docStringVisited (step:obj) =
             let stepType = step.GetType()

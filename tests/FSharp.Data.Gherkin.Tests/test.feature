@@ -94,6 +94,8 @@ argument
 |Example Column 1|Example Column 2|Example Column 3|
 |  Set 3 Data 1  |  Set 3 Data 2  |Set 3 Data 3|
 
+Scenario: Simple
+Given just a given
 
 
 

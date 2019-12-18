@@ -148,6 +148,8 @@ let validateTheFeature =
                (e.``Example Column 1`` |> ignore,
                 e.``Example Column 2`` |> ignore,
                 e.``Example Column 3`` |> ignore) |> ignore)
+
+            feature.Simple.``0 Given just a given`` |> ignore
             
             match FeatureValidator.Validate feature with
             | None -> ()
