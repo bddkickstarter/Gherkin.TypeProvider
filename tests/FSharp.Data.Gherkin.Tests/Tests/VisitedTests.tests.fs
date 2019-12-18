@@ -114,79 +114,14 @@ let visitExampleCell =
             Expect.isTrue example.Cells.[0].Visited "Expected visit to example cell to be true after visiting"
 
 
-let walkTags (tags:TestFeature.TestFeature_TagBase[]) =
-    match 
-        tags
-        |> Array.filter(fun t -> not t.Visited)
-        |> Array.fold(fun a c -> sprintf "Tag%s not visited\r\n%s" c.Name a) "" with
-    | "" -> Ok()
-    | err -> Error err
 
-let walkData (data:TestFeature.TestFeature_DataRowBase[]) =
-    if isNull data then Ok()
-    else
-        match 
-            data
-            |> Array.mapi(fun i row -> 
-                row.Cells 
-                |> Array.filter (fun c -> not c.Visited)
-                |> Array.fold(
-                           fun a c -> 
-                            sprintf "Row %i Column %s not visited\r\n%s" i c.Header a) "") 
-            |> Array.fold(fun (a:string) c ->
-                if a.Length = 0 then  sprintf "%s%s" a c
-                else sprintf "%s%s\r\n" a c
-                ) "" with
-        | "" -> Ok()
-        | err -> Error err
-
-let walkSteps (steps:TestFeature.TestFeature_StepBase[]) =
-    match
-        steps
-        |> Array.map(fun s ->
-                if not s.Visited then sprintf "Step %i not visited" s.Order
-                else if not (isNull s.DocString) && not s.DocString.Visited then sprintf "Step %i Doc String argument not visited" s.Order
-                else
-                    match walkData s.DataTable with
-                    | Error err -> sprintf "Step:%i %s" s.Order err
-                    | Ok() ->
-                        if not s.Visited then sprintf "Step %i not visited" s.Order
-                        else "")
-        |> Array.fold (fun (a:string) c -> 
-                if a.Length = 0 then  sprintf "%s%s" a c
-                else sprintf "%s%s\r\n" a c
-         ) "" with
-    | "" -> Ok()
-    | err -> Error err
-
-let walkScenarios (scenarios:TestFeature.TestFeature_ScenarioBase[]) =
-    match 
-        scenarios
-        |> Array.map(fun s ->
-            if not s.Visited then sprintf "Scenario %s not visited" s.Name
-            else 
-                match walkSteps s.Steps with
-                | Error err -> sprintf "%s\r\n%s" s.Name err
-                | Ok() -> "")
-        |> Array.fold (fun (a:string) c ->
-                if a.Length = 0 then  sprintf "%s%s" a c
-                else sprintf "%s%s\r\n" a c
-         ) "" with
-    | "" -> Ok()
-    | err -> Error err
-
-let walkFeature (feature:TestFeature.TestFeature_Feature) =
-    match walkTags feature.Tags.AllTags with
-    | Error err -> failwith err
-    | Ok() ->
-
-    walkScenarios feature.Scenarios
+open FSharp.Data.Gherkin.Validation
         
 
 [<Tests>]
-let walkTheFeature =
+let validateTheFeature =
     testCase
-        "Walk the feature using underlying arrays"
+        "Validate the feature using the feature validator"
         <| fun _ ->
             let feature = TestFeature.CreateFeature()
 
@@ -211,10 +146,16 @@ let walkTheFeature =
 
             scenarioOutlineGiven.Argument.Content |> ignore
             scenarioOutlineWhen.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
+
+            scenarioOutline.Examples |> Seq.iter(fun e ->
+               (e.``Example Column 1`` |> ignore,
+                e.``Example Column 2`` |> ignore,
+                e.``Example Column 3`` |> ignore) |> ignore)
             
-            match walkFeature feature with
-            | Ok() -> ()
-            | Error err -> failwith err
+            match FeatureValidator.Validate feature with
+            | None -> ()
+            | Some report -> failwith(report.Summary)
+
             
 
             
