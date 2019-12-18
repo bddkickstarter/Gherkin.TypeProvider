@@ -11,6 +11,7 @@
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
   <ItemGroup>
+    <Compile Include="FeatureValidation.fs" />
     <Compile Include="ScenarioOutlineBuilder.fs" />
     <Compile Include="GherkinProvider.Runtime.fs" />
     <None Include="paket.references" />
