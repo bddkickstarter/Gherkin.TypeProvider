@@ -12,6 +12,7 @@ let sanitize = Sanitizer().Sanitize
 
 type BackgroundExpressionBuilder 
             (scenarioBaseType:System.Type,
+            emptyExamples:Expr,
             stepBaseType:System.Type,
             stepsExpressionBuilder:StepExpressionBuilder,
             propertySanitizer:string->string) =
@@ -73,7 +74,7 @@ type BackgroundExpressionBuilder
                     args.GetSlice(Some 3,Some(args.Length - 1))
                     |> List.map (fun s -> Expr.Coerce(s,stepBaseType))
                     
-                baseCtr,[args.[0];args.[1];args.[2];Expr.NewArray(stepBaseType,steps)] // pass in name & descr to base class
+                baseCtr,[args.[0];args.[1];args.[2];emptyExamples;Expr.NewArray(stepBaseType,steps)] // pass in name & descr to base class
 
         backgroundCtr |> backgroundType.AddMember
         

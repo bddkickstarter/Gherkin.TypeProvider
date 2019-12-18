@@ -170,11 +170,13 @@ type FeatureExpressionBuilder
 
     static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
 
-        let dataTypeBuilder = DataTypeBuilder(providerModel.DataRowBaseType,providerModel.DataCellBaseType,propertyNameSanitizer)
-        let stepExpressionBuilder = StepExpressionBuilder(providerModel.StepBaseType,providerModel.DocStringArgType,providerModel.ArgumentBaseType,dataTypeBuilder)
+        let dataExpressionBuilder = DataExpressionBuilder(providerModel.DataRowBaseType,providerModel.DataCellBaseType,propertyNameSanitizer)
+        let stepExpressionBuilder = StepExpressionBuilder(providerModel.StepBaseType,providerModel.DocStringArgType,providerModel.ArgumentBaseType,dataExpressionBuilder)
         let tagExpressionBuilder = TagsExpressionBuilder(providerModel.TagBaseType)
-        let scenarioExpressionBuilder = ScenarioExpressionBuilder(tagExpressionBuilder,dataTypeBuilder,providerModel.ScenarioBaseType,stepExpressionBuilder,providerModel.StepBaseType,propertyNameSanitizer)
-        let backgroundExpressionBuilder = BackgroundExpressionBuilder(providerModel.ScenarioBaseType,providerModel.StepBaseType,stepExpressionBuilder,propertyNameSanitizer)
+        let scenarioExpressionBuilder = ScenarioExpressionBuilder(tagExpressionBuilder,providerModel.DataRowBaseType,dataExpressionBuilder,providerModel.ScenarioBaseType,stepExpressionBuilder,providerModel.StepBaseType,propertyNameSanitizer)
+
+        let emptyExamples = Expr.NewArray(providerModel.DataRowBaseType,[])
+        let backgroundExpressionBuilder = BackgroundExpressionBuilder(providerModel.ScenarioBaseType,emptyExamples,providerModel.StepBaseType,stepExpressionBuilder,propertyNameSanitizer)
         
         FeatureExpressionBuilder
             (backgroundExpressionBuilder,

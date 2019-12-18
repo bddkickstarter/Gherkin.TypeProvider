@@ -6,8 +6,8 @@ open Shared
 
 let sanitize = Sanitizer().Sanitize
 
-type DataTypeBuilder  (dataRowBaseType:System.Type,dataCellType:System.Type,sanitizePropertyName:string->string) = 
-    member __.GetDataType (parent:ProvidedTypeDefinition) (columnNames:string list) =
+type DataExpressionBuilder  (dataRowBaseType:System.Type,dataCellType:System.Type,sanitizePropertyName:string->string) = 
+    member __.CreateExpression (parent:ProvidedTypeDefinition) (columnNames:string list) =
         let dataType  = ProvidedTypeDefinition("DataClass",Some dataRowBaseType, isErased=false, hideObjectMethods=true, isSealed=false)
         dataType |> parent.AddMember
 

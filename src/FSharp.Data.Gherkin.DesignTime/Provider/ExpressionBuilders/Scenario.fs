@@ -14,7 +14,8 @@ open Gherkin.Ast
 
 type ScenarioExpressionBuilder 
         (tagExpressionBuilder:TagsExpressionBuilder,
-        dataType:DataTypeBuilder,
+        dataRowBaseType:System.Type,
+        dataExpressionBuilder:DataExpressionBuilder,
         scenarioBaseType:System.Type,
         stepExpressionBuilder:StepExpressionBuilder,
         stepBaseType:System.Type,
@@ -33,7 +34,7 @@ type ScenarioExpressionBuilder
             | [] -> None
             | examples -> 
                 let columns = examples.[0].TableHeader.Cells |> Seq.map (fun c -> c.Value) |> Seq.toList
-                let exampleType  = dataType.GetDataType scenarioType columns
+                let exampleType  = dataExpressionBuilder.CreateExpression scenarioType columns
                 let exampleField = PropertyHelper(scenarioType).AddProperty("Examples",exampleType.MakeArrayType())
                 Some (exampleType,exampleField)
 
@@ -119,8 +120,14 @@ type ScenarioExpressionBuilder
                     |> List.map(fun s -> Expr.Coerce(s,stepBaseType))
                     
                 let stepsArray = Expr.NewArray(stepBaseType,steps)
-               
-                baseCtr,[args.[0];args.[1];args.[2];stepsArray] // pass in name,descr & all the steps as an array to base class
+
+                let examples = 
+                    match  exampleExpression with
+                    | None -> Expr.NewArray(dataRowBaseType,[])
+                    | Some _ -> args.[3]
+                
+                baseCtr,[args.[0];args.[1];args.[2];examples;stepsArray] 
+                        
 
         scenarioCtr |> scenarioType.AddMember
         

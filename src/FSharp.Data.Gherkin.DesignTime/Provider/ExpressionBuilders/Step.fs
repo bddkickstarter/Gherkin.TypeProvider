@@ -11,7 +11,7 @@ type StepExpressionBuilder
         (stepBaseType:System.Type,
         docStringArgumentType:ProvidedTypeDefinition,
         argumentBaseType:System.Type,
-        dataType:DataTypeBuilder) =
+        dataExpressionBuilder:DataExpressionBuilder) =
 
     member __.CreateExpression (parent:ProvidedTypeDefinition) (position:int) (gherkinStep:Step)  =
         let stepName = (sprintf "%i%sClass" position gherkinStep.Text) |> Sanitizer().Sanitize
@@ -26,7 +26,7 @@ type StepExpressionBuilder
                 | :? DataTable -> 
                     let dataTable = gherkinStep.Argument :?> DataTable
                     let columnNames = (dataTable.Rows |> Seq.head).Cells |> Seq.toList |> List.map (fun c -> c.Value)
-                    let dataTableRowType = dataType.GetDataType stepType columnNames
+                    let dataTableRowType = dataExpressionBuilder.CreateExpression stepType columnNames
                     
                     Some (DataTableType (dataTableRowType))
                 | _ -> None

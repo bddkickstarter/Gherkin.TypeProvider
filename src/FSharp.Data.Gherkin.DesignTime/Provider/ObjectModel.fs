@@ -55,7 +55,7 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
     let tagBase = TagBase(providerName,root)
     let docStringBase = DocStringArgumentBase(argumentBase,providerName,root)
     let stepBase = StepBase(argumentBase,dataRowBase,providerName,root)
-    let scenarioBase = ScenarioBase(stepBase,providerName,root)
+    let scenarioBase = ScenarioBase(stepBase,dataRowBase,providerName,root)
 
     member val StepBaseType = stepBase.Type with get
     member val ScenarioBaseType = scenarioBase.Type with get
