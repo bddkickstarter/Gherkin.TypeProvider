@@ -3,6 +3,9 @@ source https://api.nuget.org/v3/index.json
 nuget FSharp.Core = 4.3.4
 nuget Gherkin
 nuget Expecto
+nuget System.Threading.Tasks.Extensions >= 4.4.0
+
+
 
 github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fsi
 github fsprojects/FSharp.TypeProviders.SDK src/ProvidedTypes.fs

@@ -2,16 +2,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\netfx.props" />
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.2;net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netcoreapp3.1;net45</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
     <DefineConstants>IS_DESIGNTIME</DefineConstants>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Optimize>true</Optimize>
-    <Tailcalls>true</Tailcalls>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\paket-files\fsprojects\FSharp.TypeProviders.SDK\src\ProvidedTypes.fsi">
@@ -44,5 +40,6 @@
     <Compile Include="GherkinProvider.fs" />
     <None Include="paket.references" />
   </ItemGroup>
+  
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

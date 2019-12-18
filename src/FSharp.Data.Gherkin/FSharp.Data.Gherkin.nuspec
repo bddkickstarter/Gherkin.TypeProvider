@@ -48,6 +48,9 @@
     <file src="..\..\packages\Gherkin\lib\net45\Gherkin.dll" target="typeproviders/fsharp41/net45" />
     <file src="..\..\packages\Utf8Json\lib\net45\Utf8Json.dll" target="typeproviders/fsharp41/net45" />
 
+    <!-- Copy over the threading library needed for Utf8Json to work in Visual Studio-->
+    <file src="..\..\packages\System.Threading.Tasks.Extensions\lib\portable-net45+win8+wp8+wpa81\System.Threading.Tasks.Extensions.dll" target="typeproviders/fsharp41/net45" />
+
 
     <file src="..\FSharp.Data.Gherkin.DesignTime\bin\Release\netstandard2.0\FSharp.Data.Gherkin.DesignTime.dll" target="typeproviders/fsharp41/netstandard2.0" />
     <file src="..\FSharp.Data.Gherkin.DesignTime\bin\Release\netstandard2.0\FSharp.Data.Gherkin.DesignTime.pdb" target="typeproviders/fsharp41/netstandard2.0" />
