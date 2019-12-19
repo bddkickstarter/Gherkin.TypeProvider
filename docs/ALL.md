@@ -85,6 +85,39 @@ would print out:
 ```console
 Order: 0, Keyword: Given, Text: this is a given step
 ```
+# Tags
+Tags can be used with Features, Scenarios & Scenario Outlines and are available via the typed *Tags* property
+
+With the feature
+
+```gherkin
+@featuretag
+Feature: a feature
+
+@scenariotag
+Scenario: this is a scenario
+    Given this is a given step
+```
+
+```fsharp
+myTestFeature.Tags.featuretag.Name
+```
+would return
+
+```
+@featuretag
+```
+
+And
+
+```fsharp
+myTestFeature.``this is a scenario``.Tags.scenariotag.Name
+```
+would return
+
+```console
+@scenariotag
+```
 
 # Step Arguments
 Steps can have document string arguments:
@@ -172,15 +205,18 @@ Examples are just a data table and are accessed in a similar way to the data tab
 With the following feature
 
 ```gherkin
-Feature: outlines
+Feature: Outlines
 
 Scenario Outline: some group of examples
-When outline when <uses the data>
-Then outline then <checks the result>
+Given some setup
+When uses <uses the data>
+Then result will be <checks the result>
 
 Examples:
 |uses the data|checks the result|
 |    data 1   |     true!       |
+|    data 2   |     false!      |
+|    data 3   |     maybe?      |
 ```
 
 The data from the second column of the first row would be accessed using:
@@ -189,7 +225,7 @@ The data from the second column of the first row would be accessed using:
 myTestFeature
     .``some group of examples``
     .Examples
-    .[0]
+    .[1]
     .``checks the result``
     .Value
 ```
@@ -197,14 +233,28 @@ myTestFeature
 And would evaluate to:
 
 ```console
-true!
+false!
+```
+
+# Sanitizing
+
+There are 3 options for sanitizing the property names:
+  
+  - **none**: the default.  Only illegal F# characters will be replaced wit underscores
+  - **partial**: all non alpha numeric characters except spaces are replaced with underscores 
+  - **full**: all non alpha numeric characters are replaced with underscores 
+
+and are specified using the Sanitize option when creating the type:
+
+```fsharp
+type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"), Sanitize="partial">
 ```
 
 # Consuming from C#
 
 To consume the type system in a C# project create an F# project to host the types.
 
-As C# won't recognised properties with illegal characters in them (such as spaces)  santize the names by using the Santize option:
+As C# won't recognised properties with illegal characters in them (such as spaces)  santize the names by using the Santize full option:
 
 ```fsharp
 type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"), Sanitize="full">
@@ -247,7 +297,7 @@ let scenario =
 The type of the scenario will be 
 
 ```fsharp
-``this_is_a_scenario_Class`` 
+``this_is_a_scenarioClass`` 
 ```
 
 However the feature also contains an array of all its Scenarios as their base classes (_TestFeature_ScenarioBase_), so if the only scenario in this feature was accessed like:
@@ -287,7 +337,7 @@ Expect.isFalse before "Should be false"
 
 myTestFeature
     .``this is a scenario``
-    .``this is a given step`` |> ignore
+    .``0 Given this is a given step`` |> ignore
 
 let after = myTestFeature.Scenarios.[0].Steps.[0].Visited
 
@@ -297,6 +347,96 @@ Expect.isTrue after "Should be true"
 (There are a set of visited tests [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/blob/master/tests/FSharp.Data.Gherkin.Tests/Tests/VisitedTests.tests.fs))
 
 The entire feature can be "walked" using the underlying arrays so it is possible to find any named properties that have not been visited.
+
+# Feature Validation
+To validate the feature use the FeatureValidator in the *FSharp.Data.Gherkin.Validation* namespace:
+
+```fsharp
+open FSharp.Data.Gherkin.Validation
+
+match FeatureValidator.Validate feature with
+| None -> ()
+| Some report -> failwith(report.Summary)
+```
+
+The validator returns a report that contains a tree of all the feature's children that have not been visited. This includes:
+- Tags
+- Features
+- Scenarios
+- Scenario Outlines
+- All cells in a DataTable argument
+- Every example
+
+To exclude the feature or specific scenarios, tag them and provide the tag names as an array and the validator will exclude them from the report e.g.
+
+```fsharp
+FeatureValidator.Validate(feature,["@WIP";"@pending"])
+```
+will exclude the feature if it has either of those tags, and any scenario that has either of the tags.
+
+Backgrounds & Steps cannot be tagged
+
+# Scenario Outlines
+To help automate the *Scenario Outline* the Gherkin TypeProvider comes with the *ScenarioOutline builder* (in the *FSharp.Data.Gherkin.Builders* namespace).
+
+The builder is a computational expression that allows a *Scenario Outline* to be used like a *Scenario*.  The builder will create a *Scenario* based on the outline for every row in the *Examples* table and applies the supplied function to each newly created *Scenario*.
+
+For example, to automate the outline:
+
+```gherkin
+Feature: Outlines
+
+Scenario Outline: some group of examples
+Given some setup
+When uses <uses the data>
+Then result will be <checks the result>
+
+Examples:
+|uses the data|checks the result|
+|    data 1   |     true!       |
+|    data 2   |     false!      |
+|    data 3   |     maybe?      |
+```
+
+Use the builder:
+
+```fsharp
+open FSharp.Data.Gherkin
+open FSharp.Data.Gherkin.Builders
+
+type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature")>
+
+let useBuilder =
+    let (scenarioOutlineName,results) =
+        ScenarioOutline(myFeature.``some group of examples``){
+            return!
+                fun scenario ->
+                    // use the given
+                    scenario.``0 Given some setup``.Text |> ignore
+
+                    // use the when
+                    let whenText = scenario.``1 When uses <uses the data>``.Text
+
+                    // use the then
+                    let thenText = scenario.``2 Then result will be <checks the result>``.Text
+
+                    //do something - just returning the text here
+                    sprintf "When %s, Then %s" whenText thenText
+        }
+
+    results |> Seq.iter(fun r -> printfn "%s" r)
+```
+The builder returns a tuple of the outline name and a list of whatever was returned from the builder, in this case a list of strings
+
+For steps that have template arguments their text is replaced with the example data so the code above would produce the output
+
+```console
+When uses data 1, Then result will be true!
+When uses data 2, Then result will be false!
+When uses data 3, Then result will be maybe?
+```
+
+
 
 
     
