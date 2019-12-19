@@ -161,6 +161,46 @@ let validateTheFeature =
             | None -> ()
             | Some report -> failwith(report.Summary)
 
+[<Tests>]
+let ignoreByTag=
+    testList 
+        "ignore by tag"
+        [
+            testCase
+                "Exclude Feature"
+                <| fun _ ->
+                    let feature = TestFeature.CreateFeature()
+
+                    match FeatureValidator.Validate feature with
+                    | None -> failwith "Expected feature to fail validation"
+                    | _->
+                        match FeatureValidator.Validate(feature,["@featureTag1"]) with
+                        | Some _ -> failwith "Expected feature to be excluded"
+                        | _ -> 
+                             match FeatureValidator.Validate(feature,["@featureTag2"]) with
+                             | Some _ ->  failwith "Expected feature to be excluded"
+                             | None -> ()
+
+            testCase
+                "Exclude scenarios"
+                <| fun _ ->
+                
+                    let feature = TestFeature.CreateFeature()
+                    feature.Tags.featureTag1 |> ignore
+                    feature.Tags.featureTag2 |> ignore
+                    feature.Simple.``0 Given just a given`` |> ignore
+
+                    match FeatureValidator.Validate feature with
+                    | None -> failwith "Expected feature to fail validation"
+                    | _ ->
+                        match FeatureValidator.Validate(feature,["@scenario1Tag1";"@scenario2Tag1";"@scenarioOutlineTag1"]) with
+                        | Some _ -> failwith "Expected scenario to be excluded"
+                        | _ -> 
+                             match FeatureValidator.Validate(feature,["@scenario1Tag2";"@scenario2Tag2";"@scenarioOutlineTag2"]) with
+                             | Some _ ->  failwith "Expected scenario to be excluded"
+                             | None -> ()
+        ]
+
             
 
             

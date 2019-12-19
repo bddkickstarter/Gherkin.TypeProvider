@@ -47,6 +47,18 @@ type FeatureValidator() =
         
         let featureType=feature.GetType()
         let scenarios = featureType.GetProperty("Scenarios").GetValue(feature) :?> IEnumerable<_>
+
+        let exclude (tagList:obj) = 
+            let tagListType = tagList.GetType()
+            let tags = tagListType.GetProperty("AllTags").GetValue(tagList) :?> IEnumerable<_>
+
+            tags
+            |> Seq.exists(fun tag ->
+                 let tagType = tag.GetType()
+                 let tagName = tagType.GetProperty("Name").GetValue(tag) :?> string
+
+                 ignoreTags |> Seq.exists(fun i -> i = tagName))
+        
         
         let featureTags = 
             match featureType.GetProperty("Tags") with
@@ -130,7 +142,7 @@ type FeatureValidator() =
                         })
             |> Seq.toList
 
-        let nonVisitedTags tagsList=
+        let nonVisitedTags tagsList =
             tagsList 
             |> Seq.filter(fun tag ->
                  let tagType = tag.GetType()
@@ -142,7 +154,7 @@ type FeatureValidator() =
                 let tagType = tag.GetType()
                 tagType.GetProperty("Name").GetValue(tag) :?> string)
             |> Seq.toList
-        
+
         let nonVisitedScenarios = 
             scenarios 
             |> Seq.choose(fun scenario ->
@@ -153,50 +165,55 @@ type FeatureValidator() =
                 let steps = nonVisitedSteps scenario
                 
                 let tagContainer = scenarioType.GetProperty("TagList").GetValue(scenario) 
-                let tagContainerType = tagContainer.GetType()
-                let tags = tagContainerType.GetProperty("AllTags").GetValue(tagContainer) :?> IEnumerable<_>
-                let nonVisitedTags = nonVisitedTags tags
-                let nonVisitedExamples = nonVisitedDataTable examples
+                
+                if exclude tagContainer then None
+                else
+                    let tagContainerType = tagContainer.GetType()
+                    let tags = tagContainerType.GetProperty("AllTags").GetValue(tagContainer) :?> IEnumerable<_>
+                    let nonVisitedTags = nonVisitedTags tags
+                    let nonVisitedExamples = nonVisitedDataTable examples
 
-                match visited,steps,nonVisitedExamples.Length = 0,nonVisitedTags.Length =0 with
-                | true,[],true,true -> None
-                | _ ->
-                    let summary = 
-                        let scenarioSummary = steps |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary ) (sprintf "\r\nScenario:%s" name)
+                    match visited,steps,nonVisitedExamples.Length = 0,nonVisitedTags.Length =0 with
+                    | true,[],true,true -> None
+                    | _ ->
+                        let summary = 
+                            let scenarioSummary = steps |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary ) (sprintf "\r\nScenario:%s" name)
 
-                        let examplesSummary = 
-                            if nonVisitedExamples.Length > 0 then
-                                    nonVisitedExamples 
-                                    |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary) " Examples:"
-                            else ""
-
-                        let tagsSummary = 
-                                if nonVisitedTags.Length > 0 then
-                                        nonVisitedTags 
-                                        |> Seq.fold(fun a c -> sprintf "%s %s" a c) " Tags:"
+                            let examplesSummary = 
+                                if nonVisitedExamples.Length > 0 then
+                                        nonVisitedExamples 
+                                        |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary) " Examples:"
                                 else ""
 
-                        sprintf "%s\r\n%s\r\n%s" scenarioSummary tagsSummary examplesSummary
+                            let tagsSummary = 
+                                    if nonVisitedTags.Length > 0 then
+                                            nonVisitedTags 
+                                            |> Seq.fold(fun a c -> sprintf "%s %s" a c) " Tags:"
+                                    else ""
 
-                    Some
-                        {
-                            Tags = nonVisitedTags
-                            Name =  name
-                            Summary = summary
-                            Steps = steps
-                            Examples = nonVisitedDataTable examples
-                        })
+                            sprintf "%s\r\n%s\r\n%s" scenarioSummary tagsSummary examplesSummary
+
+                        Some
+                            {
+                                Tags = nonVisitedTags
+                                Name =  name
+                                Summary = summary
+                                Steps = steps
+                                Examples = nonVisitedDataTable examples
+                            })
             |> Seq.toList
 
-        let nonVisitedFeatureTags = nonVisitedTags featureTags
-        let tagsSummary = nonVisitedFeatureTags |> Seq.fold(fun a c -> sprintf "    Tag:%s\r\n%s" c a) ""
-        let scenariosSummary = nonVisitedScenarios |> Seq.fold(fun a c -> sprintf "%s\r\n%s" c.Summary a) ""
+        if exclude (featureType.GetProperty("Tags").GetValue(feature)) then None
+        else
+            let nonVisitedFeatureTags = nonVisitedTags featureTags
+            let tagsSummary = nonVisitedFeatureTags |> Seq.fold(fun a c -> sprintf "    Tag:%s\r\n%s" c a) ""
+            let scenariosSummary = nonVisitedScenarios |> Seq.fold(fun a c -> sprintf "%s\r\n%s" c.Summary a) ""
 
-        match nonVisitedFeatureTags,nonVisitedScenarios with
-        | [],[] -> None
-        | _ ->
-            {
-                Tags = nonVisitedFeatureTags
-                Scenarios = nonVisitedScenarios
-                Summary = sprintf "\r\nFeature:\r\n%s%s" tagsSummary scenariosSummary
-            } |> Some
+            match nonVisitedFeatureTags,nonVisitedScenarios with
+            | [],[] -> None
+            | _ ->
+                {
+                    Tags = nonVisitedFeatureTags
+                    Scenarios = nonVisitedScenarios
+                    Summary = sprintf "\r\nFeature:\r\n%s%s" tagsSummary scenariosSummary
+                } |> Some
