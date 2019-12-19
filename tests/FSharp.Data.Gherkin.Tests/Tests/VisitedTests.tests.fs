@@ -117,49 +117,69 @@ open FSharp.Data.Gherkin.Validation
 
 [<Tests>]
 let validateTheFeature =
-    testCase
-        "Validate the feature using the feature validator"
-        <| fun _ ->
-            let feature = TestFeature.CreateFeature()
+    testList 
+        "Validate features & scenarios"
+        [
+            testCase
+                "Validate the complex feature using the feature validator"
+                <| fun _ ->
+                    let feature = TestFeature.CreateFeature()
 
-            feature.Tags.featureTag1 |> ignore
-            feature.Tags.featureTag2 |> ignore
+                    feature.Tags.featureTag1 |> ignore
+                    feature.Tags.featureTag2 |> ignore
 
-            let scenario1 = feature.``Scenario 1 name``
-            let scenario2 = feature.``Scenario 2 name``
-            let scenarioOutline = feature.``Scenario outline name``
+                    let scenario1 = feature.``Scenario 1 name``
+                    let scenario2 = feature.``Scenario 2 name``
+                    let scenarioOutline = feature.``Scenario outline name``
 
-            scenario1.Tags.scenario1Tag1 |> ignore
-            scenario1.Tags.scenario1Tag2 |> ignore
-            scenario1.``0 Given scenario 1 given step``.Argument.Content |> ignore
-            scenario1.``1 When scenario 1 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
-            scenario1.``2 Then scenario 1 then step`` |> ignore
-            
-            scenario2.Tags.scenario2Tag1 |> ignore
-            scenario2.Tags.scenario2Tag2 |> ignore
-            scenario2.``0 Given scenario 2 given step``.Argument.Content |> ignore
-            scenario2.``1 When scenario 2 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
-            scenario2.``2 Then scenario 2 then step`` |> ignore
+                    scenario1.Tags.scenario1Tag1 |> ignore
+                    scenario1.Tags.scenario1Tag2 |> ignore
+                    scenario1.``0 Given scenario 1 given step``.Argument.Content |> ignore
+                    scenario1.``1 When scenario 1 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
+                    scenario1.``2 Then scenario 1 then step`` |> ignore
+                    
+                    scenario2.Tags.scenario2Tag1 |> ignore
+                    scenario2.Tags.scenario2Tag2 |> ignore
+                    scenario2.``0 Given scenario 2 given step``.Argument.Content |> ignore
+                    scenario2.``1 When scenario 2 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
+                    scenario2.``2 Then scenario 2 then step`` |> ignore
 
-            scenarioOutline.Tags.scenarioOutlineTag1 |> ignore
-            scenarioOutline.Tags.scenarioOutlineTag2 |> ignore
-            let scenarioOutlineGiven = scenarioOutline.``0 Given scenario outline given step _Example Column 1_``
-            let scenarioOutlineWhen = scenarioOutline.``1 When scenario outline when step _Example Column 2_``
-            scenarioOutline.``2 Then scenario outline then step _Example Column 3_`` |> ignore
+                    scenarioOutline.Tags.scenarioOutlineTag1 |> ignore
+                    scenarioOutline.Tags.scenarioOutlineTag2 |> ignore
+                    let scenarioOutlineGiven = scenarioOutline.``0 Given scenario outline given step _Example Column 1_``
+                    let scenarioOutlineWhen = scenarioOutline.``1 When scenario outline when step _Example Column 2_``
+                    scenarioOutline.``2 Then scenario outline then step _Example Column 3_`` |> ignore
 
-            scenarioOutlineGiven.Argument.Content |> ignore
-            scenarioOutlineWhen.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
+                    scenarioOutlineGiven.Argument.Content |> ignore
+                    scenarioOutlineWhen.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
 
-            scenarioOutline.Examples |> Seq.iter(fun e ->
-               (e.``Example Column 1`` |> ignore,
-                e.``Example Column 2`` |> ignore,
-                e.``Example Column 3`` |> ignore) |> ignore)
+                    scenarioOutline.Examples |> Seq.iter(fun e ->
+                       (e.``Example Column 1`` |> ignore,
+                        e.``Example Column 2`` |> ignore,
+                        e.``Example Column 3`` |> ignore) |> ignore)
 
-            feature.Simple.``0 Given just a given`` |> ignore
-            
-            match FeatureValidator.Validate feature with
-            | None -> ()
-            | Some report -> failwith(report.Summary)
+                    feature.Simple.``0 Given just a given`` |> ignore
+                    
+                    match FeatureValidator.Validate feature with
+                    | None -> ()
+                    | Some report -> failwith(report.Summary)
+
+            testCase 
+               "Validate the simple feature using the feature validator"
+               <| fun _ ->
+                    let feature = SimpleFeature.CreateFeature()
+
+                    match FeatureValidator.Validate feature with
+                    | None -> failwith "Expected simple feature to fail validation"
+                    | _-> ()
+
+                    feature.``simple scenario``.``0 Given simple given`` |> ignore
+
+                    match FeatureValidator.Validate feature with
+                    | None -> ()
+                    | Some report -> failwithf "Expected simple feature to pass validation\r\n%s" report.Summary
+        ]
+
 
 [<Tests>]
 let ignoreByTag=

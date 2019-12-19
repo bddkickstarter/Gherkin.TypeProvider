@@ -203,7 +203,7 @@ type FeatureValidator() =
                             })
             |> Seq.toList
 
-        if exclude (featureType.GetProperty("Tags").GetValue(feature)) then None
+        if not (isNull (featureType.GetProperty("Tags"))) && exclude (featureType.GetProperty("Tags").GetValue(feature)) then None
         else
             let nonVisitedFeatureTags = nonVisitedTags featureTags
             let tagsSummary = nonVisitedFeatureTags |> Seq.fold(fun a c -> sprintf "    Tag:%s\r\n%s" c a) ""
