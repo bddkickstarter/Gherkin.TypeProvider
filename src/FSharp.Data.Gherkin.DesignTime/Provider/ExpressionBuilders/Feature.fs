@@ -4,7 +4,7 @@ open ObjectModel
 open ExpressionBuilders.Data
 open ExpressionBuilders.Step
 open ExpressionBuilders.Scenario
-open ExpressionBuilders.Tags
+open ExpressionBuilders.TagContainer
 open ExpressionBuilders.Background
 open ProviderImplementation.ProvidedTypes
 open Gherkin.Ast
@@ -17,7 +17,7 @@ type FeatureExpressionBuilder
             (backgroundExpression:BackgroundExpressionBuilder,
             scenarioExpressionBuilder:ScenarioExpressionBuilder,
             scenarioBaseType:System.Type,
-            tagExpressionBuilder:TagsExpressionBuilder,
+            tagContainerExpressionBuilder:TagContainerExpressionBuilder,
             propertyNameSanitizer:string->string) =
 
     let getFeatureItemsFromDocument (document:GherkinDocument) =
@@ -72,11 +72,11 @@ type FeatureExpressionBuilder
             let scenariosField = propertyHelper.AddProperty("Scenarios",scenariosType)
 
             //create tags
-            let tagExpression = tagExpressionBuilder.CreateExpression featureType tags
+            let tagContainerExpression = tagContainerExpressionBuilder.CreateExpression featureType tags
 
             //add the optional parameters
             let parameters = 
-                match backgroundExpression,tagExpression with
+                match backgroundExpression,tagContainerExpression with
                 | None,None -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>)]
                 | Some (backgroundType,_),None -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("background",backgroundType.Type)]
                 | None,Some(tagType,_) -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("tags",tagType)]
@@ -127,7 +127,7 @@ type FeatureExpressionBuilder
 
                     //get the scenarios from arguments based on whether there are tags and/or background
                     let scenarios = 
-                        match backgroundExpression,tagExpression with
+                        match backgroundExpression,tagContainerExpression with
                         | None,None -> args.GetSlice(Some 3,Some (args.Length-1))
                         | Some(_),None ->args.GetSlice(Some 4,Some (args.Length-1))
                         | Some(_),Some(_) ->args.GetSlice(Some 5,Some (args.Length-1))
@@ -150,7 +150,7 @@ type FeatureExpressionBuilder
                     
                     // add any background and tags
                     let additionalSets =
-                        match backgroundExpression,tagExpression with
+                        match backgroundExpression,tagContainerExpression with
                         | None,None -> []
                         | Some(_,backgroundField),None -> [Expr.FieldSet(this,backgroundField,args.[3])]
                         | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[3]);Expr.FieldSet(this,tagField,args.[4])]
@@ -165,22 +165,23 @@ type FeatureExpressionBuilder
                 Type = featureType
                 Scenarios = scenarioExpressions
                 Background = match backgroundExpression with | None -> None | Some (backgroundExp,_) -> Some backgroundExp
-                Tags = match tagExpression with | None -> None | Some (tagExpr,_) -> Some tagExpr
+                Tags = match tagContainerExpression with | None -> None | Some (tagExpr,_) -> Some tagExpr
             }
 
     static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
 
         let dataExpressionBuilder = DataExpressionBuilder(providerModel.DataRowBaseType,providerModel.DataCellBaseType,propertyNameSanitizer)
         let stepExpressionBuilder = StepExpressionBuilder(providerModel.StepBaseType,providerModel.DocStringArgType,providerModel.ArgumentBaseType,dataExpressionBuilder)
-        let tagExpressionBuilder = TagsExpressionBuilder(providerModel.TagBaseType)
-        let scenarioExpressionBuilder = ScenarioExpressionBuilder(tagExpressionBuilder,providerModel.DataRowBaseType,dataExpressionBuilder,providerModel.ScenarioBaseType,stepExpressionBuilder,providerModel.StepBaseType,propertyNameSanitizer)
+        let tagContainerExpressionBuilder = TagContainerExpressionBuilder(providerModel.TagBaseType , providerModel.TagContainerBaseType)
+        let scenarioExpressionBuilder = ScenarioExpressionBuilder(providerModel.TagContainerBaseType,providerModel.TagBaseType,tagContainerExpressionBuilder,providerModel.DataRowBaseType,dataExpressionBuilder,providerModel.ScenarioBaseType,stepExpressionBuilder,providerModel.StepBaseType,propertyNameSanitizer)
 
         let emptyExamples = Expr.NewArray(providerModel.DataRowBaseType,[])
-        let backgroundExpressionBuilder = BackgroundExpressionBuilder(providerModel.ScenarioBaseType,emptyExamples,providerModel.StepBaseType,stepExpressionBuilder,propertyNameSanitizer)
+        let emptyTags = Expr.NewObject(providerModel.TagContainerBaseType.GetConstructors().[0],[Expr.NewArray(providerModel.TagBaseType.AsType(),[])])
+        let backgroundExpressionBuilder = BackgroundExpressionBuilder(providerModel.ScenarioBaseType,emptyExamples,emptyTags,providerModel.StepBaseType,stepExpressionBuilder,propertyNameSanitizer)
         
         FeatureExpressionBuilder
             (backgroundExpressionBuilder,
             scenarioExpressionBuilder,
             providerModel.ScenarioBaseType,
-            tagExpressionBuilder,
+            tagContainerExpressionBuilder,
             propertyNameSanitizer)

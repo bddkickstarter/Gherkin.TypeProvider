@@ -23,6 +23,7 @@
     </Compile>
     <Compile Include="Provider/Shared.fs" />
     <Compile Include="Provider/BaseTypes/Tag.fs" />
+    <Compile Include="Provider/BaseTypes/TagContainer.fs" />
     <Compile Include="Provider/BaseTypes/Argument.fs" />
     <Compile Include="Provider/BaseTypes/DataCell.fs" />
     <Compile Include="Provider/BaseTypes/DataRow.fs" />
@@ -31,7 +32,7 @@
     <Compile Include="Provider/BaseTypes/Scenario.fs" />
     <Compile Include="Provider/ObjectModel.fs" />
     <Compile Include="Provider/ExpressionBuilders/Data.fs" />
-    <Compile Include="Provider/ExpressionBuilders/Tags.fs" />
+    <Compile Include="Provider/ExpressionBuilders/TagContainer.fs" />
     <Compile Include="Provider/ExpressionBuilders/Step.fs" />
     <Compile Include="Provider/ExpressionBuilders/Scenario.fs" />
     <Compile Include="Provider/ExpressionBuilders/Background.fs" />

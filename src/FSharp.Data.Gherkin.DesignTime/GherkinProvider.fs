@@ -20,19 +20,21 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     do assert (typeof<GherkinProvider.Runtime.AssemblyChecker>.Assembly.GetName().Name = asm.GetName().Name)  
 
     let create providerName (path:string) (sanitizetype:string) =
-        let providedAssembly = ProvidedAssembly()
-        let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
-        let gherkinDocument = Parser().Parse(path)
-        
-        let providerModel = GherkinProviderModel(providerName,root)
-        let expressionBuilder = FeatureExpressionBuilder.CreateNew providerModel (Sanitizer(sanitizetype).Sanitize)
-        let instanceBuilder= FeatureBuilder.CreateNew providerModel
+        if not (["none";"partial";"full"] |> Seq.exists(fun s -> sanitizetype = s)) then failwith ("Invalid Sanitize type. Must be: none, partial or full")
+        else
+            let providedAssembly = ProvidedAssembly()
+            let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)
+            let gherkinDocument = Parser().Parse(path)
+            
+            let providerModel = GherkinProviderModel(providerName,root)
+            let expressionBuilder = FeatureExpressionBuilder.CreateNew providerModel (Sanitizer(sanitizetype).Sanitize)
+            let instanceBuilder= FeatureBuilder.CreateNew providerModel
 
-        expressionBuilder.CreateExpression providerName root gherkinDocument
-        |> instanceBuilder.BuildFeature root gherkinDocument 
+            expressionBuilder.CreateExpression providerName root gherkinDocument
+            |> instanceBuilder.BuildFeature root gherkinDocument 
 
-        providedAssembly.AddTypes [root]
-        root
+            providedAssembly.AddTypes [root]
+            root
 
     do
         let provider = ProvidedTypeDefinition(asm, ns, "GherkinProvider", None, isErased=false)

@@ -1,6 +1,7 @@
 **/bin/**
 **/obj/**
 **/.ionide/**
+**/.idea/**
 packages/**
 paket-files/**
 .vs/**

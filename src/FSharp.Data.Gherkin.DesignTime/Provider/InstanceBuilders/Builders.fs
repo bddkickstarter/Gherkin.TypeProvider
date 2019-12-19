@@ -84,10 +84,11 @@ type StepsBuilder (argumentBuilder:ArgumentBuilder,argumentBaseType:System.Type)
                 Expr.NewObject(stepType.Type.GetConstructors().[0],parameters)
         ) steps stepsType
 
-type TagBuilder () =
+type TagBuilder (tagType:ProvidedTypeDefinition) =
 
-    member __.BuildTag(tagType:ProvidedTypeDefinition) (tags:Tag list) =
-        Expr.NewObject(tagType.GetConstructors().[0],(tags |> List.map(fun t -> Expr.Value(t.Name))))
+    member __.BuildTag(tagContainerType:ProvidedTypeDefinition) (tags:Tag list) =
+        let tagInstances = tags |> List.map(fun t -> Expr.NewObject(tagType.GetConstructors().[0],[Expr.Value(t.Name)]))
+        Expr.NewObject(tagContainerType.GetConstructors().[0],tagInstances)
 
 type ScenarioBuilder (exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsBuilder:StepsBuilder)  =
 
@@ -122,7 +123,7 @@ type ScenarioBuilder (exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsB
                         | None -> name :: description :: examples :: steps
                         | Some tagType ->
                             let tagsInstance = tagBuilder.BuildTag tagType tags
-                            name :: description :: examples :: tagsInstance :: steps
+                            name :: description :: tagsInstance :: examples ::  steps
 
                 Expr.NewObject(scenarioType.Type.GetConstructors().[0],parameters)
         ) scenarios scenarioTypes
@@ -199,7 +200,7 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
             let exampleBuilder = ExampleBuilder(rowBuilder)
             let argumentBuilder = ArgumentBuilder(rowBuilder)
             let stepsBuilder = StepsBuilder(argumentBuilder,providerModel.ArgumentBaseType)
-            let tagBuilder = TagBuilder()
+            let tagBuilder = TagBuilder(providerModel.TagBaseType)
             let scenarioBuilder = ScenarioBuilder(exampleBuilder,tagBuilder,stepsBuilder)
             let backgroundBuilder = BackgroundBuilder()
             FeatureBuilder(stepsBuilder,backgroundBuilder,tagBuilder,scenarioBuilder)

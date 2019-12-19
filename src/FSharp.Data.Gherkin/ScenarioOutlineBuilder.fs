@@ -12,6 +12,7 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
             let exampleType = e.GetType()
             let header = exampleType.GetProperty("Header").GetValue(e) |> string
             let value = exampleType.GetProperty("Value").GetValue(e) |> string
+            exampleType.GetProperty("Visited").SetValue(e,false)
             let find =  sprintf "<%s>" header
             a.Replace(find,value))  txt 
         
@@ -43,7 +44,7 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
         let parameters = 
             match tags with
             | None -> [|(name :> obj);description;examples |] |> Seq.toList
-            | Some t -> [|(name :> obj);description;examples;t |] |> Seq.toList
+            | Some t -> [|(name :> obj);description;t;examples |] |> Seq.toList
         let allParameters = parameters @ (steps |> Seq.toList) |> Seq.toArray
 
         (constructor.Invoke(allParameters)) :?> 'S

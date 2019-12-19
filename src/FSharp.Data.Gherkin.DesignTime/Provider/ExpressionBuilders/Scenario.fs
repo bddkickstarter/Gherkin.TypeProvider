@@ -1,7 +1,7 @@
 module ExpressionBuilders.Scenario
 
 open ObjectModel
-open ExpressionBuilders.Tags
+open ExpressionBuilders.TagContainer
 open ExpressionBuilders.Data
 open ExpressionBuilders.Step
 open BaseTypes.Step
@@ -13,7 +13,10 @@ open FSharp.Quotations
 open Gherkin.Ast
 
 type ScenarioExpressionBuilder 
-        (tagExpressionBuilder:TagsExpressionBuilder,
+        (
+        tagClassBaseType:System.Type,
+        tagBaseType:System.Type,
+        tagExpressionBuilder:TagContainerExpressionBuilder,
         dataRowBaseType:System.Type,
         dataExpressionBuilder:DataExpressionBuilder,
         scenarioBaseType:System.Type,
@@ -75,7 +78,7 @@ type ScenarioExpressionBuilder
             | None, Some(tagType,_) ->
                 (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: parameters)
             | Some (exampleType,_),Some(tagType,_) ->
-                (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: ProvidedParameter("tags",tagType) :: parameters)
+                (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: parameters)
 
         let getStepsFromArgs (args:Expr list) examples tags =
                 //get the steps from arguments based on whether there are examples & or tags
@@ -104,8 +107,8 @@ type ScenarioExpressionBuilder
                             let additionalSets =
                                 match exampleExpression,tagExpression with
                                 | None,None -> []
-                                | Some(_,backgroundField),None -> [Expr.FieldSet(this,backgroundField,args.[3])]
-                                | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[3]);Expr.FieldSet(this,tagField,args.[4])]
+                                | Some(_,exampleField),None -> [Expr.FieldSet(this,exampleField,args.[3])]
+                                | Some(_,exampleField),Some(_,tagField) -> [Expr.FieldSet(this,exampleField,args.[4]);Expr.FieldSet(this,tagField,args.[3])]
                                 | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[3])]
 
                             additionalSets |> Seq.fold(fun a c -> Expr.Sequential(a,c)) stepFieldSet)
@@ -121,12 +124,17 @@ type ScenarioExpressionBuilder
                     
                 let stepsArray = Expr.NewArray(stepBaseType,steps)
 
-                let examples = 
-                    match  exampleExpression with
-                    | None -> Expr.NewArray(dataRowBaseType,[])
-                    | Some _ -> args.[3]
+                let (tags,examples) =
+                    let emptyExamples = Expr.NewArray(dataRowBaseType,[])
+                    let emptyTags= Expr.NewObject(tagClassBaseType.GetConstructors().[0],[Expr.NewArray(tagBaseType,[])])
+                    match tagExpression,exampleExpression with
+                    | None,None -> emptyTags,emptyExamples
+                    | Some _,None -> args.[3],emptyExamples
+                    | Some _,Some _ -> args.[3],args.[4]
+                    | None, Some _ -> emptyTags,args.[3]
+
                 
-                baseCtr,[args.[0];args.[1];args.[2];examples;stepsArray] 
+                baseCtr,[args.[0];args.[1];args.[2];tags;examples;stepsArray] 
                         
 
         scenarioCtr |> scenarioType.AddMember
