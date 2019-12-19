@@ -12,7 +12,7 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
             let exampleType = e.GetType()
             let header = exampleType.GetProperty("Header").GetValue(e) |> string
             let value = exampleType.GetProperty("Value").GetValue(e) |> string
-            exampleType.GetProperty("Visited").SetValue(e,false)
+            exampleType.GetProperty("Visited").SetValue(e,true)
             let find =  sprintf "<%s>" header
             a.Replace(find,value))  txt 
         
@@ -65,7 +65,6 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
                 steps
                 |> Array.map(fun step->
                     let txt = step.GetType().GetProperty("Text").GetValue(step) |> string
-                    step.GetType().GetProperty("Visited").SetValue(step,true)
                     this.CopyStep step (txt |> replaceText))
 
             let name = 
@@ -84,6 +83,23 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
         scenario.GetType().GetProperty("Name").GetValue(scenario) |> string
 
     member this.ReturnFrom (x:'S->'T) =
-        (this.GetScenarioName scenarioOutline),(this.ToScenarios(scenarioOutline) |> List.map (x))
+        let scenarios = this.ToScenarios(scenarioOutline)
+        let result = scenarios |> List.map (x)
+
+        let firstScenarioType = scenarios.[0].GetType()
+        let exampleSteps = firstScenarioType.GetProperty("Steps").GetValue(scenarios.[0]) :?> System.Collections.Generic.IEnumerable<_>
+
+        let scenarioOutlineType = scenarioOutline.GetType()
+        let scenarioOutlineSteps = scenarioOutlineType.GetProperty("Steps").GetValue(scenarioOutline) :?> System.Collections.Generic.IEnumerable<_>
+        
+        Seq.iter2(fun scenarioOutlineStep exampleStep ->
+            let exampleStepType = exampleStep.GetType()
+            let scenarioOutlineStepType = scenarioOutlineStep.GetType()
+            let visited = exampleStepType.GetProperty("Visited").GetValue(exampleStep) :?> bool
+            scenarioOutlineStepType.GetProperty("Visited").SetValue(scenarioOutlineStep,visited)
+        
+        ) scenarioOutlineSteps exampleSteps
+
+        (this.GetScenarioName scenarioOutline),result
 
 

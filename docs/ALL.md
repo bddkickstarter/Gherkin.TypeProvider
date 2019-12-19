@@ -240,7 +240,7 @@ false!
 
 There are 3 options for sanitizing the property names:
   
-  - **none**: the default.  Only illegal F# characters will be replaced wit underscores
+  - **none**: the default.  Only illegal F# characters will be replaced with underscores
   - **partial**: all non alpha numeric characters except spaces are replaced with underscores 
   - **full**: all non alpha numeric characters are replaced with underscores 
 

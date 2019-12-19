@@ -4,6 +4,7 @@ open FSharp.Data.Gherkin
 
 type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature"),Sanitize="partial">
 type SimpleFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/simple.feature"),Sanitize="partial">
+type OutlineFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/outline.feature"),Sanitize="partial">
 
 module Helpers =
 

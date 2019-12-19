@@ -1,6 +1,7 @@
 module FSharp.Data.Gherkin.Tests.ScenarioOutlineBuilder
 
 open FSharp.Data.Gherkin.Builders
+open FSharp.Data.Gherkin.Validation
 open Expecto
 open FSharp.Data.Gherkin.Tests
 
@@ -40,4 +41,25 @@ let useBuilder =
                         "Steps not copied correctly"
                 }
     } >>= testList
+
+[<Tests>]
+let builderVisitsExamples =
+    let feature = OutlineFeature.CreateFeature()
+
+    match FeatureValidator.Validate feature with
+    | None -> failwith "Expected feature to fail vaildation"
+    | _ -> 
+        ScenarioOutline(feature.``some group of examples``){
+             return! 
+                fun scenario ->
+                    scenario.``0 Given some setup`` |> ignore
+                    scenario.``1 When uses _uses the data_`` |> ignore
+                    //scenario.``2 Then result will be _checks the result_`` |> ignore} |> ignore
+        } |> ignore    
+
+        match FeatureValidator.Validate feature with
+        | None -> ()
+        | Some report -> failwithf "Expected feature to pass validation\r\n%s" report.Summary
+
+
 
