@@ -128,6 +128,10 @@ let validateTheFeature =
                     feature.Tags.featureTag1 |> ignore
                     feature.Tags.featureTag2 |> ignore
 
+                    feature.Background.``0 Given background given step``.Argument |> ignore
+                    feature.Background.``1 When background when step``.Argument |> Seq.iter (fun dr -> (dr.column1,dr.column2) |> ignore)
+                    feature.Background.``2 Then background then step`` |> ignore
+
                     let scenario1 = feature.``Scenario 1 name``
                     let scenario2 = feature.``Scenario 2 name``
                     let scenarioOutline = feature.``Scenario outline name``
@@ -213,6 +217,11 @@ let ignoreByTag=
                     match FeatureValidator.Validate feature with
                     | None -> failwith "Expected feature to fail validation"
                     | _ ->
+                    
+                        feature.Background.``0 Given background given step``.Argument |> ignore
+                        feature.Background.``1 When background when step``.Argument |> Seq.iter (fun dr -> (dr.column1,dr.column2) |> ignore)
+                        feature.Background.``2 Then background then step`` |> ignore
+
                         match FeatureValidator.Validate(feature,["@scenario1Tag1";"@scenario2Tag1";"@scenarioOutlineTag1"]) with
                         | Some _ -> failwith "Expected scenario to be excluded"
                         | _ -> 

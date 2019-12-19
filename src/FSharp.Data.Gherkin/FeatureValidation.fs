@@ -35,6 +35,7 @@ type VisitedScenario =
 
 type VisitedFeature =
     {
+        Background:VisitedScenario option
         Tags:string list
         Scenarios:VisitedScenario list
         Summary:string
@@ -155,11 +156,12 @@ type FeatureValidator() =
                 tagType.GetProperty("Name").GetValue(tag) :?> string)
             |> Seq.toList
 
-        let nonVisitedScenarios = 
+        let getNonVisitedScenarios scenarios isScenario= 
+            let typeName = if isScenario then "Scenario" else "Background"
             scenarios 
             |> Seq.choose(fun scenario ->
                 let scenarioType = scenario.GetType()
-                let visited = scenarioType.GetProperty("Visited").GetValue(scenario) :?> bool
+                let scenarioVisited = scenarioType.GetProperty("Visited").GetValue(scenario) :?> bool
                 let name = scenarioType.GetProperty("Name").GetValue(scenario) :?> string
                 let examples = scenarioType.GetProperty("ExampleTable").GetValue(scenario)
                 let steps = nonVisitedSteps scenario
@@ -173,11 +175,15 @@ type FeatureValidator() =
                     let nonVisitedTags = nonVisitedTags tags
                     let nonVisitedExamples = nonVisitedDataTable examples
 
+                    let visited =
+                        if not isScenario then true
+                        else isScenario && scenarioVisited
+
                     match visited,steps,nonVisitedExamples.Length = 0,nonVisitedTags.Length =0 with
                     | true,[],true,true -> None
                     | _ ->
                         let summary = 
-                            let scenarioSummary = steps |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary ) (sprintf "\r\nScenario:%s" name)
+                            let scenarioSummary = steps |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary ) (sprintf "\r\n%s:%s" typeName name)
 
                             let examplesSummary = 
                                 if nonVisitedExamples.Length > 0 then
@@ -206,14 +212,27 @@ type FeatureValidator() =
         if not (isNull (featureType.GetProperty("Tags"))) && exclude (featureType.GetProperty("Tags").GetValue(feature)) then None
         else
             let nonVisitedFeatureTags = nonVisitedTags featureTags
+            let nonVisitedScenarios= getNonVisitedScenarios scenarios true
+            let nonVisitedBackground= 
+                match featureType.GetProperty("Background")  with
+                | null -> None
+                | bgProperty -> 
+                    let bg = bgProperty.GetValue(feature)
+                    match getNonVisitedScenarios [bg] false with
+                    |[] -> None
+                    |x :: _ -> Some x
+
+
+            let backgroundSummary = if nonVisitedBackground.IsSome then nonVisitedBackground.Value.Summary else ""
             let tagsSummary = nonVisitedFeatureTags |> Seq.fold(fun a c -> sprintf "    Tag:%s\r\n%s" c a) ""
             let scenariosSummary = nonVisitedScenarios |> Seq.fold(fun a c -> sprintf "%s\r\n%s" c.Summary a) ""
 
-            match nonVisitedFeatureTags,nonVisitedScenarios with
-            | [],[] -> None
+            match nonVisitedFeatureTags,nonVisitedScenarios,nonVisitedBackground with
+            | [],[],None -> None
             | _ ->
                 {
+                    Background = nonVisitedBackground
                     Tags = nonVisitedFeatureTags
                     Scenarios = nonVisitedScenarios
-                    Summary = sprintf "\r\nFeature:\r\n%s%s" tagsSummary scenariosSummary
+                    Summary = sprintf "\r\nFeature:\r\n%s%s%s" tagsSummary backgroundSummary scenariosSummary
                 } |> Some

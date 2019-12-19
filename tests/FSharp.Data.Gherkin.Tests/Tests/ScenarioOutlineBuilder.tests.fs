@@ -54,7 +54,7 @@ let builderVisitsExamples =
                 fun scenario ->
                     scenario.``0 Given some setup`` |> ignore
                     scenario.``1 When uses _uses the data_`` |> ignore
-                    //scenario.``2 Then result will be _checks the result_`` |> ignore} |> ignore
+                    scenario.``2 Then result will be _checks the result_`` |> ignore
         } |> ignore    
 
         match FeatureValidator.Validate feature with
