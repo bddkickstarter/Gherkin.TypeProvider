@@ -42,7 +42,8 @@ type VisitedFeature =
 
 type FeatureValidator() = 
 
-    static member Validate (feature:obj) = 
+    static member Validate (feature:obj,?ignore:string list) = 
+        let ignoreTags = if ignore.IsSome then ignore.Value else []
         
         let featureType=feature.GetType()
         let scenarios = featureType.GetProperty("Scenarios").GetValue(feature) :?> IEnumerable<_>
@@ -133,6 +134,9 @@ type FeatureValidator() =
             tagsList 
             |> Seq.filter(fun tag ->
                  let tagType = tag.GetType()
+                 let tagName = tagType.GetProperty("Name").GetValue(tag) :?> string
+
+                 not (ignoreTags |> Seq.exists(fun i -> i = tagName)) &&
                  not (tagType.GetProperty("Visited").GetValue(tag) :?> bool))
             |> Seq.map(fun tag ->
                 let tagType = tag.GetType()
