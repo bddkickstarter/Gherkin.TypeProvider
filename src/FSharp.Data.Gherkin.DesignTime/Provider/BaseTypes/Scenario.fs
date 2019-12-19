@@ -21,7 +21,7 @@ type ScenarioBase (tagContainerBase:TagContainerBase,stepBase:StepBase,dataRowBa
         let stepsField = propertyHelper.AddProperty("Steps",stepsType)
         let examplesType = dataRowBase.Type.AsType().MakeArrayType()
         let examplesField = propertyHelper.AddProperty("ExampleTable",examplesType)
-        let allTagsField = propertyHelper.AddProperty("AllTags",tagContainerBase.Type)
+        let allTagsField = propertyHelper.AddProperty("TagList",tagContainerBase.Type)
         let visitedField = propertyHelper.AddVisitedProperty()
 
         ProvidedConstructor(

@@ -26,7 +26,7 @@ type VisitedStep =
 
 type VisitedScenario =
     {
-        //Tags:string list
+        Tags:string list
         Name:string
         Summary:string
         Steps:VisitedStep list
@@ -147,26 +147,36 @@ type FeatureValidator() =
                 let name = scenarioType.GetProperty("Name").GetValue(scenario) :?> string
                 let examples = scenarioType.GetProperty("ExampleTable").GetValue(scenario)
                 let steps = nonVisitedSteps scenario
-                //TODO!!
-                //let tags = scenarioType.GetProperty("AllTags").GetValue(scenario) :?> IEnumerable<_>
-                //let nonVisitedTags = nonVisitedTags tags
-
+                
+                let tagContainer = scenarioType.GetProperty("TagList").GetValue(scenario) 
+                let tagContainerType = tagContainer.GetType()
+                let tags = tagContainerType.GetProperty("AllTags").GetValue(tagContainer) :?> IEnumerable<_>
+                let nonVisitedTags = nonVisitedTags tags
                 let nonVisitedExamples = nonVisitedDataTable examples
 
-                match visited,steps,nonVisitedExamples.Length = 0 with//,nonVisitedTags with
-                | true,[],true -> None
+                match visited,steps,nonVisitedExamples.Length = 0,nonVisitedTags.Length =0 with
+                | true,[],true,true -> None
                 | _ ->
                     let summary = 
                         let scenarioSummary = steps |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary ) (sprintf "\r\nScenario:%s" name)
-                        if nonVisitedExamples.Length > 0 then
-                                let examplesSummary =
+
+                        let examplesSummary = 
+                            if nonVisitedExamples.Length > 0 then
                                     nonVisitedExamples 
                                     |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary) " Examples:"
-                                sprintf "%s\r\n%s" scenarioSummary examplesSummary
-                        else scenarioSummary
+                            else ""
+
+                        let tagsSummary = 
+                                if nonVisitedTags.Length > 0 then
+                                        nonVisitedTags 
+                                        |> Seq.fold(fun a c -> sprintf "%s %s" a c) " Tags:"
+                                else ""
+
+                        sprintf "%s\r\n%s\r\n%s" scenarioSummary tagsSummary examplesSummary
 
                     Some
                         {
+                            Tags = nonVisitedTags
                             Name =  name
                             Summary = summary
                             Steps = steps
@@ -184,5 +194,5 @@ type FeatureValidator() =
             {
                 Tags = nonVisitedFeatureTags
                 Scenarios = nonVisitedScenarios
-                Summary = sprintf "%s\r\n%s" tagsSummary scenariosSummary
+                Summary = sprintf "\r\nFeature:\r\n%s%s" tagsSummary scenariosSummary
             } |> Some

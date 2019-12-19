@@ -129,14 +129,20 @@ let validateTheFeature =
             let scenario2 = feature.``Scenario 2 name``
             let scenarioOutline = feature.``Scenario outline name``
 
+            scenario1.Tags.scenario1Tag1 |> ignore
+            scenario1.Tags.scenario1Tag2 |> ignore
             scenario1.``0 Given scenario 1 given step``.Argument.Content |> ignore
             scenario1.``1 When scenario 1 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
             scenario1.``2 Then scenario 1 then step`` |> ignore
             
+            scenario2.Tags.scenario2Tag1 |> ignore
+            scenario2.Tags.scenario2Tag2 |> ignore
             scenario2.``0 Given scenario 2 given step``.Argument.Content |> ignore
             scenario2.``1 When scenario 2 when step``.Argument |> Seq.iter(fun rw -> (rw.column1,rw.column2) |> ignore)
             scenario2.``2 Then scenario 2 then step`` |> ignore
 
+            scenarioOutline.Tags.scenarioOutlineTag1 |> ignore
+            scenarioOutline.Tags.scenarioOutlineTag2 |> ignore
             let scenarioOutlineGiven = scenarioOutline.``0 Given scenario outline given step _Example Column 1_``
             let scenarioOutlineWhen = scenarioOutline.``1 When scenario outline when step _Example Column 2_``
             scenarioOutline.``2 Then scenario outline then step _Example Column 3_`` |> ignore
