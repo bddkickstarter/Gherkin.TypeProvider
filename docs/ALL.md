@@ -362,6 +362,7 @@ match FeatureValidator.Validate feature with
 The validator returns a report that contains a tree of all the feature's children that have not been visited. This includes:
 - Tags
 - Features
+- Backgrounds
 - Scenarios
 - Scenario Outlines
 - All cells in a DataTable argument
@@ -435,7 +436,7 @@ When uses data 1, Then result will be true!
 When uses data 2, Then result will be false!
 When uses data 3, Then result will be maybe?
 ```
-
+The builder will visit each example however the steps will only be marked as visited if referenced in the builder
 
 
 
