@@ -1,4 +1,4 @@
-namespace FSharp.Data.Gherkin.Builders
+namespace GherkinProvider.Builders
 
 type ScenarioOutline<'S> (scenarioOutline:'S) as this =
 

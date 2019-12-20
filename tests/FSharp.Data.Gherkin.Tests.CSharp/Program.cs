@@ -1,5 +1,5 @@
 ﻿using System;
-using FSharp.Data.Gherkin.Features;
+using Gherkin.Features;
 
 namespace FSharp.Data.Gherkin.Tests.CSharp
 {

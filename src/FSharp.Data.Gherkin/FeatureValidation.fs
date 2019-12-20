@@ -1,4 +1,4 @@
-namespace FSharp.Data.Gherkin.Validation
+namespace GherkinProvider.Validation
 
 open System.Collections.Generic
 

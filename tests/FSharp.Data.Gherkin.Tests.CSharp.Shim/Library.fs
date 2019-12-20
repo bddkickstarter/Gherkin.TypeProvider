@@ -1,4 +1,4 @@
-﻿namespace FSharp.Data.Gherkin.Features
+﻿namespace Gherkin.Features
 
 open FSharp.Data.Gherkin
 

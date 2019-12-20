@@ -1,17 +1,14 @@
 module FSharp.Data.Gherkin.Tests.ScenarioOutlineBuilder
 
-open FSharp.Data.Gherkin.Builders
-open FSharp.Data.Gherkin.Validation
-open Expecto
+open FSharp.Data.Gherkin
 open FSharp.Data.Gherkin.Tests
-
-let (>>=) (name,tests) testList  = testList name tests
+open Expecto
 
 [<Tests>]
 let useBuilder =
     let scenarioTemplate = TestFeature.CreateFeature().``Scenario outline name``
 
-    ScenarioOutline(scenarioTemplate){
+    scenarioOutline scenarioTemplate {
         return!
             fun scenario ->
                 test scenario.Name {
@@ -46,10 +43,10 @@ let useBuilder =
 let builderVisitsExamples =
     let feature = OutlineFeature.CreateFeature()
 
-    match FeatureValidator.Validate feature with
+    match validateFeature feature with
     | None -> failwith "Expected feature to fail vaildation"
     | _ -> 
-        ScenarioOutline(feature.``some group of examples``){
+        scenarioOutline feature.``some group of examples``{
              return! 
                 fun scenario ->
                     scenario.``0 Given some setup`` |> ignore
@@ -57,7 +54,7 @@ let builderVisitsExamples =
                     scenario.``2 Then result will be _checks the result_`` |> ignore
         } |> ignore    
 
-        match FeatureValidator.Validate feature with
+        match validateFeature feature with
         | None -> ()
         | Some report -> failwithf "Expected feature to pass validation\r\n%s" report.Summary
 
