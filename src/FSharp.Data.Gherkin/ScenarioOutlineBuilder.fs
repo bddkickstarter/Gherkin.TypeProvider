@@ -83,23 +83,6 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
         scenario.GetType().GetProperty("Name").GetValue(scenario) |> string
 
     member this.ReturnFrom (x:'S->'T) =
-        let scenarios = this.ToScenarios(scenarioOutline)
-        let result = scenarios |> List.map (x)
-
-        let firstScenarioType = scenarios.[0].GetType()
-        let exampleSteps = firstScenarioType.GetProperty("Steps").GetValue(scenarios.[0]) :?> System.Collections.Generic.IEnumerable<_>
-
-        let scenarioOutlineType = scenarioOutline.GetType()
-        let scenarioOutlineSteps = scenarioOutlineType.GetProperty("Steps").GetValue(scenarioOutline) :?> System.Collections.Generic.IEnumerable<_>
-        
-        Seq.iter2(fun scenarioOutlineStep exampleStep ->
-            let exampleStepType = exampleStep.GetType()
-            let scenarioOutlineStepType = scenarioOutlineStep.GetType()
-            let visited = exampleStepType.GetProperty("Visited").GetValue(exampleStep) :?> bool
-            scenarioOutlineStepType.GetProperty("Visited").SetValue(scenarioOutlineStep,visited)
-        
-        ) scenarioOutlineSteps exampleSteps
-
-        (this.GetScenarioName scenarioOutline),result
+        (this.GetScenarioName scenarioOutline),( this.ToScenarios(scenarioOutline) |> List.map (x))
 
 
