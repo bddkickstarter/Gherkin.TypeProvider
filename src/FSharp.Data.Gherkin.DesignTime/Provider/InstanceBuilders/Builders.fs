@@ -1,5 +1,6 @@
 module InstanceBuilders.Feature
 
+open BaseTypes.Scenario
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Gherkin.Ast
@@ -90,7 +91,7 @@ type TagBuilder (tagType:ProvidedTypeDefinition) =
         let tagInstances = tags |> List.map(fun t -> Expr.NewObject(tagType.GetConstructors().[0],[Expr.Value(t.Name)]))
         Expr.NewObject(tagContainerType.GetConstructors().[0],tagInstances)
 
-type ScenarioBuilder (exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsBuilder:StepsBuilder)  =
+type ScenarioBuilder (parent:Expr, exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsBuilder:StepsBuilder)  =
 
     member __.BuildScenario (scenarios:Scenario list) (scenarioTypes:ScenarioExpression list) =
         List.map2(
@@ -98,42 +99,41 @@ type ScenarioBuilder (exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsB
                 let name = Expr.Value(scenario.Name)
                 let description = Expr.Value(scenario.Description)
                 let steps = stepsBuilder.BuildSteps (scenario.Steps |> Seq.toList) scenarioType.Steps
-
                 let parameters = 
                     match scenarioType.Examples,(scenario.Tags |> Seq.toList)  with
                     | None,[] -> 
-                        name :: description :: steps
+                        parent :: name :: description :: steps
 
                     | Some exampleType,[] ->
                         let examples = exampleBuilder.BuildExamples (scenario.Examples |> Seq.toList) exampleType
-                        name :: description :: examples :: steps
+                        parent :: name :: description :: examples :: steps
 
                     | None,tags ->
                         match scenarioType.Tags with
-                        | None -> name :: description :: steps
+                        | None -> parent :: name :: description :: steps
                         | Some tagType ->
                             let tagsInstance = tagBuilder.BuildTag tagType tags
-                            name :: description :: tagsInstance :: steps
+                            parent :: name :: description :: tagsInstance :: steps
 
                     | Some exampleType,tags ->
 
                         let examples = exampleBuilder.BuildExamples (scenario.Examples |> Seq.toList) exampleType
 
                         match scenarioType.Tags with
-                        | None -> name :: description :: examples :: steps
+                        | None -> parent :: name :: description :: examples :: steps
                         | Some tagType ->
                             let tagsInstance = tagBuilder.BuildTag tagType tags
-                            name :: description :: tagsInstance :: examples ::  steps
+                            parent :: name :: description :: tagsInstance :: examples ::  steps
 
                 Expr.NewObject(scenarioType.Type.GetConstructors().[0],parameters)
         ) scenarios scenarioTypes
 
-type BackgroundBuilder () =
+type BackgroundBuilder (parent:Expr) =
 
     member __.BuildBackground (backgroundType:ProvidedTypeDefinition) (gherkinBackground:Background) (steps:Expr list) =
         let nameParam = Expr.Value(gherkinBackground.Name)
         let descriptionParam = Expr.Value(gherkinBackground.Description)
-        let parameters = nameParam :: descriptionParam :: steps
+        let parameters = parent :: nameParam :: descriptionParam :: steps
 
         Expr.NewObject(backgroundType.GetConstructors().[0],parameters)
 
@@ -196,11 +196,13 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
         |> root.AddMember
 
     static member CreateNew (providerModel:GherkinProviderModel) =
+            let parent = Expr.Coerce(Expr.Value(null),providerModel.ScenarioBaseType)
+
             let rowBuilder = RowBuilder(providerModel.DataCellBaseType)
             let exampleBuilder = ExampleBuilder(rowBuilder)
             let argumentBuilder = ArgumentBuilder(rowBuilder)
             let stepsBuilder = StepsBuilder(argumentBuilder,providerModel.ArgumentBaseType)
             let tagBuilder = TagBuilder(providerModel.TagBaseType)
-            let scenarioBuilder = ScenarioBuilder(exampleBuilder,tagBuilder,stepsBuilder)
-            let backgroundBuilder = BackgroundBuilder()
+            let scenarioBuilder = ScenarioBuilder(parent,exampleBuilder,tagBuilder,stepsBuilder)
+            let backgroundBuilder = BackgroundBuilder(parent)
             FeatureBuilder(stepsBuilder,backgroundBuilder,tagBuilder,scenarioBuilder)

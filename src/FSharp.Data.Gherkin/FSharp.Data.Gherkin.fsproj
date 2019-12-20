@@ -28,6 +28,7 @@
     <!-- Copy Gherkin & Utf8Json specific files based on framework -->
     <Copy SourceFiles="..\..\packages\Gherkin\lib\net45\Gherkin.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\net45" />
     <Copy SourceFiles="..\..\packages\Utf8Json\lib\net45\Utf8Json.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\net45" />
+    <Copy SourceFiles="..\..\packages\System.Threading.Tasks.Extensions\lib\portable-net45+win8+wp8+wpa81\System.Threading.Tasks.Extensions.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\net45" />
     
     <Copy SourceFiles="..\..\packages\Gherkin\lib\netstandard2.0\Gherkin.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netcoreapp3.1" />
     <Copy SourceFiles="..\..\packages\Utf8Json\lib\netstandard2.0\Utf8Json.dll" DestinationFolder="$(OutputPath)\typeproviders\fsharp41\netcoreapp3.1" />

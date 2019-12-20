@@ -2,7 +2,8 @@
 **/obj/**
 **/.ionide/**
 **/.idea/**
+**/.vscode/**
 packages/**
 paket-files/**
-.vs/**
+**/.vs/**
 **/*.nupkg

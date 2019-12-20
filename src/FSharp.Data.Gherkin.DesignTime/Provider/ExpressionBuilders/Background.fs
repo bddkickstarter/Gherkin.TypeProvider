@@ -53,13 +53,13 @@ type BackgroundExpressionBuilder
 
         let backgroundCtr = 
             ProvidedConstructor(
-                ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: parameters,
+                ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: parameters,
                 invokeCode = 
                     fun args -> 
                             let this = args.[0]
 
-                            //get the steps from arguments (after name & desc)
-                            let steps = args.GetSlice(Some 3,Some (args.Length-1))
+                            //get the steps from arguments (after parent,name & desc)
+                            let steps = args.GetSlice(Some 4,Some (args.Length-1))
 
                             //set each parameter to its non-derived backing field
                             let stepFieldSets = List.map2( fun stepField stepValue -> Expr.FieldSet(this,stepField,stepValue))  stepFields steps
@@ -72,10 +72,10 @@ type BackgroundExpressionBuilder
         backgroundCtr.BaseConstructorCall <- 
             fun args -> 
                 let steps = 
-                    args.GetSlice(Some 3,Some(args.Length - 1))
+                    args.GetSlice(Some 4,Some(args.Length - 1))
                     |> List.map (fun s -> Expr.Coerce(s,stepBaseType))
                     
-                baseCtr,[args.[0];args.[1];args.[2];emptyTags;emptyExamples;Expr.NewArray(stepBaseType,steps)] // pass in name & descr to base class
+                baseCtr,[args.[0];args.[1];args.[2];args.[3];emptyTags;emptyExamples;Expr.NewArray(stepBaseType,steps)] // pass in parent, name & descr to base class
 
         backgroundCtr |> backgroundType.AddMember
         

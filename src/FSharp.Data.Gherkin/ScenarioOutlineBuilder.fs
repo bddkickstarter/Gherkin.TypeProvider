@@ -43,8 +43,8 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
 
         let parameters = 
             match tags with
-            | None -> [|(name :> obj);description;examples |] |> Seq.toList
-            | Some t -> [|(name :> obj);description;t;examples |] |> Seq.toList
+            | None -> [|(scenarioOutline :> obj);(name :> obj);description;examples |] |> Seq.toList
+            | Some t -> [|(scenarioOutline :> obj);(name :> obj);description;t;examples |] |> Seq.toList
         let allParameters = parameters @ (steps |> Seq.toList) |> Seq.toArray
 
         (constructor.Invoke(allParameters)) :?> 'S

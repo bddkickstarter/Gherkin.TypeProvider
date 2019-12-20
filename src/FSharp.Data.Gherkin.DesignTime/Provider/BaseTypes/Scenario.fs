@@ -22,18 +22,28 @@ type ScenarioBase (tagContainerBase:TagContainerBase,stepBase:StepBase,dataRowBa
         let examplesType = dataRowBase.Type.AsType().MakeArrayType()
         let examplesField = propertyHelper.AddProperty("ExampleTable",examplesType)
         let allTagsField = propertyHelper.AddProperty("TagList",tagContainerBase.Type)
+        let parentField = propertyHelper.AddProperty("Parent",scenarioBase)
+
         let visitedField = propertyHelper.AddVisitedProperty()
 
         ProvidedConstructor(
-            [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("tags",tagContainerBase.Type);ProvidedParameter("examples",examplesType);ProvidedParameter("steps",stepsType)],
+            [
+                ProvidedParameter("parent",scenarioBase)
+                ProvidedParameter("name",typeof<string>)
+                ProvidedParameter("description",typeof<string>)
+                ProvidedParameter("tags",tagContainerBase.Type)
+                ProvidedParameter("examples",examplesType)
+                ProvidedParameter("steps",stepsType)
+            ],
             invokeCode = 
                 fun args ->
                     [
-                        Expr.FieldSet(args.[0],nameField,args.[1])
-                        Expr.FieldSet(args.[0],descriptionField,args.[2])
-                        Expr.FieldSet(args.[0],allTagsField,args.[3])
-                        Expr.FieldSet(args.[0],examplesField,args.[4])
-                        Expr.FieldSet(args.[0],stepsField,args.[5])
+                        Expr.FieldSet(args.[0],parentField,args.[1])
+                        Expr.FieldSet(args.[0],nameField,args.[2])
+                        Expr.FieldSet(args.[0],descriptionField,args.[3])
+                        Expr.FieldSet(args.[0],allTagsField,args.[4])
+                        Expr.FieldSet(args.[0],examplesField,args.[5])
+                        Expr.FieldSet(args.[0],stepsField,args.[6])
                     ]
                     |> Seq.fold(fun a c -> Expr.Sequential(a,c)) (Expr.FieldSet(args.[0],visitedField,Expr.Value(false)))
                    

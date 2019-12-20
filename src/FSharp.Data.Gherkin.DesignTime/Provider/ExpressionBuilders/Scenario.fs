@@ -1,5 +1,7 @@
 module ExpressionBuilders.Scenario
 
+open System.Reflection
+
 open ObjectModel
 open ExpressionBuilders.TagContainer
 open ExpressionBuilders.Data
@@ -49,44 +51,68 @@ type ScenarioExpressionBuilder
         let stepFields = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedField(sprintf "_step%i" i ,stepExpression.Type))
 
         let visitedProperty = stepBaseType.GetProperty("Visited")
+        let parentProperty = scenarioBaseType.GetProperty("Parent")
+        let parentStepsProperty = scenarioBaseType.GetProperty("Steps")
+        let getValue =
+                typeof<System.Array>
+                    .GetMethods(BindingFlags.DeclaredOnly ||| BindingFlags.Public ||| BindingFlags.Instance)
+                    |> Seq.pick(fun m ->
+                        let parameters = m.GetParameters()
+                        if m.Name = "GetValue" && parameters.Length = 1 && typeof<int>.IsAssignableFrom(parameters.[0].ParameterType)
+                        then Some m else None)
 
         let stepProperties = 
             List.mapi2(
-                fun i step (stepExpression:StepExpression) -> 
+                fun i step (stepExpression:StepExpression) ->
+                    
                     ProvidedProperty(
                         StepBase.GetStepName(propertySanitizer,i,step),
                         stepExpression.Type,
                         getterCode=fun args-> 
                             //get the specific step field
-                            let stepField = Expr.FieldGet(args.[0],stepFields.[i])
+                            let getStep = Expr.FieldGet(args.[0],stepFields.[i])
+   
+                            //set visited property of parent to true
+                            let parent = Expr.PropertyGet(args.[0],parentProperty)
+                            let parentSteps = Expr.PropertyGet(parent,parentStepsProperty)
+                            let stepsAsObjArray = Expr.Coerce(parentSteps, typeof<System.Array>)
+                            let getParentStep = Expr.Call(stepsAsObjArray,getValue,[Expr.Value(i)])
+                            let getParentStepAsStepBase = Expr.Coerce(getParentStep,stepBaseType)
+                            let visitParentStep = Expr.PropertySet(getParentStepAsStepBase,visitedProperty,Expr.Value(true))
 
-                            Expr.Sequential(
-                                //visit step
-                                Expr.PropertySet(stepField,visitedProperty,Expr.Value(true)),
-                                //return step
-                                stepField
-                                ))) gherkinStepList stepExpressions 
+                            //visit the parent if it exists
+                            let visitStep = Expr.PropertySet(getStep,visitedProperty,Expr.Value(true))
+                            let visitParentThenStep = Expr.Sequential(visitParentStep,visitStep)
+            
+                            // check to see if parent is null
+                            let parentAsObject = Expr.Coerce(parent,typeof<obj>)
+                            let guard = <@@ not (isNull %%parentAsObject  ) @@>
+                            
+                            Expr.IfThenElse(guard,Expr.Sequential(visitParentThenStep,getStep),Expr.Sequential(visitStep,getStep))
+
+                            )) gherkinStepList stepExpressions 
 
         stepFields |> Seq.iter(scenarioType.AddMember)
         stepProperties |> Seq.iter(scenarioType.AddMember)
 
         let constructorParams =
             match exampleExpression,tagExpression with
-            | None,None -> (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: parameters)
+            | None,None -> (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: parameters)
             | Some (exampleType,_), None -> 
-                (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: parameters)
+                (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: parameters)
             | None, Some(tagType,_) ->
-                (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: parameters)
+                (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: parameters)
             | Some (exampleType,_),Some(tagType,_) ->
-                (ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: parameters)
+                (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: parameters)
 
         let getStepsFromArgs (args:Expr list) examples tags =
                 //get the steps from arguments based on whether there are examples & or tags
                 match examples,tags with
-                | None,None -> args.GetSlice(Some 3,Some (args.Length-1))
-                | Some(_),None ->args.GetSlice(Some 4,Some (args.Length-1))
-                | Some(_),Some(_) ->args.GetSlice(Some 5,Some (args.Length-1))
-                | None,Some(_) -> args.GetSlice(Some 4,Some (args.Length-1))
+                | None,None -> args.GetSlice(Some 4,Some (args.Length-1))
+                | Some(_),None ->args.GetSlice(Some 5,Some (args.Length-1))
+                | Some(_),Some(_) ->args.GetSlice(Some 6,Some (args.Length-1))
+                | None,Some(_) -> args.GetSlice(Some 5,Some (args.Length-1))
+                
 
         let scenarioCtr = 
             ProvidedConstructor(
@@ -102,14 +128,14 @@ type ScenarioExpressionBuilder
 
                             //create a single expression with all the step sets & the new array
                             let stepFieldSet = stepFieldSets.Tail |> Seq.fold (fun a c -> Expr.Sequential(a,c) ) stepFieldSets.Head
-
+                            
                             // add any background and tags
                             let additionalSets =
                                 match exampleExpression,tagExpression with
                                 | None,None -> []
-                                | Some(_,exampleField),None -> [Expr.FieldSet(this,exampleField,args.[3])]
-                                | Some(_,exampleField),Some(_,tagField) -> [Expr.FieldSet(this,exampleField,args.[4]);Expr.FieldSet(this,tagField,args.[3])]
-                                | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[3])]
+                                | Some(_,exampleField),None -> [Expr.FieldSet(this,exampleField,args.[4])]
+                                | Some(_,exampleField),Some(_,tagField) -> [Expr.FieldSet(this,exampleField,args.[5]);Expr.FieldSet(this,tagField,args.[4])]
+                                | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[4])]
 
                             additionalSets |> Seq.fold(fun a c -> Expr.Sequential(a,c)) stepFieldSet)
 
@@ -129,12 +155,12 @@ type ScenarioExpressionBuilder
                     let emptyTags= Expr.NewObject(tagClassBaseType.GetConstructors().[0],[Expr.NewArray(tagBaseType,[])])
                     match tagExpression,exampleExpression with
                     | None,None -> emptyTags,emptyExamples
-                    | Some _,None -> args.[3],emptyExamples
-                    | Some _,Some _ -> args.[3],args.[4]
-                    | None, Some _ -> emptyTags,args.[3]
+                    | Some _,None -> args.[4],emptyExamples
+                    | Some _,Some _ -> args.[4],args.[5]
+                    | None, Some _ -> emptyTags,args.[4]
 
                 
-                baseCtr,[args.[0];args.[1];args.[2];tags;examples;stepsArray] 
+                baseCtr,[args.[0];args.[1];args.[2];args.[3];tags;examples;stepsArray] 
                         
 
         scenarioCtr |> scenarioType.AddMember

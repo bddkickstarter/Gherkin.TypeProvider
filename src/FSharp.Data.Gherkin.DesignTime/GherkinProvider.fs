@@ -20,7 +20,8 @@ type GherkinProvider (config : TypeProviderConfig) as this =
     do assert (typeof<GherkinProvider.Runtime.AssemblyChecker>.Assembly.GetName().Name = asm.GetName().Name)  
 
     let create providerName (path:string) (sanitizetype:string) =
-        if not (["none";"partial";"full"] |> Seq.exists(fun s -> sanitizetype = s)) then failwith ("Invalid Sanitize type. Must be: none, partial or full")
+        if not (["none";"partial";"full"] |> Seq.exists(fun s -> sanitizetype = s))
+            then failwith ("Invalid Sanitize type. Must be: none, partial or full")
         else
             let providedAssembly = ProvidedAssembly()
             let root = ProvidedTypeDefinition(providedAssembly,ns,providerName,Some typeof<obj>,isErased=false)

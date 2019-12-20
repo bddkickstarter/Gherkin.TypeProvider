@@ -173,7 +173,8 @@ type FeatureExpressionBuilder
         let dataExpressionBuilder = DataExpressionBuilder(providerModel.DataRowBaseType,providerModel.DataCellBaseType,propertyNameSanitizer)
         let stepExpressionBuilder = StepExpressionBuilder(providerModel.StepBaseType,providerModel.DocStringArgType,providerModel.ArgumentBaseType,dataExpressionBuilder)
         let tagContainerExpressionBuilder = TagContainerExpressionBuilder(providerModel.TagBaseType , providerModel.TagContainerBaseType)
-        let scenarioExpressionBuilder = ScenarioExpressionBuilder(providerModel.TagContainerBaseType,providerModel.TagBaseType,tagContainerExpressionBuilder,providerModel.DataRowBaseType,dataExpressionBuilder,providerModel.ScenarioBaseType,stepExpressionBuilder,providerModel.StepBaseType,propertyNameSanitizer)
+        let scenarioExpressionBuilder = ScenarioExpressionBuilder(providerModel.TagContainerBaseType,providerModel.TagBaseType,tagContainerExpressionBuilder,
+                                                                  providerModel.DataRowBaseType,dataExpressionBuilder,providerModel.ScenarioBaseType,stepExpressionBuilder,providerModel.StepBaseType,propertyNameSanitizer)
 
         let emptyExamples = Expr.NewArray(providerModel.DataRowBaseType,[])
         let emptyTags = Expr.NewObject(providerModel.TagContainerBaseType.GetConstructors().[0],[Expr.NewArray(providerModel.TagBaseType.AsType(),[])])
