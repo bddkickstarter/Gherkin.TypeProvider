@@ -83,6 +83,6 @@ type ScenarioOutline<'S> (scenarioOutline:'S) as this =
         scenario.GetType().GetProperty("Name").GetValue(scenario) |> string
 
     member this.ReturnFrom (x:'S->'T) =
-        (this.GetScenarioName scenarioOutline),( this.ToScenarios(scenarioOutline) |> List.map (x))
+        (this.GetScenarioName scenarioOutline),(this.ToScenarios(scenarioOutline) |> List.map (x))
 
 

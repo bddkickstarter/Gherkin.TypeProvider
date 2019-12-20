@@ -198,10 +198,10 @@ let ignoreByTag=
                     match validateFeature feature with
                     | None -> failwith "Expected feature to fail validation"
                     | _->
-                        match validateFeature(feature,["@featureTag1"]) with
+                        match validateFeatureAndExclude feature [|"@featureTag1"|] with
                         | Some _ -> failwith "Expected feature to be excluded"
                         | _ -> 
-                             match validateFeature(feature,["@featureTag2"]) with
+                             match validateFeatureAndExclude feature [|"@featureTag2"|] with
                              | Some _ ->  failwith "Expected feature to be excluded"
                              | None -> ()
 
@@ -222,10 +222,10 @@ let ignoreByTag=
                         feature.Background.``1 When background when step``.Argument |> Seq.iter (fun dr -> (dr.column1,dr.column2) |> ignore)
                         feature.Background.``2 Then background then step`` |> ignore
 
-                        match validateFeature(feature,["@scenario1Tag1";"@scenario2Tag1";"@scenarioOutlineTag1"]) with
+                        match validateFeatureAndExclude feature [|"@scenario1Tag1";"@scenario2Tag1";"@scenarioOutlineTag1"|] with
                         | Some _ -> failwith "Expected scenario to be excluded"
                         | _ -> 
-                             match validateFeature(feature,["@scenario1Tag2";"@scenario2Tag2";"@scenarioOutlineTag2"]) with
+                             match validateFeatureAndExclude feature [|"@scenario1Tag2";"@scenario2Tag2";"@scenarioOutlineTag2"|] with
                              | Some _ ->  failwith "Expected scenario to be excluded"
                              | None -> ()
         ]

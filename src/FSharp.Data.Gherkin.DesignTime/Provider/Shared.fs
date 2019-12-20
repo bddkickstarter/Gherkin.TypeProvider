@@ -16,15 +16,16 @@ type Sanitizer(?sanitizeType:string) =
             | _ -> str
 
     let removeIllegalFSharpChars (str:string) = 
-        str
+             str.ToCharArray()
+             |> Array.map(fun c -> if illegalFSharpChars |> Seq.exists(fun ic -> ic = c) then '_' else c)
+             |> System.String
 
     let allowCharacters  (validCharacters:int list)  (str:string) =
             str.ToCharArray() 
-            |> Seq.map(fun c -> 
+            |> Array.map(fun c -> 
                     let asciiCode = (c |> int) 
                     if validCharacters |> Seq.exists(fun a -> a = asciiCode) then c
                     else '_')
-            |> Seq.toArray
 
     let sanitizeByType (nm:string) =
         match sanitizeType with
