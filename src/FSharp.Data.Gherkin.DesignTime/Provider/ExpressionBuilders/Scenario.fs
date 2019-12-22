@@ -86,7 +86,7 @@ type ScenarioExpressionBuilder
             
                             // check to see if parent is null
                             let parentAsObject = Expr.Coerce(parent,typeof<obj>)
-                            let guard = <@@ not (isNull %%parentAsObject  ) @@>
+                            let guard = <@@ not (isNull %%parentAsObject) @@>
                             
                             Expr.IfThenElse(guard,Expr.Sequential(visitParentThenStep,getStep),Expr.Sequential(visitStep,getStep))
 
@@ -96,14 +96,15 @@ type ScenarioExpressionBuilder
         stepProperties |> Seq.iter(scenarioType.AddMember)
 
         let constructorParams =
+            let mandatory  = [ProvidedParameter("parent",scenarioBaseType) ; ProvidedParameter("name",typeof<string>) ; ProvidedParameter("description",typeof<string>)]
             match exampleExpression,tagExpression with
-            | None,None -> (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: parameters)
+            | None,None -> mandatory @ parameters
             | Some (exampleType,_), None -> 
-                (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: parameters)
+                mandatory @ ([ProvidedParameter("examples",exampleType.MakeArrayType())]) @  parameters
             | None, Some(tagType,_) ->
-                (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: parameters)
+               mandatory @ [ProvidedParameter("tags",tagType)] @ parameters
             | Some (exampleType,_),Some(tagType,_) ->
-                (ProvidedParameter("parent",scenarioBaseType) :: ProvidedParameter("name",typeof<string>) :: ProvidedParameter("description",typeof<string>) :: ProvidedParameter("tags",tagType) :: ProvidedParameter("examples",exampleType.MakeArrayType()) :: parameters)
+               mandatory @ [ProvidedParameter("tags",tagType)] @ [ProvidedParameter("examples",exampleType.MakeArrayType())] @ parameters
 
         let getStepsFromArgs (args:Expr list) examples tags =
                 //get the steps from arguments based on whether there are examples & or tags

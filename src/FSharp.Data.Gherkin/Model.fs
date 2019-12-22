@@ -7,10 +7,9 @@ let inline (>>=) (nm,lst) tl = tl nm lst
 
 let inline scenarioOutline outline = ScenarioOutline(outline)
 
-let validateFeature feature  = 
-    FeatureValidator.Validate(feature)
+let inline validateFeature feature = FeatureValidator.Validate(feature)
 
-let validateFeatureAndExclude feature (args:string [])  = 
+let inline validateFeatureAndExclude feature (args:string [])  = 
     FeatureValidator.Validate(feature,args |> Seq.toList)
 
 let inline validateFeatureRun feature (args:string[]) result =

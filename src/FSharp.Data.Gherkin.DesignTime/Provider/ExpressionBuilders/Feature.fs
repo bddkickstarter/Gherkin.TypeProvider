@@ -76,11 +76,12 @@ type FeatureExpressionBuilder
 
             //add the optional parameters
             let parameters = 
+                let mandatory = [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>)]
                 match backgroundExpression,tagContainerExpression with
-                | None,None -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>)]
-                | Some (backgroundType,_),None -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("background",backgroundType.Type)]
-                | None,Some(tagType,_) -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("tags",tagType)]
-                | Some (backgroundType,_),Some(tagType,_) -> [ProvidedParameter("name",typeof<string>);ProvidedParameter("description",typeof<string>);ProvidedParameter("background",backgroundType.Type);ProvidedParameter("tags",tagType)]
+                | None,None -> mandatory
+                | Some (backgroundType,_),None -> mandatory @ [ProvidedParameter("background",backgroundType.Type) ]
+                | None,Some(tagType,_) -> mandatory @ [ProvidedParameter("tags",tagType)]
+                | Some (backgroundType,_),Some(tagType,_) -> mandatory @ [ProvidedParameter("background",backgroundType.Type);ProvidedParameter("tags",tagType)]
 
             //create individual fields to hold the derived scenarios
             let scenarioFields = scenarioExpressions |> List.mapi(fun i sArg-> ProvidedField((sprintf "_scenario%i" i) |> sanitize, sArg.Type))
@@ -170,15 +171,42 @@ type FeatureExpressionBuilder
 
     static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
 
-        let dataExpressionBuilder = DataExpressionBuilder(providerModel.DataRowBaseType,providerModel.DataCellBaseType,propertyNameSanitizer)
-        let stepExpressionBuilder = StepExpressionBuilder(providerModel.StepBaseType,providerModel.DocStringArgType,providerModel.ArgumentBaseType,dataExpressionBuilder)
-        let tagContainerExpressionBuilder = TagContainerExpressionBuilder(providerModel.TagBaseType , providerModel.TagContainerBaseType)
-        let scenarioExpressionBuilder = ScenarioExpressionBuilder(providerModel.TagContainerBaseType,providerModel.TagBaseType,tagContainerExpressionBuilder,
-                                                                  providerModel.DataRowBaseType,dataExpressionBuilder,providerModel.ScenarioBaseType,stepExpressionBuilder,providerModel.StepBaseType,propertyNameSanitizer)
+        let dataExpressionBuilder = DataExpressionBuilder(
+                                            providerModel.DataRowBaseType,
+                                            providerModel.DataCellBaseType,
+                                            propertyNameSanitizer)
+
+        let stepExpressionBuilder = StepExpressionBuilder(
+                                            providerModel.StepBaseType,
+                                            providerModel.DocStringArgType,
+                                            providerModel.ArgumentBaseType,
+                                            dataExpressionBuilder)
+
+        let tagContainerExpressionBuilder = TagContainerExpressionBuilder(
+                                                providerModel.TagBaseType , 
+                                                providerModel.TagContainerBaseType)
+
+        let scenarioExpressionBuilder = ScenarioExpressionBuilder(
+                                            providerModel.TagContainerBaseType,
+                                            providerModel.TagBaseType,
+                                            tagContainerExpressionBuilder,
+                                            providerModel.DataRowBaseType,
+                                            dataExpressionBuilder,
+                                            providerModel.ScenarioBaseType,
+                                            stepExpressionBuilder,
+                                            providerModel.StepBaseType,
+                                            propertyNameSanitizer)
 
         let emptyExamples = Expr.NewArray(providerModel.DataRowBaseType,[])
         let emptyTags = Expr.NewObject(providerModel.TagContainerBaseType.GetConstructors().[0],[Expr.NewArray(providerModel.TagBaseType.AsType(),[])])
-        let backgroundExpressionBuilder = BackgroundExpressionBuilder(providerModel.ScenarioBaseType,emptyExamples,emptyTags,providerModel.StepBaseType,stepExpressionBuilder,propertyNameSanitizer)
+
+        let backgroundExpressionBuilder = BackgroundExpressionBuilder(
+                                            providerModel.ScenarioBaseType,
+                                            emptyExamples,
+                                            emptyTags,
+                                            providerModel.StepBaseType,
+                                            stepExpressionBuilder,
+                                            propertyNameSanitizer)
         
         FeatureExpressionBuilder
             (backgroundExpressionBuilder,
