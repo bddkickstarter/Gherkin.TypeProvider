@@ -2,52 +2,56 @@ namespace GherkinProvider.Validation
 
 open System.Collections.Generic
 
-type VisitedCell =
+type UnVisitedCell =
     {
         Header:string
         Value:string
         Summary:string
     }
 
-type VisitedRow =
+type UnVisitedRow =
     {
         Index:int
-        Cells:VisitedCell list
+        Cells:UnVisitedCell list
         Summary:string
     }
 
-type VisitedStep =
+type UnVisitedStep =
     {
         Text:string
         Summary:string
         DocString:string
-        DataTable:VisitedRow list
+        DataTable:UnVisitedRow list
     }
 
-type VisitedScenario =
+type UnVisitedScenario =
     {
         Tags:string list
         Name:string
         Summary:string
-        Steps:VisitedStep list
-        Examples:VisitedRow list
+        Steps:UnVisitedStep list
+        Examples:UnVisitedRow list
     }
 
-type VisitedRule = 
+type UnVisitedRule = 
     {
         Name:string
         Summary:string
-        Examples:VisitedScenario list
+        Examples:UnVisitedScenario list
     }   
 
-type VisitedFeature =
+type UnVisitedFeature =
     {
-        Background:VisitedScenario option
+        Background:UnVisitedScenario option
         Tags:string list
-        Scenarios:VisitedScenario list
-        Rules:VisitedRule list
+        Scenarios:UnVisitedScenario list
+        Rules:UnVisitedRule list
         Summary:string
     }
+    
+type ChildType =
+    |Background
+    |Scenario
 
 type FeatureValidator() as this = 
 
@@ -62,7 +66,7 @@ type FeatureValidator() as this =
 
                  ignoreTags |> Seq.exists(fun i -> i = tagName))
 
-    member private __.NonVisitedDataTable (dataTable:obj) =
+    member private __.GetUnVisitedDataTable (dataTable:obj) =
             if isNull dataTable then []
             else
                 dataTable :?> IEnumerable<_>
@@ -98,7 +102,7 @@ type FeatureValidator() as this =
                 |> Seq.choose(id)
                 |> Seq.toList
 
-    member private __.DocStringVisited (step:obj) =
+    member private __.GetUnVisitedDocString (step:obj) =
             let stepType = step.GetType()
             let text = stepType.GetProperty("Text").GetValue(step) :?> string
             let docString= stepType.GetProperty("DocString").GetValue(step)
@@ -106,10 +110,10 @@ type FeatureValidator() as this =
             if isNull docString then ""
             else
                 let docStringType = docString.GetType()
-                if not (docStringType.GetProperty("Visited").GetValue(docString) :?> bool) then  sprintf "  %s\r\n  DocString" text
+                if not (docStringType.GetProperty("Visited").GetValue(docString) :?> bool) then "DocString"
                 else ""
 
-    member private __.NonVisitedSteps (scenario:obj) =
+    member private __.GetUnVisitedSteps (scenario:obj) =
             let scenarioType = scenario.GetType()
             let steps = scenarioType.GetProperty("Steps").GetValue(scenario) :?> IEnumerable<_>
 
@@ -118,22 +122,23 @@ type FeatureValidator() as this =
                 let stepType = step.GetType()
                 let visited = stepType.GetProperty("Visited").GetValue(step) :?> bool
                 let text = stepType.GetProperty("Text").GetValue(step) :?> string
-                let docStringVisited = this.DocStringVisited step
-                let dataTableVisited = this.NonVisitedDataTable (stepType.GetProperty("DataTable").GetValue(step))
+                let docStringVisited = this.GetUnVisitedDocString step
+                let dataTableVisited = this.GetUnVisitedDataTable (stepType.GetProperty("DataTable").GetValue(step))
 
                 match visited,docStringVisited.Length = 0,dataTableVisited.Length = 0 with
                 | true,true,true -> None
                 | _ ->
+                       let summary = sprintf " Step:%s\r\n%s%s" text docStringVisited (dataTableVisited |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary) "")
                        Some
                         {
                             DocString = docStringVisited
                             Text = text
-                            Summary = sprintf " Step:%s%s%s" text docStringVisited (dataTableVisited |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary) "")
+                            Summary = summary
                             DataTable= dataTableVisited
                         })
             |> Seq.toList
 
-    member __.NonVisitedTags ignoreTags tagsList =
+    member __.GetUnVisitedTags ignoreTags tagsList =
                 tagsList 
                 |> Seq.filter(fun tag ->
                      let tagType = tag.GetType()
@@ -146,15 +151,15 @@ type FeatureValidator() as this =
                     tagType.GetProperty("Name").GetValue(tag) :?> string)
                 |> Seq.toList
 
-    member __.GetNonVisitedScenarios ignoreTags scenarios isScenario= 
-            let typeName = if isScenario then "Scenario" else "Background"
+    member __.GetUnVisitedScenarios ignoreTags  (childType:ChildType) scenarios = 
+
             scenarios 
             |> Seq.choose(fun scenario ->
                 let scenarioType = scenario.GetType()
                 let scenarioVisited = scenarioType.GetProperty("Visited").GetValue(scenario) :?> bool
                 let name = scenarioType.GetProperty("Name").GetValue(scenario) :?> string
                 let examples = scenarioType.GetProperty("ExampleTable").GetValue(scenario)
-                let steps = this.NonVisitedSteps scenario
+                let steps = this.GetUnVisitedSteps scenario
                 
                 let tagContainer = scenarioType.GetProperty("TagList").GetValue(scenario) 
                 
@@ -162,29 +167,34 @@ type FeatureValidator() as this =
                 else
                     let tagContainerType = tagContainer.GetType()
                     let tags = tagContainerType.GetProperty("AllTags").GetValue(tagContainer) :?> IEnumerable<_>
-                    let nonVisitedTags = this.NonVisitedTags ignoreTags tags
-                    let nonVisitedExamples = this.NonVisitedDataTable examples
+                    let nonVisitedTags = this.GetUnVisitedTags ignoreTags tags
+                    let nonVisitedExamples = this.GetUnVisitedDataTable examples
 
                     let visited =
-                        if not isScenario then true
-                        else isScenario && scenarioVisited
+                        match childType with
+                        | Background -> true
+                        | Scenario -> scenarioVisited
 
                     match visited,steps,nonVisitedExamples.Length = 0,nonVisitedTags.Length =0 with
                     | true,[],true,true -> None
                     | _ ->
                         let summary = 
-                            let scenarioSummary = steps |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary ) (sprintf "\r\n%s:%s" typeName name)
+                            let scenarioSummary = 
+                                steps 
+                                |> List.fold(fun a c -> 
+                                    sprintf "%s\r\n%s" a c.Summary) 
+                                    (sprintf "\r\n%A:%s" childType name)
 
                             let examplesSummary = 
                                 if nonVisitedExamples.Length > 0 then
                                         nonVisitedExamples 
-                                        |> Seq.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary) " Examples:"
+                                        |> List.fold(fun a c -> sprintf "%s\r\n%s" a c.Summary) " Examples:"
                                 else ""
 
                             let tagsSummary = 
                                     if nonVisitedTags.Length > 0 then
                                             nonVisitedTags 
-                                            |> Seq.fold(fun a c -> sprintf "%s %s" a c) " Tags:"
+                                            |> List.fold(fun a c -> sprintf "%s %s" a c) " Tags:"
                                     else ""
 
                             sprintf "%s\r\n%s\r\n%s" scenarioSummary tagsSummary examplesSummary
@@ -195,18 +205,52 @@ type FeatureValidator() as this =
                                 Name =  name
                                 Summary = summary
                                 Steps = steps
-                                Examples = this.NonVisitedDataTable examples
+                                Examples = this.GetUnVisitedDataTable examples
                             })
+            |> Seq.toList
+            
+    member private __.GetUnVisitedRules ignoreTags rules =
+         rules 
+            |> Seq.rev
+            |> Seq.filter(fun rule -> not (rule.GetType().GetProperty("Visited").GetValue(rule) :?> bool))
+            |> Seq.map(
+                fun unvisitedRule ->
+                    let unvisitedRuleType = unvisitedRule.GetType()
+                    let name =  unvisitedRuleType.GetProperty("Name").GetValue(unvisitedRule) :?> string
+                    let examples =
+                            unvisitedRuleType.GetProperty("All").GetValue(unvisitedRule)  :?> IEnumerable<_>
+                            |> Seq.toList
+                            |> this.GetUnVisitedScenarios ignoreTags Scenario
+                    
+                    let summary =
+                        sprintf
+                            " Rules:%s\r\n\r\n%s"
+                            name
+                            (examples |> Seq.fold(
+                                fun a c -> 
+                                    sprintf "%s\r\n %s" a c.Summary ) "  Examples:")
+                    
+                    {
+                        Name =name
+                        Summary = summary
+                        Examples =examples
+                    })
             |> Seq.toList
 
     member __.Validate (feature:obj,?ignore:string list) = 
         let ignoreTags = if ignore.IsSome then ignore.Value else []
         
         let featureType=feature.GetType()
+        
+        //rules
+        let ruleContainer = featureType.GetProperty("Rules").GetValue(feature)
+        let ruleContainerType = ruleContainer.GetType()
+        let rules = ruleContainerType.GetProperty("All").GetValue(ruleContainer) :?> IEnumerable<_>
+        
+        //scenarios
         let scenarioContainer = featureType.GetProperty("Scenarios").GetValue(feature)
         let scenarioContainerType = scenarioContainer.GetType()
         let scenarios = scenarioContainerType.GetProperty("All").GetValue(scenarioContainer) :?> IEnumerable<_>
-        
         
         let featureTags = 
             match featureType.GetProperty("Tags") with
@@ -220,29 +264,32 @@ type FeatureValidator() as this =
 
         if not (isNull (featureType.GetProperty("Tags"))) && this.Exclude ignoreTags (featureType.GetProperty("Tags").GetValue(feature)) then None
         else
-            let nonVisitedFeatureTags = this.NonVisitedTags ignoreTags featureTags
-            let nonVisitedScenarios= this.GetNonVisitedScenarios ignoreTags scenarios true
-            let nonVisitedBackground= 
+            let unVisitedFeatureTags = this.GetUnVisitedTags ignoreTags featureTags
+            let unVisitedRules= this.GetUnVisitedRules ignoreTags rules
+            let unVisitedScenarios= this.GetUnVisitedScenarios ignoreTags ChildType.Scenario scenarios
+            
+            let unVisitedBackground= 
                 match featureType.GetProperty("Background")  with
                 | null -> None
                 | bgProperty -> 
                     let bg = bgProperty.GetValue(feature)
-                    match this.GetNonVisitedScenarios ignoreTags [bg] false with
+                    match this.GetUnVisitedScenarios ignoreTags ChildType.Background [bg] with
                     |[] -> None
                     |x :: _ -> Some x
 
 
-            let backgroundSummary = if nonVisitedBackground.IsSome then nonVisitedBackground.Value.Summary else ""
-            let tagsSummary = nonVisitedFeatureTags |> Seq.fold(fun a c -> sprintf "    Tag:%s\r\n%s" c a) ""
-            let scenariosSummary = nonVisitedScenarios |> Seq.fold(fun a c -> sprintf "%s\r\n%s" c.Summary a) ""
+            let backgroundSummary = if unVisitedBackground.IsSome then unVisitedBackground.Value.Summary else ""
+            let tagsSummary = unVisitedFeatureTags |> Seq.fold(fun a c -> sprintf "    Tag:%s\r\n%s" c a) ""
+            let scenariosSummary = unVisitedScenarios |> Seq.fold(fun a c -> sprintf "%s\r\n%s" c.Summary a) ""
+            let rulesSummary = unVisitedRules |> Seq.fold(fun a c -> sprintf "%s\r\n%s" c.Summary a) ""
 
-            match nonVisitedFeatureTags,nonVisitedScenarios,nonVisitedBackground with
-            | [],[],None -> None
+            match unVisitedFeatureTags,unVisitedScenarios,unVisitedRules, unVisitedBackground with
+            | [],[],[],None -> None
             | _ ->
                 {
-                    Background = nonVisitedBackground
-                    Tags = nonVisitedFeatureTags
-                    Scenarios = nonVisitedScenarios
-                    Rules = []
-                    Summary = sprintf "\r\nFeature:\r\n%s%s%s" tagsSummary backgroundSummary scenariosSummary
+                    Background = unVisitedBackground
+                    Tags = unVisitedFeatureTags
+                    Scenarios = unVisitedScenarios
+                    Rules = unVisitedRules
+                    Summary = sprintf "\r\nFeature:\r\n%s%s%s%s" tagsSummary backgroundSummary rulesSummary scenariosSummary
                 } |> Some

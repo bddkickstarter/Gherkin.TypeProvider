@@ -26,9 +26,9 @@ type RuleContainerExpressionBuilder(ruleContainerBase:System.Type,ruleBaseType:S
       
       //properties named after the scenario names, accessing backing fields as typed scenarios
       let ruleProperties =
-            List.map2(fun(ruleExpression:RuleExpression) (ruleField:ProvidedField) -> 
+            List.map3(fun (rule:Rule) (ruleExpression:RuleExpression) (ruleField:ProvidedField) -> 
                     ProvidedProperty(
-                        ruleExpression.Name |> propertyNameSanitizer,
+                        rule.Name |> propertyNameSanitizer,
                         ruleExpression.Type,
                         isStatic = false,
                         getterCode = 
@@ -42,7 +42,7 @@ type RuleContainerExpressionBuilder(ruleContainerBase:System.Type,ruleBaseType:S
                                     //return rule
                                     ruleFieldGet)
 
-                                )) ruleExpressions ruleFields
+                                )) rules ruleExpressions ruleFields
 
         // add fields & properties to feature
       ruleFields |> Seq.iter (ruleContainerType.AddMember)
