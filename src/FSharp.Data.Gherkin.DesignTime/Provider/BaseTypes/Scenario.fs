@@ -22,13 +22,13 @@ type ScenarioBase (tagContainerBase:TagContainerBase,stepBase:StepBase,dataRowBa
         let examplesType = dataRowBase.Type.AsType().MakeArrayType()
         let examplesField = propertyHelper.AddProperty("ExampleTable",examplesType)
         let allTagsField = propertyHelper.AddProperty("TagList",tagContainerBase.Type)
-        let parentField = propertyHelper.AddProperty("Parent",scenarioBase)
+        let parentField = propertyHelper.AddProperty("Outline",scenarioBase)
 
         let visitedField = propertyHelper.AddVisitedProperty()
 
         ProvidedConstructor(
             [
-                ProvidedParameter("parent",scenarioBase)
+                ProvidedParameter("outline",scenarioBase)
                 ProvidedParameter("name",typeof<string>)
                 ProvidedParameter("description",typeof<string>)
                 ProvidedParameter("tags",tagContainerBase.Type)

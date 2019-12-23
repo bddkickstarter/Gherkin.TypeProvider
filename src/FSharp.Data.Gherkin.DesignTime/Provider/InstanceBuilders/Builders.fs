@@ -93,7 +93,7 @@ type TagBuilder (tagType:ProvidedTypeDefinition) =
         let tagInstances = tags |> List.map(fun t -> Expr.NewObject(tagType.GetConstructors().[0],[Expr.Value(t.Name)]))
         Expr.NewObject(tagContainerType.GetConstructors().[0],tagInstances)
 
-type ScenarioBuilder (parent:Expr, exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsBuilder:StepsBuilder)  =
+type ScenarioBuilder (outline:Expr, exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsBuilder:StepsBuilder)  =
 
     member __.BuildScenario(scenarioTypes:ScenarioExpression list)  (scenarios:Scenario list)  =
         List.map2(
@@ -104,28 +104,28 @@ type ScenarioBuilder (parent:Expr, exampleBuilder:ExampleBuilder,tagBuilder:TagB
                 let parameters = 
                     match scenarioType.Examples,(scenario.Tags |> Seq.toList)  with
                     | None,[] -> 
-                        parent :: name :: description :: steps
+                        outline :: name :: description :: steps
 
                     | Some exampleType,[] ->
                         let examples = exampleBuilder.BuildExamples (scenario.Examples |> Seq.toList) exampleType
-                        parent :: name :: description :: examples :: steps
+                        outline :: name :: description :: examples :: steps
 
                     | None,tags ->
                         match scenarioType.Tags with
-                        | None -> parent :: name :: description :: steps
+                        | None -> outline :: name :: description :: steps
                         | Some tagType ->
                             let tagsInstance = tagBuilder.BuildTag tagType tags
-                            parent :: name :: description :: tagsInstance :: steps
+                            outline :: name :: description :: tagsInstance :: steps
 
                     | Some exampleType,tags ->
 
                         let examples = exampleBuilder.BuildExamples (scenario.Examples |> Seq.toList) exampleType
 
                         match scenarioType.Tags with
-                        | None -> parent :: name :: description :: examples :: steps
+                        | None -> outline :: name :: description :: examples :: steps
                         | Some tagType ->
                             let tagsInstance = tagBuilder.BuildTag tagType tags
-                            parent :: name :: description :: tagsInstance :: examples ::  steps
+                            outline :: name :: description :: tagsInstance :: examples ::  steps
 
                 Expr.NewObject(scenarioType.Type.GetConstructors().[0],parameters)
         ) scenarios scenarioTypes

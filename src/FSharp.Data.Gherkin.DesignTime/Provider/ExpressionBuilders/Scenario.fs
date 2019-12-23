@@ -51,7 +51,7 @@ type ScenarioExpressionBuilder
         let stepFields = stepExpressions |> List.mapi(fun i (stepExpression:StepExpression) -> ProvidedField(sprintf "_step%i" i ,stepExpression.Type))
 
         let visitedProperty = stepBaseType.GetProperty("Visited")
-        let parentProperty = scenarioBaseType.GetProperty("Parent")
+        let outlineProperty = scenarioBaseType.GetProperty("Outline")
         let parentStepsProperty = scenarioBaseType.GetProperty("Steps")
         let getValue =
                 typeof<System.Array>
@@ -73,11 +73,11 @@ type ScenarioExpressionBuilder
                             let getStep = Expr.FieldGet(args.[0],stepFields.[i])
    
                             //set visited property of parent to true
-                            let parent = Expr.PropertyGet(args.[0],parentProperty)
+                            let parent = Expr.PropertyGet(args.[0],outlineProperty)
                             let parentSteps = Expr.PropertyGet(parent,parentStepsProperty)
                             let stepsAsObjArray = Expr.Coerce(parentSteps, typeof<System.Array>)
-                            let getParentStep = Expr.Call(stepsAsObjArray,getValue,[Expr.Value(i)])
-                            let getParentStepAsStepBase = Expr.Coerce(getParentStep,stepBaseType)
+                            let getOutlineStep = Expr.Call(stepsAsObjArray,getValue,[Expr.Value(i)])
+                            let getParentStepAsStepBase = Expr.Coerce(getOutlineStep,stepBaseType)
                             let visitParentStep = Expr.PropertySet(getParentStepAsStepBase,visitedProperty,Expr.Value(true))
 
                             //visit the parent if it exists
@@ -96,7 +96,7 @@ type ScenarioExpressionBuilder
         stepProperties |> Seq.iter(scenarioType.AddMember)
 
         let constructorParams =
-            let mandatory  = [ProvidedParameter("parent",scenarioBaseType) ; ProvidedParameter("name",typeof<string>) ; ProvidedParameter("description",typeof<string>)]
+            let mandatory  = [ProvidedParameter("outline",scenarioBaseType) ; ProvidedParameter("name",typeof<string>) ; ProvidedParameter("description",typeof<string>)]
             match exampleExpression,tagExpression with
             | None,None -> mandatory @ parameters
             | Some (exampleType,_), None -> 
