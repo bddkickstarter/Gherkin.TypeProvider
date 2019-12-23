@@ -33,25 +33,25 @@ type VisitedScenario =
         Examples:VisitedRow list
     }
 
+type VisitedRule = 
+    {
+        Name:string
+        Summary:string
+        Examples:VisitedScenario list
+    }   
+
 type VisitedFeature =
     {
         Background:VisitedScenario option
         Tags:string list
         Scenarios:VisitedScenario list
+        Rules:VisitedRule list
         Summary:string
     }
 
-type FeatureValidator() = 
+type FeatureValidator() as this = 
 
-    static member Validate (feature:obj,?ignore:string list) = 
-        let ignoreTags = if ignore.IsSome then ignore.Value else []
-        
-        let featureType=feature.GetType()
-        let scenarioContainer = featureType.GetProperty("Scenarios").GetValue(feature)
-        let scenarioContainerType = scenarioContainer.GetType()
-        let scenarios = scenarioContainerType.GetProperty("All").GetValue(scenarioContainer) :?> IEnumerable<_>
-
-        let exclude (tagList:obj) = 
+    member private __.Exclude (ignoreTags:string list) (tagList:obj) = 
             let tagListType = tagList.GetType()
             let tags = tagListType.GetProperty("AllTags").GetValue(tagList) :?> IEnumerable<_>
 
@@ -61,30 +61,8 @@ type FeatureValidator() =
                  let tagName = tagType.GetProperty("Name").GetValue(tag) :?> string
 
                  ignoreTags |> Seq.exists(fun i -> i = tagName))
-        
-        
-        let featureTags = 
-            match featureType.GetProperty("Tags") with
-            | null -> Seq.empty
-            | tags ->
-                let allTags = tags.GetValue(feature)
-                let allTagsType = allTags.GetType()
 
-                allTagsType.GetProperty("AllTags").GetValue(allTags) :?> IEnumerable<_>
-
-
-        let docStringVisited (step:obj) =
-            let stepType = step.GetType()
-            let text = stepType.GetProperty("Text").GetValue(step) :?> string
-            let docString= stepType.GetProperty("DocString").GetValue(step)
-
-            if isNull docString then ""
-            else
-                let docStringType = docString.GetType()
-                if not (docStringType.GetProperty("Visited").GetValue(docString) :?> bool) then  sprintf "  %s\r\n  DocString" text
-                else ""
-
-        let nonVisitedDataTable (dataTable:obj) =
+    member private __.NonVisitedDataTable (dataTable:obj) =
             if isNull dataTable then []
             else
                 dataTable :?> IEnumerable<_>
@@ -120,8 +98,18 @@ type FeatureValidator() =
                 |> Seq.choose(id)
                 |> Seq.toList
 
+    member private __.DocStringVisited (step:obj) =
+            let stepType = step.GetType()
+            let text = stepType.GetProperty("Text").GetValue(step) :?> string
+            let docString= stepType.GetProperty("DocString").GetValue(step)
 
-        let nonVisitedSteps (scenario:obj) =
+            if isNull docString then ""
+            else
+                let docStringType = docString.GetType()
+                if not (docStringType.GetProperty("Visited").GetValue(docString) :?> bool) then  sprintf "  %s\r\n  DocString" text
+                else ""
+
+    member private __.NonVisitedSteps (scenario:obj) =
             let scenarioType = scenario.GetType()
             let steps = scenarioType.GetProperty("Steps").GetValue(scenario) :?> IEnumerable<_>
 
@@ -130,8 +118,8 @@ type FeatureValidator() =
                 let stepType = step.GetType()
                 let visited = stepType.GetProperty("Visited").GetValue(step) :?> bool
                 let text = stepType.GetProperty("Text").GetValue(step) :?> string
-                let docStringVisited = docStringVisited step
-                let dataTableVisited = nonVisitedDataTable (stepType.GetProperty("DataTable").GetValue(step))
+                let docStringVisited = this.DocStringVisited step
+                let dataTableVisited = this.NonVisitedDataTable (stepType.GetProperty("DataTable").GetValue(step))
 
                 match visited,docStringVisited.Length = 0,dataTableVisited.Length = 0 with
                 | true,true,true -> None
@@ -145,20 +133,20 @@ type FeatureValidator() =
                         })
             |> Seq.toList
 
-        let nonVisitedTags tagsList =
-            tagsList 
-            |> Seq.filter(fun tag ->
-                 let tagType = tag.GetType()
-                 let tagName = tagType.GetProperty("Name").GetValue(tag) :?> string
+    member __.NonVisitedTags ignoreTags tagsList =
+                tagsList 
+                |> Seq.filter(fun tag ->
+                     let tagType = tag.GetType()
+                     let tagName = tagType.GetProperty("Name").GetValue(tag) :?> string
 
-                 not (ignoreTags |> Seq.exists(fun i -> i = tagName)) &&
-                 not (tagType.GetProperty("Visited").GetValue(tag) :?> bool))
-            |> Seq.map(fun tag ->
-                let tagType = tag.GetType()
-                tagType.GetProperty("Name").GetValue(tag) :?> string)
-            |> Seq.toList
+                     not (ignoreTags |> Seq.exists(fun i -> i = tagName)) &&
+                     not (tagType.GetProperty("Visited").GetValue(tag) :?> bool))
+                |> Seq.map(fun tag ->
+                    let tagType = tag.GetType()
+                    tagType.GetProperty("Name").GetValue(tag) :?> string)
+                |> Seq.toList
 
-        let getNonVisitedScenarios scenarios isScenario= 
+    member __.GetNonVisitedScenarios ignoreTags scenarios isScenario= 
             let typeName = if isScenario then "Scenario" else "Background"
             scenarios 
             |> Seq.choose(fun scenario ->
@@ -166,16 +154,16 @@ type FeatureValidator() =
                 let scenarioVisited = scenarioType.GetProperty("Visited").GetValue(scenario) :?> bool
                 let name = scenarioType.GetProperty("Name").GetValue(scenario) :?> string
                 let examples = scenarioType.GetProperty("ExampleTable").GetValue(scenario)
-                let steps = nonVisitedSteps scenario
+                let steps = this.NonVisitedSteps scenario
                 
                 let tagContainer = scenarioType.GetProperty("TagList").GetValue(scenario) 
                 
-                if exclude tagContainer then None
+                if this.Exclude ignoreTags tagContainer then None
                 else
                     let tagContainerType = tagContainer.GetType()
                     let tags = tagContainerType.GetProperty("AllTags").GetValue(tagContainer) :?> IEnumerable<_>
-                    let nonVisitedTags = nonVisitedTags tags
-                    let nonVisitedExamples = nonVisitedDataTable examples
+                    let nonVisitedTags = this.NonVisitedTags ignoreTags tags
+                    let nonVisitedExamples = this.NonVisitedDataTable examples
 
                     let visited =
                         if not isScenario then true
@@ -207,20 +195,39 @@ type FeatureValidator() =
                                 Name =  name
                                 Summary = summary
                                 Steps = steps
-                                Examples = nonVisitedDataTable examples
+                                Examples = this.NonVisitedDataTable examples
                             })
             |> Seq.toList
 
-        if not (isNull (featureType.GetProperty("Tags"))) && exclude (featureType.GetProperty("Tags").GetValue(feature)) then None
+    member __.Validate (feature:obj,?ignore:string list) = 
+        let ignoreTags = if ignore.IsSome then ignore.Value else []
+        
+        let featureType=feature.GetType()
+        let scenarioContainer = featureType.GetProperty("Scenarios").GetValue(feature)
+        let scenarioContainerType = scenarioContainer.GetType()
+        let scenarios = scenarioContainerType.GetProperty("All").GetValue(scenarioContainer) :?> IEnumerable<_>
+        
+        
+        let featureTags = 
+            match featureType.GetProperty("Tags") with
+            | null -> Seq.empty
+            | tags ->
+                let allTags = tags.GetValue(feature)
+                let allTagsType = allTags.GetType()
+
+                allTagsType.GetProperty("AllTags").GetValue(allTags) :?> IEnumerable<_>
+
+
+        if not (isNull (featureType.GetProperty("Tags"))) && this.Exclude ignoreTags (featureType.GetProperty("Tags").GetValue(feature)) then None
         else
-            let nonVisitedFeatureTags = nonVisitedTags featureTags
-            let nonVisitedScenarios= getNonVisitedScenarios scenarios true
+            let nonVisitedFeatureTags = this.NonVisitedTags ignoreTags featureTags
+            let nonVisitedScenarios= this.GetNonVisitedScenarios ignoreTags scenarios true
             let nonVisitedBackground= 
                 match featureType.GetProperty("Background")  with
                 | null -> None
                 | bgProperty -> 
                     let bg = bgProperty.GetValue(feature)
-                    match getNonVisitedScenarios [bg] false with
+                    match this.GetNonVisitedScenarios ignoreTags [bg] false with
                     |[] -> None
                     |x :: _ -> Some x
 
@@ -236,5 +243,6 @@ type FeatureValidator() =
                     Background = nonVisitedBackground
                     Tags = nonVisitedFeatureTags
                     Scenarios = nonVisitedScenarios
+                    Rules = []
                     Summary = sprintf "\r\nFeature:\r\n%s%s%s" tagsSummary backgroundSummary scenariosSummary
                 } |> Some

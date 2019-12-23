@@ -7,6 +7,8 @@ open ExpressionBuilders.ScenarioContainer
 open ExpressionBuilders.Scenario
 open ExpressionBuilders.TagContainer
 open ExpressionBuilders.Background
+open ExpressionBuilders.Rule
+open ExpressionBuilders.RuleContainer
 open ProviderImplementation.ProvidedTypes
 open Gherkin.Ast
 open FSharp.Quotations
@@ -17,9 +19,8 @@ let sanitize = Sanitizer().Sanitize
 type FeatureExpressionBuilder  
             (backgroundExpression:BackgroundExpressionBuilder,
             scenarioContainerExpressionBuilder:ScenarioContainerExpressionBuilder,
-            scenarioBaseType:System.Type,
-            tagContainerExpressionBuilder:TagContainerExpressionBuilder,
-            propertyNameSanitizer:string->string) =
+            ruleContainerExpressionBuilder:RuleContainerExpressionBuilder,
+            tagContainerExpressionBuilder:TagContainerExpressionBuilder) =
 
     let getFeatureItemsFromDocument (document:GherkinDocument) =
         let scenarios =
@@ -77,6 +78,10 @@ type FeatureExpressionBuilder
             // create scenarios container
             let scenarioContainerExpression = scenarioContainerExpressionBuilder.CreateExpression featureType scenarios
             let scenarioContainerField = propertyHelper.AddProperty("Scenarios",scenarioContainerExpression.Type)
+            
+            // create rules container
+            let rulesContainerExpression = ruleContainerExpressionBuilder.CreateExpression featureType rules
+            let rulesContainerField = propertyHelper.AddProperty("Rules",rulesContainerExpression.Type)
 
             //create tags
             let tagContainerExpression = tagContainerExpressionBuilder.CreateExpression featureType tags
@@ -87,13 +92,13 @@ type FeatureExpressionBuilder
                     ProvidedParameter("name",typeof<string>)
                     ProvidedParameter("description",typeof<string>)
                     ProvidedParameter("scenarios",scenarioContainerExpression.Type)
+                    ProvidedParameter("rules",rulesContainerExpression.Type)
                 ]
                 match backgroundExpression,tagContainerExpression with
                 | None,None -> mandatory
                 | Some (backgroundType,_),None -> mandatory @ [ProvidedParameter("background",backgroundType.Type) ]
                 | None,Some(tagType,_) -> mandatory @ [ProvidedParameter("tags",tagType)]
                 | Some (backgroundType,_),Some(tagType,_) -> mandatory @ [ProvidedParameter("background",backgroundType.Type);ProvidedParameter("tags",tagType)]
-
 
             ProvidedConstructor(
                 parameters,
@@ -104,16 +109,19 @@ type FeatureExpressionBuilder
                     let setName = Expr.FieldSet(this,nameField, args.[1])
                     let setDescription = Expr.FieldSet(this,descriptionField,args.[2])
                     let setScenarios = Expr.FieldSet(this,scenarioContainerField,args.[3])
-                    let setMandatory = Expr.Sequential(Expr.Sequential(setName,setDescription),setScenarios)
-
+                    let setRules = Expr.FieldSet(this,rulesContainerField,args.[4])
+                    let setMandatory =
+                        [
+                            setDescription;setScenarios;setRules
+                        ] |> List.fold(fun a c -> Expr.Sequential(a,c)) setName
 
                     // add any background and tags
                     let additionalSets =
                         match backgroundExpression,tagContainerExpression with
                         | None,None -> []
-                        | Some(_,backgroundField),None -> [Expr.FieldSet(this,backgroundField,args.[4])]
-                        | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[4]);Expr.FieldSet(this,tagField,args.[5])]
-                        | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[4])]
+                        | Some(_,backgroundField),None -> [Expr.FieldSet(this,backgroundField,args.[5])]
+                        | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[5]);Expr.FieldSet(this,tagField,args.[6])]
+                        | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[5])]
 
                     additionalSets |> Seq.fold(fun a c -> Expr.Sequential(a,c)) setMandatory
 
@@ -123,6 +131,7 @@ type FeatureExpressionBuilder
                 Name = "Feature"
                 Type = featureType
                 Scenarios = scenarioContainerExpression
+                Rules = rulesContainerExpression
                 Background = match backgroundExpression with | None -> None | Some (backgroundExp,_) -> Some backgroundExp
                 Tags = match tagContainerExpression with | None -> None | Some (tagExpr,_) -> Some tagExpr
             }
@@ -160,6 +169,18 @@ type FeatureExpressionBuilder
                                                         providerModel.ScenarioBaseType,
                                                         scenarioExpressionBuilder,
                                                         propertyNameSanitizer)
+        
+        let ruleExpressionBuilder = RuleExpressionBuilder(
+                                                         providerModel.RuleBaseType,
+                                                         providerModel.ScenarioBaseType,
+                                                         scenarioExpressionBuilder,
+                                                         propertyNameSanitizer)
+        
+        let ruleContainerExpressionBuilder = RuleContainerExpressionBuilder(
+                                                         providerModel.RuleContainerBaseType,
+                                                         providerModel.RuleBaseType,
+                                                         ruleExpressionBuilder,
+                                                         propertyNameSanitizer)
 
         let emptyExamples = Expr.NewArray(providerModel.DataRowBaseType,[])
         let emptyTags = Expr.NewObject(providerModel.TagContainerBaseType.GetConstructors().[0],[Expr.NewArray(providerModel.TagBaseType.AsType(),[])])
@@ -175,6 +196,5 @@ type FeatureExpressionBuilder
         FeatureExpressionBuilder
             (backgroundExpressionBuilder,
             scenarioContainerExpressionBuilder,
-            providerModel.ScenarioBaseType,
-            tagContainerExpressionBuilder,
-            propertyNameSanitizer)
+            ruleContainerExpressionBuilder,
+            tagContainerExpressionBuilder)

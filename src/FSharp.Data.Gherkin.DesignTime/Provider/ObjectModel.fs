@@ -22,6 +22,20 @@ type ScenarioExpression =
         Examples:ProvidedTypeDefinition option
         Tags:ProvidedTypeDefinition option
     }
+    
+type RuleExpression =
+    {
+        Name:string
+        Type:ProvidedTypeDefinition
+        Examples:ScenarioExpression list
+    }
+ 
+    
+type RuleContainerExpression =
+    {
+        Type:ProvidedTypeDefinition
+        Rules:RuleExpression list
+    }
 
 type ScenarioContainerExpression =
     {
@@ -40,6 +54,7 @@ type FeatureExpression =
         Name:string
         Type:ProvidedTypeDefinition
         Scenarios:ScenarioContainerExpression
+        Rules:RuleContainerExpression
         Background:BackgroundExpression option
         Tags:ProvidedTypeDefinition option
     }
@@ -54,6 +69,8 @@ open BaseTypes.DocString
 open BaseTypes.Step
 open BaseTypes.Scenario
 open BaseTypes.ScenarioContainer
+open BaseTypes.Rule
+open BaseTypes.RuleContainer
 
 type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
 
@@ -66,6 +83,8 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
     let stepBase = StepBase(argumentBase,dataRowBase,providerName,root)
     let scenarioBase = ScenarioBase(tagContainerBase,stepBase,dataRowBase,providerName,root)
     let scenarioContainerBase = ScenarioContainerBase(scenarioBase,providerName,root)
+    let ruleBase = RuleBase(scenarioContainerBase,providerName,root)
+    let ruleContainerBase = RuleContainerBase(ruleBase,providerName,root)
 
     member val StepBaseType = stepBase.Type with get
     member val ScenarioBaseType = scenarioBase.Type with get
@@ -76,3 +95,5 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
     member val DataCellBaseType = dataCellType.Type with get
     member val ArgumentBaseType = argumentBase.Type with get
     member val ScenarioContainerBaseType = scenarioContainerBase.Type with get
+    member val RuleContainerBaseType = ruleContainerBase.Type with get
+    member val RuleBaseType = ruleBase.Type with get

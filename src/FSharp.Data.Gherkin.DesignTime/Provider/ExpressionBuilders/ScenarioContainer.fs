@@ -1,7 +1,5 @@
 ﻿module ExpressionBuilders.ScenarioContainer
 
-open BaseTypes.Scenario
-open BaseTypes.ScenarioContainer
 open ProviderImplementation.ProvidedTypes
 open Gherkin.Ast
 open ObjectModel
@@ -56,10 +54,11 @@ type ScenarioContainerExpressionBuilder(scenarioContainerBase:System.Type,scenar
                             invokeCode = fun args ->
                         //get the scenarios from arguments based on whether there are tags and/or background
                         let this = args.Head
-                        let scenarios = args.Tail
-
-                        //set each parameter to its non-derived backing field
-                        let scenarioFieldSets = List.map2( fun scenarioField scenarioValue -> Expr.FieldSet(this,scenarioField,scenarioValue))  scenarioFields scenarios
+                        let scenarioFieldSets =
+                                match args.Tail with
+                                | [] -> [(<@@ () @@>)]
+                                | scenarios -> List.map2( fun scenarioField scenarioValue ->
+                                    Expr.FieldSet(this,scenarioField,scenarioValue))  scenarioFields scenarios
 
                         //create a single expression with all the scenarios sets & the new array
                         scenarioFieldSets.Tail |> Seq.fold (fun a c -> Expr.Sequential(a,c) ) scenarioFieldSets.Head

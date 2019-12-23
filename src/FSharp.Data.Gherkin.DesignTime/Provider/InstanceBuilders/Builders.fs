@@ -1,6 +1,8 @@
 module InstanceBuilders.Feature
 
 open BaseTypes.Scenario
+open ExpressionBuilders
+open ExpressionBuilders.RuleContainer
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Gherkin.Ast
@@ -93,7 +95,7 @@ type TagBuilder (tagType:ProvidedTypeDefinition) =
 
 type ScenarioBuilder (parent:Expr, exampleBuilder:ExampleBuilder,tagBuilder:TagBuilder,stepsBuilder:StepsBuilder)  =
 
-    member __.BuildScenario (scenarios:Scenario list) (scenarioTypes:ScenarioExpression list) =
+    member __.BuildScenario(scenarioTypes:ScenarioExpression list)  (scenarios:Scenario list)  =
         List.map2(
             fun (scenario:Scenario) (scenarioType:ScenarioExpression) ->
                 let name = Expr.Value(scenario.Name)
@@ -130,8 +132,28 @@ type ScenarioBuilder (parent:Expr, exampleBuilder:ExampleBuilder,tagBuilder:TagB
 
 type ScenarioContainerBuilder (scenarioBuilder:ScenarioBuilder) =
     member __.BuildScenarioContainer (scenarios:Scenario list) (scenarioContainerExpression:ScenarioContainerExpression) =
-            let scenarioExpressions = scenarioBuilder.BuildScenario scenarios scenarioContainerExpression.Scenarios
+            let scenarioExpressions = scenarioBuilder.BuildScenario scenarioContainerExpression.Scenarios scenarios
             Expr.NewObject(scenarioContainerExpression.Type.GetConstructors().[0],scenarioExpressions)
+            
+type RuleBuilder (scenarioBuilder:ScenarioBuilder)  =
+    member __.BuildRule (ruleType:ProvidedTypeDefinition) (rule:Rule) (exampleExpressions:ScenarioExpression list) =
+            let examples =
+                rule.Children
+                |> Seq.cast<Scenario>
+                |> Seq.toList
+                |> scenarioBuilder.BuildScenario exampleExpressions
+            let parameters =
+                [Expr.Value(rule.Keyword);Expr.Value(rule.Name);Expr.Value(rule.Description)] @ examples
+            Expr.NewObject(ruleType.GetConstructors().[0],parameters)
+            
+type RuleContainerBuilder (ruleBuilder:RuleBuilder) =
+    member __.BuildRuleContainer (rules:Rule list) (ruleContainerExpression:RuleContainerExpression) =
+        let rulesExpressions =
+            List.map2(fun rule (ruleExpression:RuleExpression) ->
+                    ruleBuilder.BuildRule ruleExpression.Type rule ruleExpression.Examples
+                ) rules ruleContainerExpression.Rules
+            
+        Expr.NewObject(ruleContainerExpression.Type.GetConstructors().[0],rulesExpressions)
 
 type BackgroundBuilder (parent:Expr) =
 
@@ -142,7 +164,7 @@ type BackgroundBuilder (parent:Expr) =
 
         Expr.NewObject(backgroundType.GetConstructors().[0],parameters)
 
-type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuilder,tagBuilder:TagBuilder,scenarioContainerBuilder:ScenarioContainerBuilder)  =
+type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuilder,tagBuilder:TagBuilder,scenarioContainerBuilder:ScenarioContainerBuilder,ruleContainerBuilder:RuleContainerBuilder)  =
 
     member __.BuildFeature (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
         let gherkinScenarios =
@@ -151,6 +173,14 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
                 fun c ->
                     match c with
                     | :? Scenario -> Some  (c :?> Scenario)
+                    | _ -> None)
+            
+        let gherkinRules =
+            gherkinDocument.Feature.Children |> Seq.toList
+            |> List.choose(
+                fun c ->
+                    match c with
+                    | :? Rule -> Some  (c :?> Rule)
                     | _ -> None)
 
         let gherkinBackground = 
@@ -162,9 +192,10 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
                         | _ -> None)
 
         let scenarioContainer = scenarioContainerBuilder.BuildScenarioContainer gherkinScenarios featureExpression.Scenarios
+        let ruleContainer = ruleContainerBuilder.BuildRuleContainer gherkinRules featureExpression.Rules
         
         let parameters =
-             let mandatory = [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);scenarioContainer]
+             let mandatory = [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);scenarioContainer;ruleContainer]
              match featureExpression.Background,gherkinBackground,(gherkinDocument.Feature.Tags |> Seq.toList) with
              | Some bgType,Some gherkinBackground,[] ->
                 let steps =  stepsBuilder.BuildSteps (gherkinBackground.Steps |> Seq.toList) bgType.Steps
@@ -203,4 +234,7 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
             let scenarioBuilder = ScenarioBuilder(parent,exampleBuilder,tagBuilder,stepsBuilder)
             let scenarioContainerBuilder = ScenarioContainerBuilder(scenarioBuilder)
             let backgroundBuilder = BackgroundBuilder(parent)
-            FeatureBuilder(stepsBuilder,backgroundBuilder,tagBuilder,scenarioContainerBuilder)
+            let ruleBuilder= RuleBuilder(scenarioBuilder)
+            let ruleContainerBuilder = RuleContainerBuilder(ruleBuilder)
+            
+            FeatureBuilder(stepsBuilder,backgroundBuilder,tagBuilder,scenarioContainerBuilder,ruleContainerBuilder)
