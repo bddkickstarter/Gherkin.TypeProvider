@@ -128,6 +128,11 @@ type ScenarioBuilder (parent:Expr, exampleBuilder:ExampleBuilder,tagBuilder:TagB
                 Expr.NewObject(scenarioType.Type.GetConstructors().[0],parameters)
         ) scenarios scenarioTypes
 
+type ScenarioContainerBuilder (scenarioBuilder:ScenarioBuilder) =
+    member __.BuildScenarioContainer (scenarios:Scenario list) (scenarioContainerExpression:ScenarioContainerExpression) =
+            let scenarioExpressions = scenarioBuilder.BuildScenario scenarios scenarioContainerExpression.Scenarios
+            Expr.NewObject(scenarioContainerExpression.Type.GetConstructors().[0],scenarioExpressions)
+
 type BackgroundBuilder (parent:Expr) =
 
     member __.BuildBackground (backgroundType:ProvidedTypeDefinition) (gherkinBackground:Background) (steps:Expr list) =
@@ -137,7 +142,7 @@ type BackgroundBuilder (parent:Expr) =
 
         Expr.NewObject(backgroundType.GetConstructors().[0],parameters)
 
-type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuilder,tagBuilder:TagBuilder,scenarioBuilder:ScenarioBuilder)  =
+type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuilder,tagBuilder:TagBuilder,scenarioContainerBuilder:ScenarioContainerBuilder)  =
 
     member __.BuildFeature (root:ProvidedTypeDefinition) (gherkinDocument:GherkinDocument) (featureExpression:FeatureExpression) =
         let gherkinScenarios =
@@ -156,41 +161,33 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
                         | :? Background -> Some  (c :?> Background)
                         | _ -> None)
 
-        let parameters = 
+        let scenarioContainer = scenarioContainerBuilder.BuildScenarioContainer gherkinScenarios featureExpression.Scenarios
+        
+        let parameters =
+             let mandatory = [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);scenarioContainer]
              match featureExpression.Background,gherkinBackground,(gherkinDocument.Feature.Tags |> Seq.toList) with
-
              | Some bgType,Some gherkinBackground,[] ->
-
                 let steps =  stepsBuilder.BuildSteps (gherkinBackground.Steps |> Seq.toList) bgType.Steps
                 let background = backgroundBuilder.BuildBackground bgType.Type gherkinBackground steps
-                
-                [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);background]
-
+                mandatory  @ [background]
              | Some bgType,Some gherkinBackground,tags ->
-                
                 let steps =  stepsBuilder.BuildSteps (gherkinBackground.Steps |> Seq.toList) bgType.Steps
                 let background = backgroundBuilder.BuildBackground bgType.Type gherkinBackground steps
-
                 match featureExpression.Tags with
                 | None ->  
-                    [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);background]
+                    mandatory  @ [background]
                 | Some featureTagType -> 
                     let tagsInstance = tagBuilder.BuildTag featureTagType tags
-                    [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);background;tagsInstance]
-
+                    mandatory  @ [background;tagsInstance]
              | None, _,tags ->
-                
                 match featureExpression.Tags with
                 | Some featureTagType -> 
                     let tagsinstance = tagBuilder.BuildTag featureTagType tags
-                    [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description);tagsinstance]
-                | None -> [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description)]
+                    mandatory  @ [tagsinstance]
+                | None -> mandatory
+             | _ -> mandatory
 
-             | _ -> [Expr.Value(gherkinDocument.Feature.Name);Expr.Value(gherkinDocument.Feature.Description)]
-
-        let scenarios = scenarioBuilder.BuildScenario gherkinScenarios featureExpression.Scenarios
-        let allParams = parameters @ scenarios
-        let feature = Expr.NewObject(featureExpression.Type.GetConstructors().[0],allParams)
+        let feature = Expr.NewObject(featureExpression.Type.GetConstructors().[0],parameters)
 
         ProvidedMethod("CreateFeature",[],featureExpression.Type,isStatic=true,invokeCode=fun _ -> feature)
         |> root.AddMember
@@ -204,5 +201,6 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
             let stepsBuilder = StepsBuilder(argumentBuilder,providerModel.ArgumentBaseType)
             let tagBuilder = TagBuilder(providerModel.TagBaseType)
             let scenarioBuilder = ScenarioBuilder(parent,exampleBuilder,tagBuilder,stepsBuilder)
+            let scenarioContainerBuilder = ScenarioContainerBuilder(scenarioBuilder)
             let backgroundBuilder = BackgroundBuilder(parent)
-            FeatureBuilder(stepsBuilder,backgroundBuilder,tagBuilder,scenarioBuilder)
+            FeatureBuilder(stepsBuilder,backgroundBuilder,tagBuilder,scenarioContainerBuilder)

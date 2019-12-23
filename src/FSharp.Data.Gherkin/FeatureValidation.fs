@@ -47,7 +47,9 @@ type FeatureValidator() =
         let ignoreTags = if ignore.IsSome then ignore.Value else []
         
         let featureType=feature.GetType()
-        let scenarios = featureType.GetProperty("Scenarios").GetValue(feature) :?> IEnumerable<_>
+        let scenarioContainer = featureType.GetProperty("Scenarios").GetValue(feature)
+        let scenarioContainerType = scenarioContainer.GetType()
+        let scenarios = scenarioContainerType.GetProperty("All").GetValue(scenarioContainer) :?> IEnumerable<_>
 
         let exclude (tagList:obj) = 
             let tagListType = tagList.GetType()

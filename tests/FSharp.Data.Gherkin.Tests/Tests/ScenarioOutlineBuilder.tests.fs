@@ -6,7 +6,7 @@ open Expecto
 
 [<Tests>]
 let useBuilder =
-    let scenarioTemplate = TestFeature.CreateFeature().``Scenario outline name``
+    let scenarioTemplate = TestFeature.CreateFeature().Scenarios.``Scenario outline name``
 
     scenarioOutline scenarioTemplate {
         return!
@@ -46,7 +46,7 @@ let builderVisitsExamples =
     match validateFeature feature with
     | None -> failwith "Expected feature to fail vaildation"
     | _ -> 
-        scenarioOutline feature.``some group of examples``{
+        scenarioOutline feature.Scenarios.``some group of examples``{
              return! 
                 fun scenario ->
                     scenario.``0 Given some setup`` |> ignore

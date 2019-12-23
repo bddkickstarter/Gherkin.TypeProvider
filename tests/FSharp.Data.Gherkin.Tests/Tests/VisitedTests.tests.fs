@@ -10,20 +10,20 @@ let visitScenarios =
         <| fun _ -> 
             let feature = TestFeature.CreateFeature()
 
-            Expect.isFalse feature.Scenarios.[0].Visited "Expected visit to scenario 1 to be false before visiting"
-            Expect.isFalse feature.Scenarios.[1].Visited "Expected visit to scenario 2 to be false before visiting"
-            Expect.isFalse feature.Scenarios.[2].Visited "Expected visit to scenario outline to be false before visiting"
+            Expect.isFalse feature.Scenarios.All.[0].Visited "Expected visit to scenario 1 to be false before visiting"
+            Expect.isFalse feature.Scenarios.All.[1].Visited "Expected visit to scenario 2 to be false before visiting"
+            Expect.isFalse feature.Scenarios.All.[2].Visited "Expected visit to scenario outline to be false before visiting"
 
-            feature.``Scenario 1 name`` |> ignore
-            feature.``Scenario 2 name`` |> ignore
+            feature.Scenarios.``Scenario 1 name`` |> ignore
+            feature.Scenarios.``Scenario 2 name`` |> ignore
 
-            Expect.isTrue feature.Scenarios.[0].Visited "Expected visit to scenario 1 to be true after visiting"
-            Expect.isTrue feature.Scenarios.[1].Visited "Expected visit to scenario 2 to be true before visiting"
-            Expect.isFalse feature.Scenarios.[2].Visited "Expected visit to scenario outline to be false as not visited"
+            Expect.isTrue feature.Scenarios.All.[0].Visited "Expected visit to scenario 1 to be true after visiting"
+            Expect.isTrue feature.Scenarios.All.[1].Visited "Expected visit to scenario 2 to be true before visiting"
+            Expect.isFalse feature.Scenarios.All.[2].Visited "Expected visit to scenario outline to be false as not visited"
 
-            feature.``Scenario outline name`` |> ignore
+            feature.Scenarios.``Scenario outline name`` |> ignore
 
-            Expect.isTrue feature.Scenarios.[2].Visited "Expected visit to scenario outline to be true as now visited"
+            Expect.isTrue feature.Scenarios.All.[2].Visited "Expected visit to scenario outline to be true as now visited"
 
 [<Tests>]
 let visitSteps =
@@ -32,7 +32,7 @@ let visitSteps =
         <| fun _ -> 
             let feature = TestFeature.CreateFeature()
 
-            let scenario = feature.``Scenario 1 name``
+            let scenario = feature.Scenarios.``Scenario 1 name``
 
             Expect.isFalse scenario.Steps.[0].Visited "Expected visit to given step to be false before visiting"
             Expect.isFalse scenario.Steps.[1].Visited "Expected visit to when to be false before visiting"
@@ -50,7 +50,7 @@ let visitDocStringArgument =
     testCase
         "DocString arguments marked visited if accessed through Argument property"
         <| fun _ ->
-            let stepWithDocstringArg = TestFeature.CreateFeature().``Scenario 1 name``.``0 Given scenario 1 given step``
+            let stepWithDocstringArg = TestFeature.CreateFeature().Scenarios.``Scenario 1 name``.``0 Given scenario 1 given step``
 
             Expect.isFalse stepWithDocstringArg.DocString.Visited "Expected visit to step argument to be false before visiting"
 
@@ -77,7 +77,7 @@ let visitTags =
             testCase
                 "Scenario tags are marked as visted when accessed through their named property"
                 <| fun _ ->
-                    let scenario = TestFeature.CreateFeature().``Scenario 1 name``
+                    let scenario = TestFeature.CreateFeature().Scenarios.``Scenario 1 name``
 
                     Expect.isFalse scenario.Tags.AllTags.[0].Visited "Expected visit to scenario tag to be false before visiting"
 
@@ -105,7 +105,7 @@ let visitExampleCell =
     testCase
         "Example cells are marked as visited when accessed through their named property"        
         <| fun _ ->
-            let example = TestFeature.CreateFeature().``Scenario outline name``.Examples.[0]
+            let example = TestFeature.CreateFeature().Scenarios.``Scenario outline name``.Examples.[0]
 
             Expect.isFalse example.Cells.[0].Visited "Expected visit to example cell to be false before visiting"
 
@@ -132,9 +132,9 @@ let validateTheFeature =
                     feature.Background.``1 When background when step``.Argument |> Seq.iter (fun dr -> (dr.column1,dr.column2) |> ignore)
                     feature.Background.``2 Then background then step`` |> ignore
 
-                    let scenario1 = feature.``Scenario 1 name``
-                    let scenario2 = feature.``Scenario 2 name``
-                    let scenarioOutline = feature.``Scenario outline name``
+                    let scenario1 = feature.Scenarios.``Scenario 1 name``
+                    let scenario2 = feature.Scenarios.``Scenario 2 name``
+                    let scenarioOutline = feature.Scenarios.``Scenario outline name``
 
                     scenario1.Tags.scenario1Tag1 |> ignore
                     scenario1.Tags.scenario1Tag2 |> ignore
@@ -162,7 +162,7 @@ let validateTheFeature =
                         e.``Example Column 2`` |> ignore,
                         e.``Example Column 3`` |> ignore) |> ignore)
 
-                    feature.Simple.``0 Given just a given`` |> ignore
+                    feature.Scenarios.Simple.``0 Given just a given`` |> ignore
                     
                     match validateFeature feature with
                     | None -> ()
@@ -177,7 +177,7 @@ let validateTheFeature =
                     | None -> failwith "Expected simple feature to fail validation"
                     | _-> ()
 
-                    feature.``simple scenario``.``0 Given simple given`` |> ignore
+                    feature.Scenarios.``simple scenario``.``0 Given simple given`` |> ignore
 
                     match validateFeature feature with
                     | None -> ()
@@ -212,7 +212,7 @@ let ignoreByTag=
                     let feature = TestFeature.CreateFeature()
                     feature.Tags.featureTag1 |> ignore
                     feature.Tags.featureTag2 |> ignore
-                    feature.Simple.``0 Given just a given`` |> ignore
+                    feature.Scenarios.Simple.``0 Given just a given`` |> ignore
 
                     match validateFeature feature with
                     | None -> failwith "Expected feature to fail validation"

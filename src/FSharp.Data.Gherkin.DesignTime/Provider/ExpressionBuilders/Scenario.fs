@@ -26,9 +26,9 @@ type ScenarioExpressionBuilder
         stepBaseType:System.Type,
         propertySanitizer:string->string) =
 
-    member __.CreateExpression (feature:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
+    member __.CreateExpression (parent:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
         let scenarioType = ProvidedTypeDefinition((sprintf "%sClass" gherkinScenario.Name) |> Sanitizer().Sanitize ,Some scenarioBaseType,isErased=false, hideObjectMethods=true, isSealed=false)
-        scenarioType |> feature.AddMember
+        scenarioType |> parent.AddMember
 
         //create tags
         let tagExpression = tagExpressionBuilder.CreateExpression scenarioType (gherkinScenario.Tags |> Seq.toList |> List.map(fun t -> t.Name))

@@ -10,6 +10,7 @@ let examples =
 
     let examples = TestFeature
                     .CreateFeature()
+                    .Scenarios
                     .``Scenario outline name``
                     .Examples
     testList

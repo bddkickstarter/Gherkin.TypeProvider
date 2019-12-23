@@ -8,7 +8,7 @@ open Expecto
 [<Tests>]
 let scenario1 =
 
-    let scenario1 = TestFeature.CreateFeature().``Scenario 1 name``
+    let scenario1 = TestFeature.CreateFeature().Scenarios.``Scenario 1 name``
 
     testList
         "Scenario 1 has correct data"
@@ -90,7 +90,7 @@ let scenario1 =
 [<Tests>]
 let scenario2 =
 
-    let scenario2 = TestFeature.CreateFeature().``Scenario 2 name``
+    let scenario2 = TestFeature.CreateFeature().Scenarios.``Scenario 2 name``
 
     testList
         "Scenario 2 has correct data"

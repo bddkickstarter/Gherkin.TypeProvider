@@ -30,12 +30,14 @@
     <Compile Include="Provider/BaseTypes/DocString.fs" />
     <Compile Include="Provider/BaseTypes/Step.fs" />
     <Compile Include="Provider/BaseTypes/Scenario.fs" />
+    <Compile Include="Provider\BaseTypes\ScenarioContainer.fs" />
     <Compile Include="Provider/ObjectModel.fs" />
     <Compile Include="Provider/ExpressionBuilders/Data.fs" />
     <Compile Include="Provider/ExpressionBuilders/TagContainer.fs" />
     <Compile Include="Provider/ExpressionBuilders/Step.fs" />
     <Compile Include="Provider/ExpressionBuilders/Scenario.fs" />
     <Compile Include="Provider/ExpressionBuilders/Background.fs" />
+    <Compile Include="Provider\ExpressionBuilders\ScenarioContainer.fs" />
     <Compile Include="Provider/ExpressionBuilders/Feature.fs" />
     <Compile Include="Provider/InstanceBuilders/Builders.fs" />
     <Compile Include="GherkinProvider.fs" />

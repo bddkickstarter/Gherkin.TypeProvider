@@ -15,16 +15,16 @@ namespace FSharp.Data.Gherkin.Tests.CSharp
             featureFile += "    Background:\r\n" + GetBackgroundSteps(feature.Background);
 
             featureFile += "\r\n";
-            featureFile += "    " + feature.Scenario_1_name.Tags.scenario1Tag1.Name + "," + feature.Scenario_1_name.Tags.scenario1Tag2.Name + "\r\n";
-            featureFile += "    Scenario:" + feature.Scenario_1_name.Name + "\r\n       " + feature.Scenario_1_name.Description + "\r\n" + GetScenario1Steps(feature.Scenario_1_name);
+            featureFile += "    " + feature.Scenarios.Scenario_1_name.Tags.scenario1Tag1.Name + "," + feature.Scenarios.Scenario_1_name.Tags.scenario1Tag2.Name + "\r\n";
+            featureFile += "    Scenario:" + feature.Scenarios.Scenario_1_name.Name + "\r\n       " + feature.Scenarios.Scenario_1_name.Description + "\r\n" + GetScenario1Steps(feature.Scenarios.Scenario_1_name);
 
             featureFile += "\r\n";
-            featureFile += "    " + feature.Scenario_2_name.Tags.scenario2Tag1.Name + "," + feature.Scenario_2_name.Tags.scenario2Tag2.Name + "\r\n";
-            featureFile += "    Scenario:" + feature.Scenario_2_name.Name + "\r\n       " + feature.Scenario_2_name.Description  + "\r\n" + GetScenario2Steps(feature.Scenario_2_name);
+            featureFile += "    " + feature.Scenarios.Scenario_2_name.Tags.scenario2Tag1.Name + "," + feature.Scenarios.Scenario_2_name.Tags.scenario2Tag2.Name + "\r\n";
+            featureFile += "    Scenario:" + feature.Scenarios.Scenario_2_name.Name + "\r\n       " + feature.Scenarios.Scenario_2_name.Description  + "\r\n" + GetScenario2Steps(feature.Scenarios.Scenario_2_name);
 
             featureFile += "\r\n";
-            featureFile += "    " + feature.Scenario_outline_name.Tags.scenarioOutlineTag1.Name + "," + feature.Scenario_outline_name.Tags.scenarioOutlineTag2.Name + "\r\n";
-            featureFile += "    Scenario Outline:" + feature.Scenario_outline_name.Name + "\r\n     " + feature.Scenario_outline_name.Description  + "\r\n" + GetScenarioOutlineSteps(feature.Scenario_outline_name);
+            featureFile += "    " + feature.Scenarios.Scenario_outline_name.Tags.scenarioOutlineTag1.Name + "," + feature.Scenarios.Scenario_outline_name.Tags.scenarioOutlineTag2.Name + "\r\n";
+            featureFile += "    Scenario Outline:" + feature.Scenarios.Scenario_outline_name.Name + "\r\n     " + feature.Scenarios.Scenario_outline_name.Description  + "\r\n" + GetScenarioOutlineSteps(feature.Scenarios.Scenario_outline_name);
 
             Console.WriteLine("Look ma...no Specflow!\r\n" + featureFile);
         }
@@ -51,7 +51,7 @@ namespace FSharp.Data.Gherkin.Tests.CSharp
                 
         }
 
-        private static string GetScenario1Steps(CSharpTestFeature.CSharpTestFeature_Feature.Scenario_1_nameClass scenario)
+        private static string GetScenario1Steps(CSharpTestFeature.CSharpTestFeature_Feature.ScenarioContainer.Scenario_1_nameClass scenario)
         {
             var givenStep= scenario._0_Given_scenario_1_given_step;
             var whenStep= scenario._1_When_scenario_1_when_step;
@@ -72,7 +72,7 @@ namespace FSharp.Data.Gherkin.Tests.CSharp
                 
         }
 
-        private static string GetScenario2Steps(CSharpTestFeature.CSharpTestFeature_Feature.Scenario_2_nameClass scenario)
+        private static string GetScenario2Steps(CSharpTestFeature.CSharpTestFeature_Feature.ScenarioContainer.Scenario_2_nameClass scenario)
         {
             var givenStep= scenario._0_Given_scenario_2_given_step;
             var whenStep= scenario._1_When_scenario_2_when_step;
@@ -94,7 +94,7 @@ namespace FSharp.Data.Gherkin.Tests.CSharp
                 
         }
 
-        private static string GetScenarioOutlineSteps(CSharpTestFeature.CSharpTestFeature_Feature.Scenario_outline_nameClass scenarioOutline)
+        private static string GetScenarioOutlineSteps(CSharpTestFeature.CSharpTestFeature_Feature.ScenarioContainer.Scenario_outline_nameClass scenarioOutline)
         {
             var givenStep= scenarioOutline._0_Given_scenario_outline_given_step__Example_Column_1_;
             var whenStep= scenarioOutline._1_When_scenario_outline_when_step__Example_Column_2_;
