@@ -32,3 +32,16 @@ module Helpers =
     let validateData (row:TestFeature.TestFeature_DataCell) (header:string) (value:string) =
         Expect.equal row.Header header (sprintf "Background When Data Row 1 Header:Expected %s but got %s" header row.Header)
         Expect.equal row.Value value (sprintf "Background When Data Row 1 Value:Expected %s but got %s" value row.Value)
+
+    let validateExample (example:RulesAndExamplesFeature.RulesAndExamplesFeature_ScenarioBase) (name:string) (description:string) =
+        Expect.equal example.Name name (sprintf "Example name:Expected %s but got %s" name example.Name)
+        Expect.equal (example.Description.Trim()) description (sprintf "Example description:Expected %s but got %s" description (example.Description.Trim()))
+
+    let validateExampleStep (step:RulesAndExamplesFeature.RulesAndExamplesFeature_StepBase) (expectedOrder:int) (expectedKeyword:string) (expectedText:string) =
+        Expect.equal step.Order expectedOrder (sprintf "Step Order:Expected %i but got %i" expectedOrder step.Order)
+        Expect.equal step.Keyword expectedKeyword (sprintf "Step Keyword:Expected %s but got %s" expectedKeyword step.Keyword)
+        Expect.equal step.Text expectedText (sprintf "Step Text:Expected %s but got %s" expectedText step.Text)
+
+    let validateExampleStepData (row:RulesAndExamplesFeature.RulesAndExamplesFeature_DataCell) (header:string) (value:string) =
+        Expect.equal row.Header header (sprintf "Background When Data Row 1 Header:Expected %s but got %s" header row.Header)
+        Expect.equal row.Value value (sprintf "Background When Data Row 1 Value:Expected %s but got %s" value row.Value)

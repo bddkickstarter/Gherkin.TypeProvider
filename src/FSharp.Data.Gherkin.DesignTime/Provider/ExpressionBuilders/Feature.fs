@@ -1,13 +1,9 @@
 module ExpressionBuilders.Feature
 
 open ObjectModel
-open ExpressionBuilders.Data
-open ExpressionBuilders.Step
 open ExpressionBuilders.ScenarioContainer
-open ExpressionBuilders.Scenario
 open ExpressionBuilders.TagContainer
 open ExpressionBuilders.Background
-open ExpressionBuilders.Rule
 open ExpressionBuilders.RuleContainer
 open ProviderImplementation.ProvidedTypes
 open Gherkin.Ast
@@ -138,63 +134,8 @@ type FeatureExpressionBuilder
 
     static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
 
-        let dataExpressionBuilder = DataExpressionBuilder(
-                                            providerModel.DataRowBaseType,
-                                            providerModel.DataCellBaseType,
-                                            propertyNameSanitizer)
-
-        let stepExpressionBuilder = StepExpressionBuilder(
-                                            providerModel.StepBaseType,
-                                            providerModel.DocStringArgType,
-                                            providerModel.ArgumentBaseType,
-                                            dataExpressionBuilder)
-
-        let tagContainerExpressionBuilder = TagContainerExpressionBuilder(
-                                                providerModel.TagBaseType , 
-                                                providerModel.TagContainerBaseType)
-
-        let scenarioExpressionBuilder = ScenarioExpressionBuilder(
-                                            providerModel.TagContainerBaseType,
-                                            providerModel.TagBaseType,
-                                            tagContainerExpressionBuilder,
-                                            providerModel.DataRowBaseType,
-                                            dataExpressionBuilder,
-                                            providerModel.ScenarioBaseType,
-                                            stepExpressionBuilder,
-                                            providerModel.StepBaseType,
-                                            propertyNameSanitizer)
-        
-        let scenarioContainerExpressionBuilder = ScenarioContainerExpressionBuilder(
-                                                        providerModel.ScenarioContainerBaseType,
-                                                        providerModel.ScenarioBaseType,
-                                                        scenarioExpressionBuilder,
-                                                        propertyNameSanitizer)
-        
-        let ruleExpressionBuilder = RuleExpressionBuilder(
-                                                         providerModel.RuleBaseType,
-                                                         providerModel.ScenarioBaseType,
-                                                         scenarioExpressionBuilder,
-                                                         propertyNameSanitizer)
-        
-        let ruleContainerExpressionBuilder = RuleContainerExpressionBuilder(
-                                                         providerModel.RuleContainerBaseType,
-                                                         providerModel.RuleBaseType,
-                                                         ruleExpressionBuilder,
-                                                         propertyNameSanitizer)
-
-        let emptyExamples = Expr.NewArray(providerModel.DataRowBaseType,[])
-        let emptyTags = Expr.NewObject(providerModel.TagContainerBaseType.GetConstructors().[0],[Expr.NewArray(providerModel.TagBaseType.AsType(),[])])
-
-        let backgroundExpressionBuilder = BackgroundExpressionBuilder(
-                                            providerModel.ScenarioBaseType,
-                                            emptyExamples,
-                                            emptyTags,
-                                            providerModel.StepBaseType,
-                                            stepExpressionBuilder,
-                                            propertyNameSanitizer)
-        
         FeatureExpressionBuilder
-            (backgroundExpressionBuilder,
-            scenarioContainerExpressionBuilder,
-            ruleContainerExpressionBuilder,
-            tagContainerExpressionBuilder)
+            (BackgroundExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+            ScenarioContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+            RuleContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+            TagContainerExpressionBuilder.CreateNew providerModel)

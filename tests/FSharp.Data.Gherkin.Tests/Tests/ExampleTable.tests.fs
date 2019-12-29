@@ -1,4 +1,4 @@
-module FSharp.Data.Gherkin.Tests.Example
+module FSharp.Data.Gherkin.Tests.ExampleTable
 
 open FSharp.Data.Gherkin.Tests
 open FSharp.Data.Gherkin.Tests.Helpers

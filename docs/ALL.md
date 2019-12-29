@@ -61,6 +61,7 @@ Then the Gherkin Typeprovider would expose that as:
 
 ```fsharp
     myTestFeature
+        .Scenarios
         .``this is a scenario``
         .``0 Given this is a given step``
 ```
@@ -70,6 +71,7 @@ The object returned by the named step has the information from the feature file 
 ```fsharp
     let step = 
         myTestFeature
+            .Scenarios
             .``this is a scenario``
             .``0 Given this is a given step``
 
@@ -111,7 +113,7 @@ would return
 And
 
 ```fsharp
-myTestFeature.``this is a scenario``.Tags.scenariotag.Name
+myTestFeature.Scenarios.``this is a scenario``.Tags.scenariotag.Name
 ```
 would return
 
@@ -139,6 +141,7 @@ which would be represented as:
 
 ```fsharp
 myTestFeature
+    .Scenarios
     .``this is a scenario``
     .``1 a when step with a string argument``
     .Argument
@@ -177,6 +180,7 @@ Here the **Argument** is no longer a _DocString_,but instead an array of data ob
 
 ```fsharp
 myTestFeature
+    .Scenarios
     .``this is a scenario``
     .``1 a when step with a data table argument``
     .Argument
@@ -223,6 +227,7 @@ The data from the second column of the first row would be accessed using:
 
 ```fsharp
 myTestFeature
+    .Scenarios
     .``some group of examples``
     .Examples
     .[1]
@@ -264,6 +269,7 @@ Which will replace illegal characters with underscores.  The previous example no
 
 ```csharp
 myTestFeature
+    .Scenarios
     .some_group_of_examples
     .Examples
     .[0]
@@ -291,6 +297,7 @@ For example,when the scenario from the first feature is accessed like:
 ```fsharp
 let scenario = 
     myTestFeature
+        .Scenarios
         .``this is a scenario``
 ```
 
@@ -305,7 +312,7 @@ However the feature also contains an array of all its Scenarios as their base cl
 ```fsharp
 let scenario = 
     myTestFeature
-        .Scenarios.[0]
+        .Scenarios.All.[0]
 ```
 
 The type of the scenario will be 
@@ -317,13 +324,13 @@ The type of the scenario will be
 The base class has the _Visited_ property which is set to true __only__ when the named property is used, so the following test will pass:
 
 ```fsharp
-let before = myTestFeature.Scenarios.[0].Visited
+let before = myTestFeature.Scenarios.All.[0].Visited
 
 Expect.isFalse before "Should be false"
 
-myTestFeature.``this is a scenario`` |> ignore
+myTestFeature.Scenarios.``this is a scenario`` |> ignore
 
-let after = myTestFeature.Scenarios.[0].Visited
+let after = myTestFeature.Scenarios.All.[0].Visited
 
 Expect.isTrue after "Should be true"
 ```
@@ -331,15 +338,16 @@ Expect.isTrue after "Should be true"
 The same is true of steps:
 
 ```fsharp
-let before = myTestFeature.Scenarios.[0].Steps.[0].Visited
+let before = myTestFeature.Scenarios.All.[0].Steps.[0].Visited
 
 Expect.isFalse before "Should be false"
 
 myTestFeature
+    .Scenarios
     .``this is a scenario``
     .``0 Given this is a given step`` |> ignore
 
-let after = myTestFeature.Scenarios.[0].Steps.[0].Visited
+let after = myTestFeature.Scenarios.All.[0].Steps.[0].Visited
 
 Expect.isTrue after "Should be true"
 ```
@@ -347,35 +355,6 @@ Expect.isTrue after "Should be true"
 (There are a set of visited tests [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/blob/master/tests/FSharp.Data.Gherkin.Tests/Tests/VisitedTests.tests.fs))
 
 The entire feature can be "walked" using the underlying arrays so it is possible to find any named properties that have not been visited.
-
-# Feature Validation
-To validate the feature use the FeatureValidator in the *FSharp.Data.Gherkin.Validation* namespace:
-
-```fsharp
-open FSharp.Data.Gherkin.Validation
-
-match FeatureValidator.Validate feature with
-| None -> ()
-| Some report -> failwith(report.Summary)
-```
-
-The validator returns a report that contains a tree of all the feature's children that have not been visited. This includes:
-- Tags
-- Features
-- Backgrounds
-- Scenarios
-- Scenario Outlines
-- All cells in a DataTable argument
-- Every example
-
-To exclude the feature or specific scenarios, tag them and provide the tag names as an array and the validator will exclude them from the report e.g.
-
-```fsharp
-FeatureValidator.Validate(feature,["@WIP";"@pending"])
-```
-will exclude the feature if it has either of those tags, and any scenario that has either of the tags.
-
-Backgrounds & Steps cannot be tagged
 
 # Scenario Outlines
 To help automate the *Scenario Outline* the Gherkin TypeProvider comes with the *ScenarioOutline builder* (in the *FSharp.Data.Gherkin.Builders* namespace).
@@ -399,7 +378,7 @@ Examples:
 |    data 3   |     maybe?      |
 ```
 
-Use the builder:
+Use the builder (with *Expecto*):
 
 ```fsharp
 open FSharp.Data.Gherkin
@@ -407,11 +386,14 @@ open FSharp.Data.Gherkin.Builders
 
 type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature")>
 
+[<Tests>]
 let useBuilder =
-    let (scenarioOutlineName,results) =
-        ScenarioOutline(myFeature.``some group of examples``){
-            return!
-                fun scenario ->
+
+    scenarioOutline myFeature.Scenarios.``some group of examples`` {
+        return!
+            fun scenario ->
+
+                test scenario.Name {
                     // use the given
                     scenario.``0 Given some setup``.Text |> ignore
 
@@ -421,13 +403,14 @@ let useBuilder =
                     // use the then
                     let thenText = scenario.``2 Then result will be <checks the result>``.Text
 
-                    //do something - just returning the text here
-                    sprintf "When %s, Then %s" whenText thenText
-        }
+                    //do something - just printing the text here
+                    printfn "When %s, Then %s" whenText thenText
+                }
 
-    results |> Seq.iter(fun r -> printfn "%s" r)
+        } >>= testList
+
 ```
-The builder returns a tuple of the outline name and a list of whatever was returned from the builder, in this case a list of strings
+The builder returns a tuple of the outline name and a list of whatever was returned from the builder, in this case a list of *Expecto* tests.  The *FSharp.Data.Gherkin* namespace also includes a bind operator *(>>=*) that can bind the resulting tuple to anything that takes a name & a list (the *Expecto* **testList**) in this case
 
 For steps that have template arguments their text is replaced with the example data so the code above would produce the output
 
@@ -437,6 +420,82 @@ When uses data 2, Then result will be false!
 When uses data 3, Then result will be maybe?
 ```
 The builder will visit each example however the steps will only be marked as visited if referenced in the builder
+
+## xUnit
+Unfortunately xUnit doesn't support this behaviour as it uses the *Theory* attribute to support running multiple tests unlike *Expecto* which can run a list of tests.
+
+# Rules & Examples
+As of Gherkin 6 Rules & Examples are now supported.  A rule is container for multiple examples (which are just synonyms for Scenarios).
+
+So with the feature
+
+```gherkin
+Feature: Rules and Examples
+
+    Rule: A rule is a collection of examples
+
+        Example: An example is a scenario
+            When it works the same way as a scenario
+            Then they can be used to group examples
+
+        Example: Another example for the rule
+            Given the rule can have a completely different scenario
+            When multiple conditions can be specified
+            Then a rule can be expressed easily
+
+    Rule: A feature can have multiple rules
+
+        Example: A rule must have an example
+            Given a scenario must have a step
+```
+
+To get the first step of the first example:
+
+```fsharp
+open FSharp.Data.Gherkin
+
+type RulesFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/rulesAndExamples.feature")>
+
+let feature = RulesFeature.CreateFeature()
+
+feature
+    .Rules
+    .``A rule is a collection of examples``
+    .``An example is a scenario``
+    .``0 When it works the same way as a scenario`` |> ignore
+```
+
+# Feature Validation
+To validate the feature use the FeatureValidator in the *FSharp.Data.Gherkin.Validation* namespace:
+
+```fsharp
+open FSharp.Data.Gherkin.Validation
+
+match validateFeature feature with
+| None -> ()
+| Some report -> failwith(report.Summary)
+```
+
+The validator returns a report that contains a tree of all the feature's children that have not been visited. This includes:
+- Tags
+- Features
+- Backgrounds
+- Scenarios
+- Scenario Outlines
+- All cells in a DataTable argument
+- Every example
+
+To exclude the feature or specific scenarios, tag them and provide the tag names as an array and the validator will exclude them from the report e.g.
+
+```fsharp
+match validateFeatureAndExclude feature ["@WIP";"@pending"] with
+| None -> ()
+| Some report -> failwith(report.Summary)
+```
+will exclude the feature if it has either of those tags, and any scenario that has either of the tags.
+
+Backgrounds & Steps cannot be tagged
+
 
 
 

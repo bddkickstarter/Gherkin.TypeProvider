@@ -11,7 +11,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Model.fs" />
-    <Compile Include="Tests/Example.tests.fs" />
+    <Compile Include="Tests/Rules.tests.fs" />
+    <Compile Include="Tests/ExampleTable.tests.fs" />
     <Compile Include="Tests/Scenario.tests.fs" />
     <Compile Include="Tests/ScenarioOutline.tests.fs" />
     <Compile Include="Tests/Background.tests.fs" />

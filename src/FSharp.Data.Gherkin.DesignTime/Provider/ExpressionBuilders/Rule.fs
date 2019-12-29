@@ -9,7 +9,7 @@ open Shared
 
 let sanitize = Sanitizer().Sanitize
 
-type RuleExpressionBuilder(ruleBaseType:System.Type,scenarioBaseType:System.Type,scenarioExpressionBuilder:ScenarioExpressionBuilder,propertyNameSanitizer) =
+type RuleExpressionBuilder(ruleBaseType:System.Type,examplesBaseType:System.Type,scenarioExpressionBuilder:ScenarioExpressionBuilder,propertyNameSanitizer) =
     member __.CreateExpression (parent:ProvidedTypeDefinition) (gherkinRule:Rule) =
        let name = sprintf "%sClass" gherkinRule.Name |> sanitize
        let ruleType = ProvidedTypeDefinition(name,Some ruleBaseType,isErased=false, hideObjectMethods=true, isSealed=false)
@@ -28,8 +28,8 @@ type RuleExpressionBuilder(ruleBaseType:System.Type,scenarioBaseType:System.Type
        let exampleParameters =  exampleExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> sanitize,st.Type))
        let exampleFields = exampleExpressions |> List.mapi(fun i st-> ProvidedField((sprintf "_example%i" i) |> sanitize, st.Type))
        
-       //get the visited property of the scenario base
-       let visitedProperty = scenarioBaseType.GetProperty("Visited")
+       //get the visited property of the examples base
+       let visitedProperty = examplesBaseType.GetProperty("Visited")
        
        let exampleProperties =
             List.mapi2(
@@ -68,8 +68,8 @@ type RuleExpressionBuilder(ruleBaseType:System.Type,scenarioBaseType:System.Type
        ctr.BaseConstructorCall <- fun (args:Expr list) ->
            let examples =
                 args.GetSlice(Some 4,Some (args.Length-1))
-                |> List.map(fun e -> Expr.Coerce(e,scenarioBaseType))
-           let examplesArray = Expr.NewArray(scenarioBaseType,examples)
+                |> List.map(fun e -> Expr.Coerce(e,examplesBaseType))
+           let examplesArray = Expr.NewArray(examplesBaseType,examples)
            baseCtr,[args.[0];args.[1];args.[2];args.[3];examplesArray]
            
        ctr |> ruleType.AddMember
@@ -79,3 +79,11 @@ type RuleExpressionBuilder(ruleBaseType:System.Type,scenarioBaseType:System.Type
         Type= ruleType
         Examples=exampleExpressions
         }
+       
+    static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
+        
+        RuleExpressionBuilder(
+                                 providerModel.RuleBaseType,
+                                 providerModel.ScenarioBaseType,
+                                 ScenarioExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+                                 propertyNameSanitizer)

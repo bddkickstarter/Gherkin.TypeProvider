@@ -5,6 +5,7 @@ open Gherkin.Ast
 open ObjectModel
 open Shared
 open ExpressionBuilders.Rule
+open ExpressionBuilders.Scenario
 open FSharp.Quotations
 
 let sanitize = Sanitizer().Sanitize
@@ -19,12 +20,12 @@ type RuleContainerExpressionBuilder(ruleContainerBase:System.Type,ruleBaseType:S
       //typed scenario properties
       let ruleExpressions = rules |> List.map(ruleExpressionBuilder.CreateExpression ruleContainerType)
       let ruleParameters =  ruleExpressions |> List.map(fun st -> ProvidedParameter(st.Name |> sanitize,st.Type))
-      let ruleFields = ruleExpressions |> List.mapi(fun i st-> ProvidedField((sprintf "_scenario%i" i) |> sanitize, st.Type))
+      let ruleFields = ruleExpressions |> List.mapi(fun i st-> ProvidedField((sprintf "_rule%i" i) |> sanitize, st.Type))
       
       //get the visited property of the scenario base
       let visitedProperty = ruleBaseType.GetProperty("Visited")
       
-      //properties named after the scenario names, accessing backing fields as typed scenarios
+      //properties named after the rule names, accessing backing fields as typed rules
       let ruleProperties =
             List.map3(fun (rule:Rule) (ruleExpression:RuleExpression) (ruleField:ProvidedField) -> 
                     ProvidedProperty(
@@ -77,3 +78,18 @@ type RuleContainerExpressionBuilder(ruleContainerBase:System.Type,ruleBaseType:S
         Type= ruleContainerType
         Rules= ruleExpressions
       }
+      
+    static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
+
+        
+        let ruleExpressionBuilder = RuleExpressionBuilder(
+                                                         providerModel.RuleBaseType,
+                                                         providerModel.ScenarioBaseType,
+                                                         ScenarioExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+                                                         propertyNameSanitizer)
+        
+        RuleContainerExpressionBuilder(
+                                                         providerModel.RuleContainerBaseType,
+                                                         providerModel.RuleBaseType,
+                                                         ruleExpressionBuilder,
+                                                         propertyNameSanitizer)

@@ -38,8 +38,8 @@
     <Compile Include="Provider/ExpressionBuilders/TagContainer.fs" />
     <Compile Include="Provider/ExpressionBuilders/Step.fs" />
     <Compile Include="Provider/ExpressionBuilders/Scenario.fs" />
+    <Compile Include="Provider/ExpressionBuilders/ScenarioContainer.fs" />
     <Compile Include="Provider/ExpressionBuilders/Background.fs" />
-    <Compile Include="Provider\ExpressionBuilders\ScenarioContainer.fs" />
     <Compile Include="Provider\ExpressionBuilders\Rule.fs" />
     <Compile Include="Provider\ExpressionBuilders\RuleContainer.fs" />
     <Compile Include="Provider/ExpressionBuilders/Feature.fs" />

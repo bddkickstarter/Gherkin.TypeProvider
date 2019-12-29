@@ -212,13 +212,14 @@ type FeatureValidator() as this =
     member private __.GetUnVisitedRules ignoreTags rules =
          rules 
             |> Seq.rev
-            |> Seq.filter(fun rule -> not (rule.GetType().GetProperty("Visited").GetValue(rule) :?> bool))
-            |> Seq.map(
-                fun unvisitedRule ->
-                    let unvisitedRuleType = unvisitedRule.GetType()
-                    let name =  unvisitedRuleType.GetProperty("Name").GetValue(unvisitedRule) :?> string
+            //|> Seq.filter(fun rule -> not (rule.GetType().GetProperty("Visited").GetValue(rule) :?> bool))
+            |> Seq.choose(
+                fun rule ->
+                    let ruleType = rule.GetType()
+                    let ruleVisited = ruleType.GetProperty("Visited").GetValue(rule) :?> bool
+                    let name =  ruleType.GetProperty("Name").GetValue(rule) :?> string
                     let examples =
-                            unvisitedRuleType.GetProperty("All").GetValue(unvisitedRule)  :?> IEnumerable<_>
+                            ruleType.GetProperty("All").GetValue(rule)  :?> IEnumerable<_>
                             |> Seq.toList
                             |> this.GetUnVisitedScenarios ignoreTags Scenario
                     
@@ -230,11 +231,14 @@ type FeatureValidator() as this =
                                 fun a c -> 
                                     sprintf "%s\r\n %s" a c.Summary ) "  Examples:")
                     
-                    {
-                        Name =name
-                        Summary = summary
-                        Examples =examples
-                    })
+                    match ruleVisited,examples with
+                    | true,[] -> None
+                    | _ ->
+                        {
+                            Name =name
+                            Summary = summary
+                            Examples =examples
+                        } |> Some)
             |> Seq.toList
 
     member __.Validate (feature:obj,?ignore:string list) = 

@@ -85,3 +85,10 @@ type ScenarioContainerExpressionBuilder(scenarioContainerBase:System.Type,scenar
                         Type = scenarioContainerType
                         Scenarios = scenarioExpressions
                 }
+                
+        static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
+            ScenarioContainerExpressionBuilder(
+                                          providerModel.ScenarioContainerBaseType,
+                                          providerModel.ScenarioBaseType,
+                                          ScenarioExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+                                          propertyNameSanitizer)

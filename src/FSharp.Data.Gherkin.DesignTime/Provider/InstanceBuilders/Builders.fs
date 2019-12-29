@@ -223,7 +223,7 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
         ProvidedMethod("CreateFeature",[],featureExpression.Type,isStatic=true,invokeCode=fun _ -> feature)
         |> root.AddMember
 
-    static member CreateNew (providerModel:GherkinProviderModel) =
+    static member CreateNewScenario (providerModel:GherkinProviderModel) =
             let parent = Expr.Coerce(Expr.Value(null),providerModel.ScenarioBaseType)
 
             let rowBuilder = RowBuilder(providerModel.DataCellBaseType)
@@ -231,7 +231,17 @@ type FeatureBuilder (stepsBuilder:StepsBuilder,backgroundBuilder:BackgroundBuild
             let argumentBuilder = ArgumentBuilder(rowBuilder)
             let stepsBuilder = StepsBuilder(argumentBuilder,providerModel.ArgumentBaseType)
             let tagBuilder = TagBuilder(providerModel.TagBaseType)
-            let scenarioBuilder = ScenarioBuilder(parent,exampleBuilder,tagBuilder,stepsBuilder)
+            ScenarioBuilder(parent,exampleBuilder,tagBuilder,stepsBuilder)
+
+    static member CreateNewFeature (providerModel:GherkinProviderModel) =
+            let parent = Expr.Coerce(Expr.Value(null),providerModel.ScenarioBaseType)
+            let scenarioBuilder = FeatureBuilder.CreateNewScenario providerModel
+            
+            let rowBuilder = RowBuilder(providerModel.DataCellBaseType)
+            let argumentBuilder = ArgumentBuilder(rowBuilder)
+            let stepsBuilder = StepsBuilder(argumentBuilder,providerModel.ArgumentBaseType)
+            let tagBuilder = TagBuilder(providerModel.TagBaseType)
+            
             let scenarioContainerBuilder = ScenarioContainerBuilder(scenarioBuilder)
             let backgroundBuilder = BackgroundBuilder(parent)
             let ruleBuilder= RuleBuilder(scenarioBuilder)

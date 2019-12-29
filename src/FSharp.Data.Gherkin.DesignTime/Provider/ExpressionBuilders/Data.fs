@@ -2,6 +2,7 @@ module ExpressionBuilders.Data
 
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
+open ObjectModel
 open Shared
 
 let sanitize = Sanitizer().Sanitize
@@ -56,4 +57,11 @@ type DataExpressionBuilder  (dataRowBaseType:System.Type,dataCellType:System.Typ
         ctr |> dataType.AddMember
 
         dataType
+        
+    static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
+        DataExpressionBuilder(
+                                providerModel.DataRowBaseType,
+                                providerModel.DataCellBaseType,
+                                propertyNameSanitizer)
+
     

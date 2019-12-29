@@ -4,6 +4,7 @@ open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open BaseTypes.Tag
 open BaseTypes.TagContainer
+open ObjectModel
 open Shared
 
 type TagContainerExpressionBuilder (tagBaseType:System.Type,tagContainerBase:System.Type) =
@@ -73,3 +74,10 @@ type TagContainerExpressionBuilder (tagBaseType:System.Type,tagContainerBase:Sys
         | Some tagType ->
             let tagField = PropertyHelper(parent).AddProperty("Tags",tagType)
             Some (tagType,tagField)
+            
+    static member CreateNew (providerModel:GherkinProviderModel) =
+
+        TagContainerExpressionBuilder(
+                                    providerModel.TagBaseType , 
+                                    providerModel.TagContainerBaseType)
+

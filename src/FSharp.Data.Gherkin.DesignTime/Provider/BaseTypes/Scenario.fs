@@ -23,7 +23,6 @@ type ScenarioBase (tagContainerBase:TagContainerBase,stepBase:StepBase,dataRowBa
         let examplesField = propertyHelper.AddProperty("ExampleTable",examplesType)
         let allTagsField = propertyHelper.AddProperty("TagList",tagContainerBase.Type)
         let parentField = propertyHelper.AddProperty("Outline",scenarioBase)
-
         let visitedField = propertyHelper.AddVisitedProperty()
 
         ProvidedConstructor(

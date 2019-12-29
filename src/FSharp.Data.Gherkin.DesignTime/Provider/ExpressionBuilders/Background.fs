@@ -2,6 +2,9 @@ module ExpressionBuilders.Background
 
 open ObjectModel
 open ExpressionBuilders.Step
+open ExpressionBuilders.Data
+open ExpressionBuilders.Scenario
+open ExpressionBuilders.TagContainer
 open ProviderImplementation.ProvidedTypes
 open FSharp.Quotations
 open Shared
@@ -83,6 +86,19 @@ type BackgroundExpressionBuilder
             Type = backgroundType
             Steps = stepExpressions
         }
+        
+    static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
+
+        let emptyExamples = Expr.NewArray(providerModel.DataRowBaseType,[])
+        let emptyTags = Expr.NewObject(providerModel.TagContainerBaseType.GetConstructors().[0],[Expr.NewArray(providerModel.TagBaseType.AsType(),[])])
+
+        BackgroundExpressionBuilder(
+                                            providerModel.ScenarioBaseType,
+                                            emptyExamples,
+                                            emptyTags,
+                                            providerModel.StepBaseType,
+                                            StepExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+                                            propertyNameSanitizer)
 
 
 

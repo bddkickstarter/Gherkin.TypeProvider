@@ -3,10 +3,10 @@
 open ProviderImplementation.ProvidedTypes
 open Shared
 open FSharp.Quotations
-open BaseTypes.ScenarioContainer
+open BaseTypes.Scenario
 open Gherkin.Ast
 
-type RuleBase (scenarioContainerBase:ScenarioContainerBase,parentName:string,parent:ProvidedTypeDefinition) =
+type RuleBase (exampleBase:ScenarioBase,parentName:string,parent:ProvidedTypeDefinition) =
     let baseType =
         let baseName = sprintf "%s_RuleBase" parentName |> Sanitizer().Sanitize  
         let ruleBase = ProvidedTypeDefinition(baseName,Some typeof<obj>,isErased=false,isSealed=false, hideObjectMethods=true)
@@ -19,8 +19,8 @@ type RuleBase (scenarioContainerBase:ScenarioContainerBase,parentName:string,par
         let descriptionField = propertyHelper.AddProperty("Description",typeof<string>)
         let visitedField = propertyHelper.AddVisitedProperty()
         
-        // untyped array of scenario base
-        let examplesType = scenarioContainerBase.Type.MakeArrayType();
+        // untyped array of examples 
+        let examplesType = exampleBase.Type.MakeArrayType();
         let examplesTypeField = propertyHelper.AddProperty("All",examplesType)
                 
         ProvidedConstructor(

@@ -113,6 +113,45 @@ let visitExampleCell =
 
             Expect.isTrue example.Cells.[0].Visited "Expected visit to example cell to be true after visiting"
 
+[<Tests>]
+let visitRule = 
+    testCase
+        "Rules are marked as visited when accessed through their named property"
+        <| fun _ ->
+            let rules = RulesAndExamplesFeature.CreateFeature().Rules
+
+            Expect.isFalse rules.All.[0].Visited "Expected visit to first rule to be false before visiting"
+
+            rules.``This is the first Rule`` |> ignore
+
+            Expect.isTrue rules.All.[0].Visited "Expected visit to first rule to be true after visiting"
+
+            Expect.isFalse rules.All.[1].Visited "Expected visit to second rule to be false before visiting"
+
+            rules.``This is the second Rule`` |> ignore
+
+            Expect.isTrue rules.All.[1].Visited "Expected visit to second rule to be true after visiting"
+
+[<Tests>]
+let visitExample =
+    testCase
+        "Examples are marked as visited when accessed through their named property"
+        <| fun _ ->
+            let rule = RulesAndExamplesFeature.CreateFeature().Rules.``This is the second Rule``
+         
+            Expect.isFalse rule.All.[0].Visited "Expected visit to first example to be false before visiting"
+
+            rule.``Second example title`` |> ignore
+
+            Expect.isTrue rule.All.[0].Visited "Expected visit to first example to be true after visiting"
+
+            Expect.isFalse rule.All.[1].Visited "Expected visit to second example to be false before visiting"
+
+            rule.``Third example title`` |> ignore
+
+            Expect.isTrue rule.All.[1].Visited "Expected visit to second example to be true after visiting"
+
+
 open FSharp.Data.Gherkin
 
 [<Tests>]
@@ -124,6 +163,10 @@ let validateTheFeature =
                 "Validate the complex feature using the feature validator"
                 <| fun _ ->
                     let feature = TestFeature.CreateFeature()
+
+                    match validateFeature feature with
+                    | None -> failwith ("should fail validation")
+                    | Some _ -> ()
 
                     feature.Tags.featureTag1 |> ignore
                     feature.Tags.featureTag2 |> ignore
@@ -164,6 +207,36 @@ let validateTheFeature =
 
                     feature.Scenarios.Simple.``0 Given just a given`` |> ignore
                     
+                    match validateFeature feature with
+                    | None -> ()
+                    | Some report -> failwith(report.Summary)
+
+            testCase
+                "Validate the rules & examples feature using the feature validatore"
+                <| fun _ ->
+                    let feature = RulesAndExamplesFeature.CreateFeature()
+
+                    match validateFeature feature with
+                    | None -> failwith ("should fail validation")
+                    | Some _ -> ()
+
+                    let rule1 = feature.Rules.``This is the first Rule``
+                    let example1 = rule1.``First example title``
+                    example1.``0 Given example 1 given``.Argument.Content |> ignore
+                    example1.``1 When example 1 when``.Argument |> Seq.iter(fun row -> (row.hello,row.world) |> ignore)
+                    example1.``2 Then example 1 then`` |> ignore
+
+                    let rule2 = feature.Rules.``This is the second Rule``
+                    let example2 = rule2.``Second example title``
+                    example2.``0 Given example 2 given``.Argument.Content |> ignore
+                    example2.``1 When example 2 when``.Argument |> Seq.iter(fun row -> (row.hello2,row.world2) |> ignore)
+                    example2.``2 Then example 2 then`` |> ignore
+
+                    let example3 = rule2.``Third example title``
+                    example3.``0 Given example 3 given``.Argument.Content |> ignore
+                    example3.``1 When example 3 when``.Argument |> Seq.iter(fun row -> (row.hello3,row.world3) |> ignore)
+                    example3.``2 Then example 3 then`` |> ignore
+
                     match validateFeature feature with
                     | None -> ()
                     | Some report -> failwith(report.Summary)

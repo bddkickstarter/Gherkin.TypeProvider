@@ -101,7 +101,6 @@ type StepExpressionBuilder
                     | DocStringType _ -> baseCtr,[args.[0];args.[1];args.[2];args.[3];args.[4];Expr.Value(null)]
                     | DataTableType _ -> baseCtr,[args.[0];args.[1];args.[2];args.[3];Expr.Value(null);args.[4]]
 
-
         stepCtr |> stepType.AddMember
 
         {
@@ -110,3 +109,13 @@ type StepExpressionBuilder
             Position = position
             Argument = argumentType 
         }
+        
+    static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
+
+        StepExpressionBuilder(
+                            providerModel.StepBaseType,
+                            providerModel.DocStringArgType,
+                            providerModel.ArgumentBaseType,
+                            DataExpressionBuilder.CreateNew providerModel propertyNameSanitizer)     
+
+

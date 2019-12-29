@@ -113,7 +113,6 @@ type ScenarioExpressionBuilder
                 | Some(_),None ->args.GetSlice(Some 5,Some (args.Length-1))
                 | Some(_),Some(_) ->args.GetSlice(Some 6,Some (args.Length-1))
                 | None,Some(_) -> args.GetSlice(Some 5,Some (args.Length-1))
-                
 
         let scenarioCtr = 
             ProvidedConstructor(
@@ -159,10 +158,8 @@ type ScenarioExpressionBuilder
                     | Some _,None -> args.[4],emptyExamples
                     | Some _,Some _ -> args.[4],args.[5]
                     | None, Some _ -> emptyTags,args.[4]
-
                 
                 baseCtr,[args.[0];args.[1];args.[2];args.[3];tags;examples;stepsArray] 
-                        
 
         scenarioCtr |> scenarioType.AddMember
         
@@ -173,4 +170,19 @@ type ScenarioExpressionBuilder
             Examples = match exampleExpression with | None -> None | Some(exampleExpr,_) -> Some exampleExpr
             Tags = match tagExpression with | None -> None | Some(tagExpr,_) -> Some tagExpr
         }
-    
+        
+    static member CreateNew (providerModel:GherkinProviderModel) (propertyNameSanitizer:string->string) =
+
+        ScenarioExpressionBuilder(
+                                    providerModel.TagContainerBaseType,
+                                    providerModel.TagBaseType,
+                                    TagContainerExpressionBuilder.CreateNew providerModel,
+                                    providerModel.DataRowBaseType,
+                                    DataExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+                                    providerModel.ScenarioBaseType,
+                                    StepExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
+                                    providerModel.StepBaseType,
+                                    propertyNameSanitizer)
+
+        
+
