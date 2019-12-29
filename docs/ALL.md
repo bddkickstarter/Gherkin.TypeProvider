@@ -357,7 +357,7 @@ Expect.isTrue after "Should be true"
 The entire feature can be "walked" using the underlying arrays so it is possible to find any named properties that have not been visited.
 
 # Scenario Outlines
-To help automate the *Scenario Outline* the Gherkin TypeProvider comes with the *ScenarioOutline builder* (in the *FSharp.Data.Gherkin.Builders* namespace).
+To help automate the *Scenario Outline* the Gherkin TypeProvider comes with the *scenarioOutline builder* .
 
 The builder is a computational expression that allows a *Scenario Outline* to be used like a *Scenario*.  The builder will create a *Scenario* based on the outline for every row in the *Examples* table and applies the supplied function to each newly created *Scenario*.
 
@@ -381,8 +381,8 @@ Examples:
 Use the builder (with *Expecto*):
 
 ```fsharp
+open Expecto
 open FSharp.Data.Gherkin
-open FSharp.Data.Gherkin.Builders
 
 type TestFeature = GherkinProvider<const(__SOURCE_DIRECTORY__ + "/test.feature")>
 
@@ -393,7 +393,9 @@ let useBuilder =
         return!
             fun scenario ->
 
+                // create an Expecto test
                 test scenario.Name {
+
                     // use the given
                     scenario.``0 Given some setup``.Text |> ignore
 
@@ -466,10 +468,10 @@ feature
 ```
 
 # Feature Validation
-To validate the feature use the FeatureValidator in the *FSharp.Data.Gherkin.Validation* namespace:
+To validate the feature use the FeatureValidator - shortcut in the *FSharp.Data.Gherkin* namespace:
 
 ```fsharp
-open FSharp.Data.Gherkin.Validation
+open FSharp.Data.Gherkin
 
 match validateFeature feature with
 | None -> ()
@@ -494,7 +496,7 @@ match validateFeatureAndExclude feature ["@WIP";"@pending"] with
 | None -> ()
 | Some report -> failwith(report.Summary)
 ```
-will exclude the feature if it has either of those tags, and any scenario that has either of the tags.
+will exclude the feature if it has either of those tags, and any scenario/example that has either of the tags.
 
 Backgrounds, Rules & Steps cannot be tagged
 
