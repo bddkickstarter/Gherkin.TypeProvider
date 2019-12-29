@@ -492,7 +492,7 @@ The validator returns a report that contains a tree of all the feature's childre
 To exclude the feature or specific scenarios, tag them and provide the tag names as an array and the validator will exclude them from the report e.g.
 
 ```fsharp
-match validateFeatureAndExclude feature ["@WIP";"@pending"] with
+match validateFeatureAndExclude feature [|"@WIP";"@pending"|] with
 | None -> ()
 | Some report -> failwith(report.Summary)
 ```
