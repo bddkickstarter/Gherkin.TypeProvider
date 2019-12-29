@@ -483,6 +483,8 @@ The validator returns a report that contains a tree of all the feature's childre
 - Scenarios
 - Scenario Outlines
 - All cells in a DataTable argument
+- Every example row
+- Every rule
 - Every example
 
 To exclude the feature or specific scenarios, tag them and provide the tag names as an array and the validator will exclude them from the report e.g.
@@ -494,7 +496,7 @@ match validateFeatureAndExclude feature ["@WIP";"@pending"] with
 ```
 will exclude the feature if it has either of those tags, and any scenario that has either of the tags.
 
-Backgrounds & Steps cannot be tagged
+Backgrounds, Rules & Steps cannot be tagged
 
 
 
