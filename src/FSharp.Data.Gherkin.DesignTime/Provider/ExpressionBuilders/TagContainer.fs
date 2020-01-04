@@ -7,12 +7,12 @@ open BaseTypes.TagContainer
 open ObjectModel
 open Shared
 
-type TagContainerExpressionBuilder (tagBaseType:System.Type,tagContainerBase:System.Type) =
+type TagContainerExpressionBuilder (tagBaseType:System.Type,tagContainerBase:ProvidedTypeDefinition) =
 
     let createTagsType (parent:ProvidedTypeDefinition) (tags:string list) = 
         if tags.Length = 0 then None
         else
-            let tagsContainer = ProvidedTypeDefinition("TagsContainer",Some (tagContainerBase),isErased = false, hideObjectMethods=true, isSealed=false)
+            let tagsContainer = ProvidedTypeDefinition("TagsContainer",Some (tagContainerBase.AsType()),isErased = false, hideObjectMethods=true, isSealed=false)
             let sanitizeTagName (nm:string) = nm.Replace("@","") |> Sanitizer().Sanitize
             tagsContainer |> parent.AddMember
 
@@ -75,9 +75,12 @@ type TagContainerExpressionBuilder (tagBaseType:System.Type,tagContainerBase:Sys
             let tagField = PropertyHelper(parent).AddProperty("Tags",tagType)
             Some (tagType,tagField)
             
+    member __.CreateDefaultTagContainer (parent:ProvidedTypeDefinition) =
+            (PropertyHelper(parent).AddProperty("Tags",tagContainerBase),tagBaseType)
+            
+            
     static member CreateNew (providerModel:GherkinProviderModel) =
 
         TagContainerExpressionBuilder(
                                     providerModel.TagBaseType , 
                                     providerModel.TagContainerBaseType)
-

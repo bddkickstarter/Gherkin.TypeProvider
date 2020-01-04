@@ -81,7 +81,24 @@ type FeatureExpressionBuilder
 
             //create tags
             let tagContainerExpression = tagContainerExpressionBuilder.CreateExpression featureType tags
-
+            let defaultTagContainer =
+                    match tagContainerExpression with
+                    | Some _ -> None  
+                    | None -> Some (tagContainerExpressionBuilder.CreateDefaultTagContainer featureType)
+            
+            //create the hastag method
+            let hasTagMethod =
+                    ProvidedMethod(
+                        "HasTag",
+                        [ProvidedParameter("tagName",typeof<string>)],
+                        typeof<bool>,
+                        isStatic = false,
+                        invokeCode = fun _ ->
+                            let hasTags = tagContainerExpression.IsSome
+                            <@@ hasTags  @@>)
+                    
+            hasTagMethod |> featureType.AddMember
+                        
             //add the optional parameters to mandatory parameters
             let parameters = 
                 let mandatory = [
@@ -110,15 +127,25 @@ type FeatureExpressionBuilder
                         [
                             setDescription;setScenarios;setRules
                         ] |> List.fold(fun a c -> Expr.Sequential(a,c)) setName
+                    
+                    // set empty tag collection of none exists
+                    let setEmptyTags defaultTagContainer =
+                            match defaultTagContainer with
+                            | None -> []
+                            | Some (defaultContainer:ProvidedField,tagBaseType) ->
+                                let emptyTags= Expr.NewArray(tagBaseType,[])
+                                let emptyTagContainer =Expr.NewObject(defaultContainer.FieldType.GetConstructors().[0],[emptyTags])
+                                let setTags = Expr.FieldSet(this,defaultContainer,emptyTagContainer)
+                                [setTags]
 
                     // add any background and tags
                     let additionalSets =
                         match backgroundExpression,tagContainerExpression with
-                        | None,None -> []
-                        | Some(_,backgroundField),None -> [Expr.FieldSet(this,backgroundField,args.[5])]
+                        | None,None -> setEmptyTags defaultTagContainer
+                        | Some(_,backgroundField),None -> Expr.FieldSet(this,backgroundField,args.[5]) :: (setEmptyTags defaultTagContainer)
                         | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[5]);Expr.FieldSet(this,tagField,args.[6])]
                         | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[5])]
-
+                        
                     additionalSets |> Seq.fold(fun a c -> Expr.Sequential(a,c)) setMandatory
 
                     )) |> featureType.AddMember
