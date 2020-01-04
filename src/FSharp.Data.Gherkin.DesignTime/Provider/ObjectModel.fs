@@ -59,7 +59,6 @@ type FeatureExpression =
         Tags:ProvidedTypeDefinition option
     }
 
-open Shared
 open BaseTypes.Argument
 open BaseTypes.DataCell
 open BaseTypes.DataRow

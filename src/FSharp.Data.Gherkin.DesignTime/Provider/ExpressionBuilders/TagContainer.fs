@@ -75,11 +75,11 @@ type TagContainerExpressionBuilder (tagBaseType:System.Type,tagContainerBase:Pro
             let tagField = PropertyHelper(parent).AddProperty("Tags",tagType)
             Some (tagType,tagField)
             
-    member __.CreateDefaultTagFactory (parent:ProvidedTypeDefinition) =
+    member __.CreateDefaultTagContainer (parent:ProvidedTypeDefinition) =
             let emptyTags= Expr.NewArray(tagBaseType,[])
             let emptyTagContainer =Expr.NewObject(tagContainerBase.GetConstructors().[0],[emptyTags])
             let defaultContainer = PropertyHelper(parent).AddProperty("Tags",tagContainerBase)
-            fun this -> Expr.FieldSet(this,defaultContainer,emptyTagContainer)
+            defaultContainer,emptyTagContainer
             
             
             

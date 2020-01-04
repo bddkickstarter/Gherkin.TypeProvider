@@ -5,6 +5,7 @@ open ExpressionBuilders.ScenarioContainer
 open ExpressionBuilders.TagContainer
 open ExpressionBuilders.Background
 open ExpressionBuilders.RuleContainer
+open ExpressionBuilders.HasTags
 open ProviderImplementation.ProvidedTypes
 open Gherkin.Ast
 open FSharp.Quotations
@@ -16,7 +17,8 @@ type FeatureExpressionBuilder
             (backgroundExpression:BackgroundExpressionBuilder,
             scenarioContainerExpressionBuilder:ScenarioContainerExpressionBuilder,
             ruleContainerExpressionBuilder:RuleContainerExpressionBuilder,
-            tagContainerExpressionBuilder:TagContainerExpressionBuilder) =
+            tagContainerExpressionBuilder:TagContainerExpressionBuilder,
+            hasTagsExpressionBuilder:HasTagsMethodExpressionBuilder) =
 
     let getFeatureItemsFromDocument (document:GherkinDocument) =
         let scenarios =
@@ -81,23 +83,16 @@ type FeatureExpressionBuilder
 
             //create tags
             let tagContainerExpression = tagContainerExpressionBuilder.CreateExpression featureType tags
-            let defaultTagFactory =
+            let defaultTagContainer =
                     match tagContainerExpression with
                     | Some _ -> None  
-                    | None -> Some (tagContainerExpressionBuilder.CreateDefaultTagFactory featureType)
-            
-            //create the hastag method
-            let hasTagMethod =
-                    ProvidedMethod(
-                        "HasTag",
-                        [ProvidedParameter("tagName",typeof<string>)],
-                        typeof<bool>,
-                        isStatic = false,
-                        invokeCode = fun _ ->
-                            let hasTags = tagContainerExpression.IsSome
-                            <@@ hasTags  @@>)
-                    
-            hasTagMethod |> featureType.AddMember
+                    | None -> Some (tagContainerExpressionBuilder.CreateDefaultTagContainer featureType)
+
+            match tagContainerExpression,defaultTagContainer with
+            | Some (_,field),_ ->  hasTagsExpressionBuilder.AddHasTagsMethod featureType field
+            | _ ->  
+                let (container,_) = defaultTagContainer.Value
+                hasTagsExpressionBuilder.AddHasTagsMethod featureType container
                         
             //add the optional parameters to mandatory parameters
             let parameters = 
@@ -131,8 +126,12 @@ type FeatureExpressionBuilder
                     // add any background and tags
                     let additionalSets =
                         match backgroundExpression,tagContainerExpression with
-                        | None,None -> [defaultTagFactory.Value this]
-                        | Some(_,backgroundField),None -> [Expr.FieldSet(this,backgroundField,args.[5]) ; (defaultTagFactory.Value this)]
+                        | None,None ->
+                             let (defaultContainer,emptyTagContainer) = defaultTagContainer.Value
+                             [Expr.FieldSet(this,defaultContainer,emptyTagContainer)]
+                        | Some(_,backgroundField),None -> 
+                             let (defaultContainer,emptyTagContainer) = defaultTagContainer.Value
+                             [Expr.FieldSet(this,backgroundField,args.[5]) ; Expr.FieldSet(this,defaultContainer,emptyTagContainer)]
                         | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[5]);Expr.FieldSet(this,tagField,args.[6])]
                         | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[5])]
                         
@@ -155,4 +154,5 @@ type FeatureExpressionBuilder
             (BackgroundExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
             ScenarioContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
             RuleContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
-            TagContainerExpressionBuilder.CreateNew providerModel)
+            TagContainerExpressionBuilder.CreateNew providerModel,
+            HasTagsMethodExpressionBuilder.CreateNew providerModel)
