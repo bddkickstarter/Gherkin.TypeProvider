@@ -81,10 +81,10 @@ type FeatureExpressionBuilder
 
             //create tags
             let tagContainerExpression = tagContainerExpressionBuilder.CreateExpression featureType tags
-            let defaultTagContainer =
+            let defaultTagFactory =
                     match tagContainerExpression with
                     | Some _ -> None  
-                    | None -> Some (tagContainerExpressionBuilder.CreateDefaultTagContainer featureType)
+                    | None -> Some (tagContainerExpressionBuilder.CreateDefaultTagFactory featureType)
             
             //create the hastag method
             let hasTagMethod =
@@ -128,21 +128,11 @@ type FeatureExpressionBuilder
                             setDescription;setScenarios;setRules
                         ] |> List.fold(fun a c -> Expr.Sequential(a,c)) setName
                     
-                    // set empty tag collection of none exists
-                    let setEmptyTags defaultTagContainer =
-                            match defaultTagContainer with
-                            | None -> []
-                            | Some (defaultContainer:ProvidedField,tagBaseType) ->
-                                let emptyTags= Expr.NewArray(tagBaseType,[])
-                                let emptyTagContainer =Expr.NewObject(defaultContainer.FieldType.GetConstructors().[0],[emptyTags])
-                                let setTags = Expr.FieldSet(this,defaultContainer,emptyTagContainer)
-                                [setTags]
-
                     // add any background and tags
                     let additionalSets =
                         match backgroundExpression,tagContainerExpression with
-                        | None,None -> setEmptyTags defaultTagContainer
-                        | Some(_,backgroundField),None -> Expr.FieldSet(this,backgroundField,args.[5]) :: (setEmptyTags defaultTagContainer)
+                        | None,None -> [defaultTagFactory.Value this]
+                        | Some(_,backgroundField),None -> [Expr.FieldSet(this,backgroundField,args.[5]) ; (defaultTagFactory.Value this)]
                         | Some(_,backgroundField),Some(_,tagField) -> [Expr.FieldSet(this,backgroundField,args.[5]);Expr.FieldSet(this,tagField,args.[6])]
                         | None,Some(_,tagField) ->  [Expr.FieldSet(this,tagField,args.[5])]
                         

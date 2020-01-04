@@ -75,8 +75,12 @@ type TagContainerExpressionBuilder (tagBaseType:System.Type,tagContainerBase:Pro
             let tagField = PropertyHelper(parent).AddProperty("Tags",tagType)
             Some (tagType,tagField)
             
-    member __.CreateDefaultTagContainer (parent:ProvidedTypeDefinition) =
-            (PropertyHelper(parent).AddProperty("Tags",tagContainerBase),tagBaseType)
+    member __.CreateDefaultTagFactory (parent:ProvidedTypeDefinition) =
+            let emptyTags= Expr.NewArray(tagBaseType,[])
+            let emptyTagContainer =Expr.NewObject(tagContainerBase.GetConstructors().[0],[emptyTags])
+            let defaultContainer = PropertyHelper(parent).AddProperty("Tags",tagContainerBase)
+            fun this -> Expr.FieldSet(this,defaultContainer,emptyTagContainer)
+            
             
             
     static member CreateNew (providerModel:GherkinProviderModel) =
