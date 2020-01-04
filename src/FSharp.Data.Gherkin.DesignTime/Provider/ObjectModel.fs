@@ -157,8 +157,8 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) as t
                     
             hasTagMethod |> parent.AddMember 
 
-    member __.AddHasTagsMethodWithField (parent:ProvidedTypeDefinition)  (tagsField:ProvidedField) =
+    member __.AddHasTagMethodWithField (parent:ProvidedTypeDefinition)  (tagsField:ProvidedField) =
         this.AddHasTagsMethod parent (fun this -> Expr.FieldGet(this,tagsField))
 
-    member __.AddHasTagsMethodWithProperty (parent:ProvidedTypeDefinition) (tagsProperty:System.Reflection.PropertyInfo) =
+    member __.AddHasTagMethodWithProperty (parent:ProvidedTypeDefinition) (tagsProperty:System.Reflection.PropertyInfo) =
         this.AddHasTagsMethod parent (fun this -> Expr.PropertyGet(this,tagsProperty))

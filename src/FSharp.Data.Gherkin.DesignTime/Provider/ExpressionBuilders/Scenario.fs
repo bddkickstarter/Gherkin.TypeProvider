@@ -185,7 +185,4 @@ type ScenarioExpressionBuilder
                                     StepExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
                                     providerModel.StepBaseType,
                                     propertyNameSanitizer,
-                                    providerModel.AddHasTagsMethodWithProperty)
-
-        
-
+                                    providerModel.AddHasTagMethodWithProperty)

@@ -154,5 +154,5 @@ type FeatureExpressionBuilder
             ScenarioContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
             RuleContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
             TagContainerExpressionBuilder.CreateNew providerModel,
-            providerModel.AddHasTagsMethodWithField
+            providerModel.AddHasTagMethodWithField
             )
