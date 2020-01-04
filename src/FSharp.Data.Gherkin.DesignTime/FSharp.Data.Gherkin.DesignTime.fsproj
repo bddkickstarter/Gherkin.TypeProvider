@@ -34,6 +34,7 @@
     <Compile Include="Provider\BaseTypes\Rule.fs" />
     <Compile Include="Provider\BaseTypes\RuleContainer.fs" />
     <Compile Include="Provider/ObjectModel.fs" />
+    <Compile Include="Provider/ExpressionBuilders/HasTags.fs" />
     <Compile Include="Provider/ExpressionBuilders/Data.fs" />
     <Compile Include="Provider/ExpressionBuilders/TagContainer.fs" />
     <Compile Include="Provider/ExpressionBuilders/Step.fs" />
@@ -42,7 +43,6 @@
     <Compile Include="Provider/ExpressionBuilders/Background.fs" />
     <Compile Include="Provider\ExpressionBuilders\Rule.fs" />
     <Compile Include="Provider\ExpressionBuilders\RuleContainer.fs" />
-    <Compile Include="Provider/ExpressionBuilders/HasTags.fs" />
     <Compile Include="Provider/ExpressionBuilders/Feature.fs" />
     <Compile Include="Provider/InstanceBuilders/Builders.fs" />
     <Compile Include="GherkinProvider.fs" />

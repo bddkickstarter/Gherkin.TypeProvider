@@ -70,8 +70,9 @@ open BaseTypes.Scenario
 open BaseTypes.ScenarioContainer
 open BaseTypes.Rule
 open BaseTypes.RuleContainer
+open FSharp.Quotations
 
-type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
+type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) as this=
 
     let argumentBase = ArgumentBase(providerName,root)
     let dataCellType = DataCellBase(argumentBase,providerName,root)
@@ -84,6 +85,11 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
     let scenarioContainerBase = ScenarioContainerBase(scenarioBase,providerName,root)
     let ruleBase = RuleBase(scenarioBase,providerName,root)
     let ruleContainerBase = RuleContainerBase(ruleBase,providerName,root)
+    let allTagsProperty = tagContainerBase.Type.GetProperty("AllTags")
+    let arrayType = typeof<System.Array>
+    let lengthProperty = arrayType.GetProperty("Length")
+    let tagVisitedProperty = tagBase.Type.GetProperty("Visited")
+
 
     member val StepBaseType = stepBase.Type with get
     member val ScenarioBaseType = scenarioBase.Type with get
@@ -96,3 +102,63 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) =
     member val ArgumentBaseType = argumentBase.Type with get
     member val RuleContainerBaseType = ruleContainerBase.Type with get
     member val RuleBaseType = ruleBase.Type with get
+
+    member private __.AddHasTagsMethod (parent:ProvidedTypeDefinition) (getTags:Expr->Expr) =
+            
+            let hasTagMethod =
+                    ProvidedMethod(
+                        "HasTag",
+                        [ProvidedParameter("tagName",typeof<string>)],
+                        typeof<bool>,
+                        isStatic = false,
+                        invokeCode = fun args ->
+                            let this = args.[0]
+                            let loopVarExpr = Expr<int>.GlobalVar("i")
+                            
+                            let tags = getTags this
+                            let allTags = Expr.PropertyGet(tags,allTagsProperty)
+                            let allTagsAsArray = Expr.Coerce(allTags,arrayType)
+                            let allTagsLength = Expr.PropertyGet(allTagsAsArray,lengthProperty)
+                            let foundTag = Var("foundTag",typeof<bool>,isMutable=true)
+
+                            let guard = 
+                                <@@
+                                    let arr :System.Array = %%allTagsAsArray
+                                    let index :int= %loopVarExpr
+                                    not (isNull (arr.GetValue(index)))
+                                @@>
+
+                            let getTagByIndexAsTagBase = 
+                                Expr.Coerce(
+                                    <@@
+                                        let arr :System.Array = %%allTagsAsArray
+                                        let index :int= %loopVarExpr
+                                        arr.GetValue(index)
+                                    @@>, tagBase.Type)
+
+                            let visitTag = 
+                                    Expr.Sequential(
+                                        Expr.PropertySet(getTagByIndexAsTagBase,tagVisitedProperty,Expr.Value(true)),
+                                        Expr.Sequential(Expr.VarSet(foundTag,Expr.Value(true)),Expr.Value(true)))
+
+                            let ifTagFound = 
+                                    Expr.IfThenElse(guard,visitTag,Expr.Value(false))
+
+                            let finishLoop =
+                                <@@ 
+                                    let l :int = %%allTagsLength
+                                    l-1
+                                @@>
+
+                            Expr.Sequential(
+                                Expr.Let(foundTag,Expr.Value(false),Expr.ForIntegerRangeLoop(Var.Global("i",typeof<int>),Expr.Value(0),finishLoop,ifTagFound)),
+                                Expr.Var(foundTag)) //!!!
+                    )
+                    
+            hasTagMethod |> parent.AddMember 
+
+    member __.AddHasTagsMethodWithField (parent:ProvidedTypeDefinition)  (tagsField:ProvidedField) =
+        this.AddHasTagsMethod parent (fun this -> Expr.FieldGet(this,tagsField))
+
+    member __.AddHasTagsMethodWithProperty (parent:ProvidedTypeDefinition) (tagsProperty:System.Reflection.PropertyInfo) =
+        this.AddHasTagsMethod parent (fun this -> Expr.PropertyGet(this,tagsProperty))

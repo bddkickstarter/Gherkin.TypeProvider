@@ -24,7 +24,8 @@ type ScenarioExpressionBuilder
         scenarioBaseType:System.Type,
         stepExpressionBuilder:StepExpressionBuilder,
         stepBaseType:System.Type,
-        propertySanitizer:string->string) =
+        propertySanitizer:string->string,
+        addHasTagsMethodByProperty) =
 
     member __.CreateExpression (parent:ProvidedTypeDefinition) (gherkinScenario:Scenario) =
         let scenarioType = ProvidedTypeDefinition((sprintf "%sClass" gherkinScenario.Name) |> Sanitizer().Sanitize ,Some scenarioBaseType,isErased=false, hideObjectMethods=true, isSealed=false)
@@ -32,7 +33,8 @@ type ScenarioExpressionBuilder
 
         //create tags
         let tagExpression = tagExpressionBuilder.CreateExpression scenarioType (gherkinScenario.Tags |> Seq.toList |> List.map(fun t -> t.Name))
-
+        addHasTagsMethodByProperty scenarioType (scenarioBaseType.GetProperty("TagList"))
+       
         //get the examples if any
         let exampleExpression = 
             match gherkinScenario.Examples |> Seq.toList with
@@ -182,7 +184,8 @@ type ScenarioExpressionBuilder
                                     providerModel.ScenarioBaseType,
                                     StepExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
                                     providerModel.StepBaseType,
-                                    propertyNameSanitizer)
+                                    propertyNameSanitizer,
+                                    providerModel.AddHasTagsMethodWithProperty)
 
         
 

@@ -5,7 +5,6 @@ open ExpressionBuilders.ScenarioContainer
 open ExpressionBuilders.TagContainer
 open ExpressionBuilders.Background
 open ExpressionBuilders.RuleContainer
-open ExpressionBuilders.HasTags
 open ProviderImplementation.ProvidedTypes
 open Gherkin.Ast
 open FSharp.Quotations
@@ -18,7 +17,7 @@ type FeatureExpressionBuilder
             scenarioContainerExpressionBuilder:ScenarioContainerExpressionBuilder,
             ruleContainerExpressionBuilder:RuleContainerExpressionBuilder,
             tagContainerExpressionBuilder:TagContainerExpressionBuilder,
-            hasTagsExpressionBuilder:HasTagsMethodExpressionBuilder) =
+            addHasTagsMethod) =
 
     let getFeatureItemsFromDocument (document:GherkinDocument) =
         let scenarios =
@@ -89,10 +88,10 @@ type FeatureExpressionBuilder
                     | None -> Some (tagContainerExpressionBuilder.CreateDefaultTagContainer featureType)
 
             match tagContainerExpression,defaultTagContainer with
-            | Some (_,field),_ ->  hasTagsExpressionBuilder.AddHasTagsMethod featureType field
+            | Some (_,field),_ ->  addHasTagsMethod featureType field
             | _ ->  
                 let (container,_) = defaultTagContainer.Value
-                hasTagsExpressionBuilder.AddHasTagsMethod featureType container
+                addHasTagsMethod featureType container
                         
             //add the optional parameters to mandatory parameters
             let parameters = 
@@ -155,4 +154,5 @@ type FeatureExpressionBuilder
             ScenarioContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
             RuleContainerExpressionBuilder.CreateNew providerModel propertyNameSanitizer,
             TagContainerExpressionBuilder.CreateNew providerModel,
-            HasTagsMethodExpressionBuilder.CreateNew providerModel)
+            providerModel.AddHasTagsMethodWithField
+            )
