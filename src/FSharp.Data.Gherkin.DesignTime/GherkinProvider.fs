@@ -1,18 +1,13 @@
 ﻿namespace ProviderImplementation
 
-open BaseTypes.Argument
 open FSharp.Core.CompilerServices
 open ProviderImplementation.ProvidedTypes
 open System.Reflection
 open Gherkin
 open ExpressionBuilders.Feature
-open ExpressionBuilders.Scenario
-open ExpressionBuilders.Step
 open Shared
 open InstanceBuilders.Feature
 open ObjectModel
-open FSharp.Quotations
-open InstanceBuilders.Feature
 
 [<TypeProvider>]
 type GherkinProvider (config : TypeProviderConfig) as this =
@@ -35,31 +30,6 @@ type GherkinProvider (config : TypeProviderConfig) as this =
             let providerModel = GherkinProviderModel(providerName,root)
             let expressionBuilder = FeatureExpressionBuilder.CreateNew providerModel (Sanitizer(sanitizetype).Sanitize)
             let instanceBuilder= FeatureBuilder.CreateNewFeature providerModel
-            
-            let sbCtr = providerModel.ScenarioBaseType.GetConstructors().[0]
-            let sbInstance = Expr.NewObject(sbCtr,
-                                            [
-                                                Expr.Coerce(Expr.Value(null),providerModel.ScenarioBaseType)
-                                                Expr.Value("")
-                                                Expr.Value("")
-                                                Expr.Coerce(Expr.Value(null),providerModel.TagContainerBaseType)
-                                                Expr.Coerce(Expr.Value(null), providerModel.DataRowBaseType.MakeArrayType())
-                                                Expr.Coerce(Expr.Value(null),providerModel.StepBaseType.MakeArrayType())
-                                            ])
-            
-            let stepCtr = providerModel.StepBaseType.GetConstructors().[0]
-            let stepInstance = Expr.NewObject(stepCtr,
-                                              [
-                                                  Expr.Value("")
-                                                  Expr.Value("")
-                                                  Expr.Value(0)
-                                                  Expr.Coerce(Expr.Value(null),providerModel.ArgumentBaseType)
-                                                  Expr.Coerce(Expr.Value(null),providerModel.DataRowBaseType.MakeArrayType())
-                                              ])
-            
-            let baseClasses = Expr.NewTuple([sbInstance;stepInstance])
-            
-            ProvidedProperty("BaseClasses",baseClasses.Type,isStatic=true,getterCode=fun _ -> baseClasses) |> root.AddMember
 
             expressionBuilder.CreateExpression providerName root gherkinDocument
             |> instanceBuilder.BuildFeature root gherkinDocument
