@@ -89,6 +89,7 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) as t
     let arrayType = typeof<System.Array>
     let lengthProperty = arrayType.GetProperty("Length")
     let tagVisitedProperty = tagBase.Type.GetProperty("Visited")
+    let tagNameProperty = tagBase.Type.GetProperty("Name")
 
 
     member val StepBaseType = stepBase.Type with get
@@ -113,36 +114,45 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) as t
                         isStatic = false,
                         invokeCode = fun args ->
                             let this = args.[0]
-                            let loopVarExpr = Expr<int>.GlobalVar("i")
-                            
-                            let tags = getTags this
-                            let allTags = Expr.PropertyGet(tags,allTagsProperty)
-                            let allTagsAsArray = Expr.Coerce(allTags,arrayType)
-                            let allTagsLength = Expr.PropertyGet(allTagsAsArray,lengthProperty)
                             let foundTag = Var("foundTag",typeof<bool>,isMutable=true)
-
-                            let guard = 
-                                <@@
-                                    let arr :System.Array = %%allTagsAsArray
-                                    let index :int= %loopVarExpr
-                                    not (isNull (arr.GetValue(index)))
-                                @@>
-
-                            let getTagByIndexAsTagBase = 
-                                Expr.Coerce(
-                                    <@@
-                                        let arr :System.Array = %%allTagsAsArray
-                                        let index :int= %loopVarExpr
-                                        arr.GetValue(index)
-                                    @@>, tagBase.Type)
+                            let tag = Var("tag",tagBase.Type,isMutable=false)
 
                             let visitTag = 
                                     Expr.Sequential(
-                                        Expr.PropertySet(getTagByIndexAsTagBase,tagVisitedProperty,Expr.Value(true)),
+                                        Expr.PropertySet(Expr.Var(tag),tagVisitedProperty,Expr.Value(true)),
                                         Expr.Sequential(Expr.VarSet(foundTag,Expr.Value(true)),Expr.Value(true)))
+
+                            let guard = 
+                                let tagExpr = Expr.Coerce(Expr.Var(tag),typeof<obj>)
+                                let expectedTagName = args.[1]
+                                let actualTagName = Expr.PropertyGet(Expr.Var(tag),tagNameProperty)
+                                <@@
+                                    let tag :obj = %%tagExpr
+                                    let actualName :string= %%actualTagName 
+                                    let expectedName :string= %%expectedTagName 
+                                    not (isNull tag)  && (actualName = expectedName)
+                                @@>
 
                             let ifTagFound = 
                                     Expr.IfThenElse(guard,visitTag,Expr.Value(false))
+
+                            let allTagsAsArray = 
+                                Expr.Coerce
+                                    (Expr.PropertyGet(getTags this,allTagsProperty),arrayType)
+
+                            let allTagsLength = Expr.PropertyGet(allTagsAsArray,lengthProperty)
+
+                            let getTagAsObject =
+                                    let loopVarExpr = Expr<int>.GlobalVar("i")
+                                    Expr.Coerce(
+                                        <@@
+                                            let arr :System.Array= %%allTagsAsArray
+                                            let index :int= %loopVarExpr
+                                            arr.GetValue(index)
+                                        @@>,tagBase.Type)
+                            
+                            let getTagByIndexAsTagBase = 
+                                Expr.Let(tag,getTagAsObject,ifTagFound)
 
                             let finishLoop =
                                 <@@ 
@@ -151,8 +161,9 @@ type GherkinProviderModel (providerName:string,root:ProvidedTypeDefinition) as t
                                 @@>
 
                             Expr.Sequential(
-                                Expr.Let(foundTag,Expr.Value(false),Expr.ForIntegerRangeLoop(Var.Global("i",typeof<int>),Expr.Value(0),finishLoop,ifTagFound)),
-                                Expr.Var(foundTag)) //!!!
+                                Expr.Let(foundTag,Expr.Value(false),
+                                    Expr.ForIntegerRangeLoop(Var.Global("i",typeof<int>),Expr.Value(0),finishLoop,getTagByIndexAsTagBase)),
+                                Expr.Var(foundTag))
                     )
                     
             hasTagMethod |> parent.AddMember 

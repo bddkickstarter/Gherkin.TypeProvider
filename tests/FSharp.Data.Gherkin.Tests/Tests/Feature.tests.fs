@@ -17,6 +17,31 @@ let features =
                     <| fun _ -> validateFeature feature "Feature name"  "Multi-line\r\nFeature Description"
 
                 testCase
+                    "Feature has tags correct"
+                    <| fun _ ->
+                        let feature = TestFeature.CreateFeature()
+                        let before = feature.Tags.AllTags.[0].Visited
+
+                        Expect.isFalse before "Expected tag to be unvisited"
+
+                        let hasTag = feature.HasTag("@featureTag1")
+
+                        Expect.isTrue hasTag "Expected tag to be present"
+
+                        let after = feature.Tags.AllTags.[0].Visited
+
+                        Expect.isTrue after "Expected tag to be unvisited"
+
+                testCase
+                    "Feature hastags false if no tag"
+                    <| fun _ ->
+                        let feature = TestFeature.CreateFeature()
+                        
+                        let hasTag = feature.HasTag("@foo")
+
+                        Expect.isFalse hasTag "Expected tag to be missing"
+
+                testCase
                     "Feature tags correct"
                     <| fun _ ->
                         let tag1 = feature.Tags.featureTag1.Name

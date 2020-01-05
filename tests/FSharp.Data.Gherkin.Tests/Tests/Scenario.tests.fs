@@ -14,6 +14,31 @@ let scenario1 =
         "Scenario 1 has correct data"
         [
             testCase
+                "Scenario has visiting tags correct"
+                <| fun _ ->
+                    let scenario = TestFeature.CreateFeature().Scenarios.``Scenario 1 name``
+                    let before = scenario.TagList.AllTags.[0].Visited
+
+                    Expect.isFalse before "Expected tag to be unvisited"
+
+                    let hasTag = scenario.HasTag("@scenario1Tag1")
+
+                    Expect.isTrue hasTag "Expected tag to be present"
+
+                    let after = scenario.TagList.AllTags.[0].Visited
+
+                    Expect.isTrue after "Expected tag to be unvisited"
+
+            testCase
+                "Scenario hastags false if no tag"
+                <| fun _ ->
+                    let scenario = TestFeature.CreateFeature().Scenarios.``Scenario 1 name``
+                    
+                    let hasTag = scenario.HasTag("@foo")
+
+                    Expect.isFalse hasTag "Expected tag to be missing"
+
+            testCase
                 "Scenario 1 is correct"
                 <| fun _ -> validateScenario scenario1 "Scenario 1 name" "Multi-line\r\nScenario 1 Description"
 
