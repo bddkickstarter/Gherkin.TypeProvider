@@ -1,6 +1,22 @@
+
 # Gherkin.TypeProvider
 
-### Background
+# Contents
+
+- **[Background](#background)**
+- **[Usage](#usage)**
+- **[Scenarios and Steps](#scenarios-and-steps)**
+- **[Tags](#tags)**
+- **[Step Arguments](#step-arguments)**
+- **[Scenario Outlines and Examples](#scenario-outlines-and-examples)**
+- **[Sanitizing](#sanitizing)**
+- **[Consuming from C#](#consuming-from-c)**
+- **[The Visited property](#the-visited-property)**
+- **[Scenario Outline Builder](#scenario-outline-builder)**
+- **[Rules and Examples](#rules-and-examples)**
+- **[Feature Validation](#feature-validation)**
+
+# Background
 
 The [Gherkin](https://cucumber.io/docs/gherkin/reference/) language provides a strict schema that has an existing [parser](https://www.nuget.org/packages/gherkin/) used by the major Gherkin parsing automation tools such as Specflow or the Cucumber family.
 
@@ -21,7 +37,7 @@ The Gherkin Type Provider simply adds to this structure by creating named proper
 
 Referencing the properties generated from the text of the feature means that if the feature file changes then the property names will change, and code referencing the old property names will fail to compile.
 
-## Usage
+# Usage
 
 * ### Add the package [__Gherkin.TypeProvider__](https://www.nuget.org/packages/Gherkin.TypeProvider)
 
@@ -46,7 +62,7 @@ Referencing the properties generated from the text of the feature means that if 
     let myTestFeature = TestFeature.CreateFeature()
     ```
 
-# Scenarios & Steps
+# Scenarios and Steps
 
 If we had the following feature
 
@@ -87,6 +103,7 @@ would print out:
 ```console
 Order: 0, Keyword: Given, Text: this is a given step
 ```
+
 # Tags
 Tags can be used with Features, Scenarios & Scenario Outlines and are available via the typed *Tags* property
 
@@ -119,6 +136,39 @@ would return
 
 ```console
 @scenariotag
+```
+
+Features, Scenarios & Scenario Outlines all have a HasTag method, which will return true if the Tag the exists (& will also visit it if found), so the following test will pass:
+
+```fsharp
+    let before = myTestFeature.Tags.AllTags.[0].Visited
+
+    Expect.isFalse before "Expected tag to be unvisited"
+
+    let hasTag = feature.HasTag("@featureTag")
+
+    Expect.isTrue hasTag "Expected tag to be present"
+
+    let after = feature.Tags.AllTags.[0].Visited
+
+    Expect.isTrue after "Expected tag to be unvisited"
+```
+
+as will:
+
+```fsharp
+    let scenario = myTestFeature.Scenarios.``this is a scenario``
+    let before = scenario.Tags.AllTags.[0].Visited
+
+    Expect.isFalse before "Expected tag to be unvisited"
+
+    let hasTag = scenario.HasTag("@scenariotag")
+
+    Expect.isTrue hasTag "Expected tag to be present"
+
+    let after = scenario.Tags.AllTags.[0].Visited
+
+    Expect.isTrue after "Expected tag to be unvisited"
 ```
 
 # Step Arguments
@@ -157,12 +207,9 @@ this is a multi
 line string argument
 ```
 
-But an argument can also be a data table, what then? 
+If a step has a data table argument then it is used slightly differently. 
 
-As the type system is generated, an argument on a specific senario can be any type we please.  
-If a step has a string argument it is accessed as above, but if it has a data table argument, it is used slightly different.
-
-In this feature we're using a data table argument with the When step:
+For example, in this feature the When step has a data table argument:
 
 ```gherkin
 Feature: a feature
@@ -176,7 +223,9 @@ Scenario: this is a scenario
     | Data 3 | Data 4  |
 ```
 
-Here the **Argument** is no longer a _DocString_,but instead an array of data objects that have individual _DataCells_ as named properties.
+Now the **Argument** is no longer a _DocString_,but instead an array of data objects that have individual _DataCells_ as named properties.
+
+So,
 
 ```fsharp
 myTestFeature
@@ -189,7 +238,7 @@ myTestFeature
     .Value
 ```
 
-Would output:
+would output:
 
 ```console
 Data 4
@@ -202,7 +251,7 @@ Then by using the named column __``Column 2``__, the _DataCell_ for the 2nd row 
 A _DataCell_ has 2 properties; Header & Value.  The header contains the name of the cell's column, while the value is the contents of the cell
 
 
-# Scenario Outlines & Examples
+# Scenario Outlines and Examples
 
 Examples are just a data table and are accessed in a similar way to the data table argument.
 
@@ -290,24 +339,7 @@ But what about properties that haven't been referenced (either because they have
 
 To keep the code and feature file complete in sync when a named property is accessed it sets a _Visited_ property to true on the underlying field.
 
-The underlying field can be accessed via an array on the parent (a Scenarios array for a feature, Steps array for a Scenario etc etc) as each property derives from a base class/
-
-For example,when the scenario from the first feature is accessed like:
-
-```fsharp
-let scenario = 
-    myTestFeature
-        .Scenarios
-        .``this is a scenario``
-```
-
-The type of the scenario will be 
-
-```fsharp
-``this_is_a_scenarioClass`` 
-```
-
-However the feature also contains an array of all its Scenarios as their base classes (_TestFeature_ScenarioBase_), so if the only scenario in this feature was accessed like:
+Any child can be accessed via an array on the parent (a Scenarios array for a feature, Steps array for a Scenario etc etc) , so a Scenario can be used via the its parent Feature's scenario array like:
 
 ```fsharp
 let scenario = 
@@ -315,24 +347,18 @@ let scenario =
         .Scenarios.All.[0]
 ```
 
-The type of the scenario will be 
-
-```fsharp
-``TestFeature_ScenarioBase`` 
-```
-
-The base class has the _Visited_ property which is set to true __only__ when the named property is used, so the following test will pass:
+However bypassing the named property will not set the *Visited* flag, so the following test will pass:
 
 ```fsharp
 let before = myTestFeature.Scenarios.All.[0].Visited
 
-Expect.isFalse before "Should be false"
+Expect.isFalse before "Should be false as accessed via array"
 
 myTestFeature.Scenarios.``this is a scenario`` |> ignore
 
 let after = myTestFeature.Scenarios.All.[0].Visited
 
-Expect.isTrue after "Should be true"
+Expect.isTrue after "Should be true as accessed via named property"
 ```
 
 The same is true of steps:
@@ -340,7 +366,7 @@ The same is true of steps:
 ```fsharp
 let before = myTestFeature.Scenarios.All.[0].Steps.[0].Visited
 
-Expect.isFalse before "Should be false"
+Expect.isFalse before "Should be false as accessed via array"
 
 myTestFeature
     .Scenarios
@@ -349,14 +375,14 @@ myTestFeature
 
 let after = myTestFeature.Scenarios.All.[0].Steps.[0].Visited
 
-Expect.isTrue after "Should be true"
+Expect.isTrue after "Should be true as accessed via named property"
 ```
 
 (There are a set of visited tests [here](https://github.com/bddkickstarter/Gherkin.TypeProvider/blob/master/tests/FSharp.Data.Gherkin.Tests/Tests/VisitedTests.tests.fs))
 
 The entire feature can be "walked" using the underlying arrays so it is possible to find any named properties that have not been visited.
 
-# Scenario Outlines
+# Scenario Outline Builder
 To help automate the *Scenario Outline* the Gherkin TypeProvider comes with the *scenarioOutline builder* .
 
 The builder is a computational expression that allows a *Scenario Outline* to be used like a *Scenario*.  The builder will create a *Scenario* based on the outline for every row in the *Examples* table and applies the supplied function to each newly created *Scenario*.
@@ -426,7 +452,7 @@ The builder will visit each example however the steps will only be marked as vis
 ## xUnit
 Unfortunately xUnit doesn't support this behaviour as it uses the *Theory* attribute to support running multiple tests unlike *Expecto* which can run a list of tests.
 
-# Rules & Examples
+# Rules and Examples
 As of Gherkin 6 Rules & Examples are now supported.  A rule is container for multiple examples (which are just synonyms for Scenarios).
 
 So with the feature
